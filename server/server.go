@@ -51,6 +51,9 @@ func NewServer(ctx context.Context, servingPort string, host string, logger *zap
 	}
 }
 
+func (s *Server) GetContext() context.Context {
+	return s.ctx
+}
 func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
 
 	for _, e := range endpoint {
