@@ -16,7 +16,7 @@ const (
 type EndpointHandler func(w http.ResponseWriter, r *http.Request)
 
 type Endpoint struct {
-	SubdomainProxy  string     `json:"subdomain_proxy" yaml:"subdomain_proxy"`
+	SubDomain       string
 	URL             *url.URL   `json:"url" yaml:"url"`
 	Methods         []string   `json:"methods" yaml:"methods"`
 	PermissionLevel Permission `json:"permission_level" yaml:"permission_level"`

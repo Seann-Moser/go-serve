@@ -13,7 +13,7 @@ type AddEndpoints func(manager Manager) error
 
 type Manager struct {
 	ctx                     context.Context
-	router                  *mux.Router
+	Router                  *mux.Router
 	logger                  *zap.Logger
 	extraAddEndpointProcess func(endpoint *endpoints.Endpoint) error
 }
@@ -21,7 +21,7 @@ type Manager struct {
 func NewManager(ctx context.Context, router *mux.Router, logger *zap.Logger) *Manager {
 	return &Manager{
 		ctx:                     ctx,
-		router:                  router,
+		Router:                  router,
 		logger:                  logger,
 		extraAddEndpointProcess: nil,
 	}
@@ -35,12 +35,15 @@ func (m *Manager) AddEndpoint(endpoint *endpoints.Endpoint) error {
 		m.logger.Debug("adding handler func",
 			zap.String("path", endpoint.URL.Path),
 			zap.Strings("methods", endpoint.Methods))
-		m.router.HandleFunc(endpoint.URL.Path, endpoint.HandlerFunc).Methods(endpoint.Methods...)
+		m.Router.HandleFunc(endpoint.URL.Path, endpoint.HandlerFunc).Methods(endpoint.Methods...)
 	} else if endpoint.Handler != nil {
 		m.logger.Debug("adding handler",
 			zap.String("path", endpoint.URL.Path),
 			zap.Strings("methods", endpoint.Methods))
-		m.router.Handle(endpoint.URL.Path, endpoint.Handler).Methods(endpoint.Methods...)
+		m.Router.Handle(endpoint.URL.Path, endpoint.Handler).Methods(endpoint.Methods...)
+	}
+	if m.extraAddEndpointProcess == nil {
+		return nil
 	}
 	return m.extraAddEndpointProcess(endpoint)
 }

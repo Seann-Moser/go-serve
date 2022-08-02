@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/Seann-Moser/go-serve/server/endpoint_manager"
+	"github.com/Seann-Moser/go-serve/server/endpoints"
 )
 
 type Server struct {
@@ -21,9 +22,11 @@ type Server struct {
 	router          *mux.Router
 	logger          *zap.Logger
 	EndpointManager *endpoint_manager.Manager
+	host            string
+	subrouters      map[string]*endpoint_manager.Manager
 }
 
-func NewServer(ctx context.Context, servingPort string, logger *zap.Logger) *Server {
+func NewServer(ctx context.Context, servingPort string, host string, logger *zap.Logger) *Server {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	notifyContext, cancel := context.WithCancel(ctx)
@@ -33,14 +36,60 @@ func NewServer(ctx context.Context, servingPort string, logger *zap.Logger) *Ser
 		cancel()
 	}()
 	router := mux.NewRouter()
+	if host != "" {
+		router = router.Host(fmt.Sprintf("{subdomain:[a-z]+}.%s", host)).Subrouter()
+	}
 	return &Server{
 		Endpoint:        "",
+		host:            host,
 		ServingPort:     servingPort,
 		ctx:             notifyContext,
 		router:          router,
 		logger:          logger,
 		EndpointManager: endpoint_manager.NewManager(ctx, router, logger),
+		subrouters:      map[string]*endpoint_manager.Manager{},
 	}
+}
+
+func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
+
+	for _, e := range endpoint {
+		if len(e.SubDomain) > 0 {
+			sub := fmt.Sprintf("%s.%s", e.SubDomain, s.host)
+			if s.host == "" {
+				sub = e.SubDomain
+			}
+			subRouter, found := s.subrouters[sub]
+			if !found {
+				sr := s.router.Host(sub).Subrouter()
+				subRouter = endpoint_manager.NewManager(s.ctx, sr, s.logger)
+				s.subrouters[e.SubDomain] = subRouter
+
+			}
+			err := subRouter.AddEndpoint(e)
+			if err != nil {
+				return fmt.Errorf("failed adding endpoint: %w", err)
+			}
+		} else {
+			err := s.EndpointManager.AddEndpoint(e)
+			if err != nil {
+				return fmt.Errorf("failed adding endpoint: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Server) AddMiddleware(subdomain string, middlewareFunc ...mux.MiddlewareFunc) error {
+	if len(subdomain) == 0 {
+		s.router.Use(middlewareFunc...)
+	}
+	subRouter, found := s.subrouters[subdomain]
+	if !found {
+		return fmt.Errorf("subdomain does not exist")
+	}
+	subRouter.Router.Use(middlewareFunc...)
+	return nil
 }
 
 func (s *Server) StartServer() error {
