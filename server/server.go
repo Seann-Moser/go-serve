@@ -80,9 +80,12 @@ func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
 	return nil
 }
 
-func (s *Server) AddMiddleware(subdomain string, middlewareFunc ...mux.MiddlewareFunc) error {
+func (s *Server) AddMiddleware(middlewareFunc ...mux.MiddlewareFunc) {
+	s.router.Use(middlewareFunc...)
+}
+func (s *Server) AddMiddlewareWithSubdomain(subdomain string, middlewareFunc ...mux.MiddlewareFunc) error {
 	if len(subdomain) == 0 {
-		s.router.Use(middlewareFunc...)
+		return fmt.Errorf("no subdomain provided")
 	}
 	subRouter, found := s.subrouters[subdomain]
 	if !found {
