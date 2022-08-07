@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/Seann-Moser/go-serve/pkg/request"
+	"github.com/Seann-Moser/go-serve/pkg/response"
 	"net/http"
 	"os"
 	"os/signal"
@@ -24,9 +26,11 @@ type Server struct {
 	EndpointManager *endpoint_manager.Manager
 	host            string
 	subrouters      map[string]*endpoint_manager.Manager
+	Response        *response.Response
+	Request         *request.Request
 }
 
-func NewServer(ctx context.Context, servingPort string, host string, logger *zap.Logger) *Server {
+func NewServer(ctx context.Context, servingPort string, host string, mb int64, showErr bool, logger *zap.Logger) *Server {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	notifyContext, cancel := context.WithCancel(ctx)
@@ -48,6 +52,8 @@ func NewServer(ctx context.Context, servingPort string, host string, logger *zap
 		logger:          logger,
 		EndpointManager: endpoint_manager.NewManager(ctx, router, logger),
 		subrouters:      map[string]*endpoint_manager.Manager{},
+		Response:        response.NewResponse(showErr, logger),
+		Request:         request.NewRequest(mb, logger),
 	}
 }
 

@@ -25,7 +25,7 @@ var HealthCheck = &endpoints.Endpoint{
 }
 
 func NewProxy(subdomain, redirect string, logger *zap.Logger) (*endpoints.Endpoint, error) {
-	respManger := response.NewResponse(logger)
+	respManger := response.NewResponse(false, logger)
 	redirectURL, err := url.Parse(redirect)
 	if err != nil {
 		return nil, err

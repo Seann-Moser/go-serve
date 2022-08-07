@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	s := server.NewServer(context.Background(), "8888", "mnlib.com", logger)
+	s := server.NewServer(context.Background(), "8888", "mnlib.com", 0, false, logger)
 	if err := s.AddEndpoints(handlers.HealthCheck); err != nil {
 		log.Fatal(err)
 	}
