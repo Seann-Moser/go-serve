@@ -61,7 +61,7 @@ func main() {
 	h, err := handlers.NewProxy("proxy", "https://www.google.com", logger)
 	s.AddEndpoints(h)
 
-	s.AddMiddleware("", middleware.NewMetrics(true, logger).Middleware, middleware.NewCorsMiddleware().Cors)
+	s.AddMiddleware(middleware.NewMetrics(true, logger).Middleware, middleware.NewCorsMiddleware().Cors)
 	if err := s.StartServer(); err != nil {
 		log.Fatal(err)
 	}
