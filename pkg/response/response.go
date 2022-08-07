@@ -16,7 +16,8 @@ import (
 )
 
 type Response struct {
-	logger *zap.Logger
+	logger    *zap.Logger
+	showError bool
 }
 type BaseResponse struct {
 	Message string                 `json:"message"`
@@ -24,16 +25,21 @@ type BaseResponse struct {
 	Page    *pagination.Pagination `json:"page,omitempty"`
 }
 
-func NewResponse(logger *zap.Logger) *Response {
-	return &Response{logger: logger}
+func NewResponse(showErr bool, logger *zap.Logger) *Response {
+	return &Response{logger: logger, showError: showErr}
 }
 
 func (resp *Response) Error(w http.ResponseWriter, err error, code int, message string) {
 	w.WriteHeader(code)
-	resp.logger.Error(message, zap.Error(err))
+
+	resp.logger.Error(message, zap.Error(err), zap.Int("code", code))
+	var dataErr error
+	if err != nil && resp.showError {
+		dataErr = err
+	}
 	EncodeErr := json.NewEncoder(w).Encode(BaseResponse{
 		Message: message,
-		Data:    err.Error(),
+		Data:    dataErr,
 	})
 	if EncodeErr != nil {
 		resp.logger.Error("failed encoding response", zap.Error(EncodeErr))
