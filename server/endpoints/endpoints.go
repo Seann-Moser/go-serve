@@ -2,7 +2,6 @@ package endpoints
 
 import (
 	"net/http"
-	"net/url"
 )
 
 type Permission int
@@ -16,10 +15,11 @@ const (
 type EndpointHandler func(w http.ResponseWriter, r *http.Request)
 
 type Endpoint struct {
-	SubDomain       string
-	URL             *url.URL   `json:"url" yaml:"url"`
-	Methods         []string   `json:"methods" yaml:"methods"`
-	PermissionLevel Permission `json:"permission_level" yaml:"permission_level"`
-	HandlerFunc     EndpointHandler
-	Handler         http.Handler
+	SubDomain       string          `json:"sub_domain" db:"sub_domain" q_config:"primary,where:="`
+	Redirect        string          `json:"redirect" db:"redirect" q_config:"join,update"`
+	URLPath         string          `json:"url_path" yaml:"url_path" db:"url_path" q_config:"primary,delete,join,update,where:="`
+	PermissionLevel Permission      `json:"permission_level" yaml:"permission_level" db:"permission_level" q_config:"primary,delete,join,update,where:<="`
+	Methods         []string        `json:"methods" yaml:"methods" db:"-"`
+	HandlerFunc     EndpointHandler `db:"-"`
+	Handler         http.Handler    `db:"-"`
 }
