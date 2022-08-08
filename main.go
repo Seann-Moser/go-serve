@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
-	"net/url"
-
-	"go.uber.org/zap"
 
 	"github.com/Seann-Moser/go-serve/server"
 	"github.com/Seann-Moser/go-serve/server/endpoints"
@@ -26,10 +24,8 @@ func main() {
 	}
 	if err := s.AddEndpoints(
 		&endpoints.Endpoint{
-			SubDomain: "books",
-			URL: &url.URL{
-				Path: "/{path}",
-			},
+			SubDomain:       "books",
+			URLPath:         "/{path}",
 			Methods:         []string{http.MethodGet, http.MethodPost},
 			PermissionLevel: 0,
 			HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -43,10 +39,8 @@ func main() {
 	}
 	if err := s.AddEndpoints(
 		&endpoints.Endpoint{
-			SubDomain: "auth",
-			URL: &url.URL{
-				Path: "/{path}",
-			},
+			SubDomain:       "auth",
+			URLPath:         "/{path}",
 			Methods:         []string{http.MethodGet, http.MethodPost},
 			PermissionLevel: 0,
 			HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +52,11 @@ func main() {
 		}); err != nil {
 		log.Fatal(err)
 	}
-	h, err := handlers.NewProxy("proxy", "https://www.google.com", logger)
+	h, err := handlers.NewProxy(&endpoints.Endpoint{
+		SubDomain: "proxy",
+		Redirect:  "https://www.google.com",
+		URLPath:   "/{path}",
+	}, logger)
 	s.AddEndpoints(h)
 
 	s.AddMiddleware(middleware.NewMetrics(true, logger).Middleware, middleware.NewCorsMiddleware().Cors)

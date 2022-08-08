@@ -28,7 +28,7 @@ func NewProxy(ep *endpoints.Endpoint, logger *zap.Logger) (*endpoints.Endpoint, 
 	if err != nil {
 		return nil, err
 	}
-	logger.Info("redirect url", zap.String("url", ep.Redirect), zap.String("subdomain", ep.SubDomain), zap.Strings("methods", ep.Methods))
+	logger.Info("redirect url", zap.String("url", ep.Redirect), zap.String("subdomain", ep.SubDomain), zap.Strings("methods", ep.Methods), zap.String("path", ep.URLPath))
 	return &endpoints.Endpoint{
 		SubDomain:       ep.SubDomain,
 		URLPath:         ep.URLPath,
@@ -51,7 +51,7 @@ func NewProxy(ep *endpoints.Endpoint, logger *zap.Logger) (*endpoints.Endpoint, 
 				Fragment:    r.URL.Fragment,
 				RawFragment: r.URL.RawFragment,
 			}
-			logger.Info("redirecting to proxy endpoint", zap.String("endpoint", u.String()))
+			logger.Info("redirecting to proxy endpoint", zap.String("endpoint", u.String()), zap.String("path", r.URL.Path))
 			req, err := http.NewRequestWithContext(ctx, r.Method, u.String(), r.Body)
 			if err != nil {
 				respManger.Error(w, err, http.StatusInternalServerError, "failed creating proxy request")
