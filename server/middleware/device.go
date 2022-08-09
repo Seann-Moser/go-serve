@@ -11,11 +11,14 @@ import (
 )
 
 type UserDevices struct {
-	ID        string `db:"id" json:"id" table:"primary" where:"="`
-	Name      string `db:"name" json:"name" table:"primary" can_update:"true"`
-	IPv4      string `db:"ip_v4" json:"ip_v4" table:"primary"`
-	IPv6      string `db:"ip_v6" json:"ip_v6"`
-	UserAgent string `db:"user_agent" json:"user_agent" data_type:"text"`
+	ID          string `db:"id" json:"id" q_config:"primary,join,where:="`
+	Name        string `db:"name" json:"name" q_config:"primary,update"`
+	IPv4        string `db:"ip_v4" json:"ip_v4" q_config:"primary"`
+	IPv6        string `db:"ip_v6" json:"ip_v6" q_config:"primary"`
+	UserAgent   string `db:"user_agent" json:"user_agent" q_config:"data_type:text,primary"`
+	Active      bool   `db:"active" q_config:"default:true,update,where:="`
+	UpdatedDate string `db:"updated_date" json:"updated_date" q_config:"skip,data_type:TIMESTAMP,default:NOW() ON UPDATE CURRENT_TIMESTAMP"`
+	CreatedDate string `db:"created_date" json:"created_date" q_config:"skip,data_type:TIMESTAMP,default:NOW()"`
 }
 
 func LoadDeviceDetails(r *http.Request) *UserDevices {

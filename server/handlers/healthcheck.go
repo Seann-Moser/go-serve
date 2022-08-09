@@ -13,9 +13,7 @@ import (
 )
 
 var HealthCheck = &endpoints.Endpoint{
-	URL: &url.URL{
-		Path: "/health_check",
-	},
+	URLPath:         "/health_check",
 	Methods:         []string{http.MethodGet, http.MethodPost},
 	PermissionLevel: endpoints.All,
 	HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -24,19 +22,17 @@ var HealthCheck = &endpoints.Endpoint{
 	Handler: nil,
 }
 
-func NewProxy(subdomain, redirect string, logger *zap.Logger) (*endpoints.Endpoint, error) {
-	respManger := response.NewResponse(logger)
-	redirectURL, err := url.Parse(redirect)
+func NewProxy(ep *endpoints.Endpoint, logger *zap.Logger) (*endpoints.Endpoint, error) {
+	respManger := response.NewResponse(false, logger)
+	redirectURL, err := url.Parse(ep.Redirect)
 	if err != nil {
 		return nil, err
 	}
-	logger.Info("redirect url", zap.String("url", redirect))
+	logger.Info("redirect url", zap.String("url", ep.Redirect), zap.String("subdomain", ep.SubDomain), zap.Strings("methods", ep.Methods), zap.String("path", ep.URLPath))
 	return &endpoints.Endpoint{
-		SubDomain: subdomain,
-		URL: &url.URL{
-			Path: "/{path}",
-		},
-		Methods:         []string{http.MethodGet, http.MethodPost},
+		SubDomain:       ep.SubDomain,
+		URLPath:         ep.URLPath,
+		Methods:         ep.Methods,
 		PermissionLevel: endpoints.All,
 		HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 			ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -55,11 +51,14 @@ func NewProxy(subdomain, redirect string, logger *zap.Logger) (*endpoints.Endpoi
 				Fragment:    r.URL.Fragment,
 				RawFragment: r.URL.RawFragment,
 			}
-			logger.Info("redirecting to proxy endpoint", zap.String("endpoint", u.String()))
+			logger.Info("redirecting to proxy endpoint", zap.String("endpoint", u.String()), zap.String("path", r.URL.Path))
 			req, err := http.NewRequestWithContext(ctx, r.Method, u.String(), r.Body)
 			if err != nil {
 				respManger.Error(w, err, http.StatusInternalServerError, "failed creating proxy request")
 				return
+			}
+			for _, c := range r.Cookies() {
+				req.AddCookie(c)
 			}
 			req.Header = r.Header
 			resp, err := (&http.Client{}).Do(req)
