@@ -20,6 +20,6 @@ type Endpoint struct {
 	URLPath         string          `json:"url_path" yaml:"url_path" db:"url_path" q_config:"primary,delete,join,update,where:="`
 	PermissionLevel Permission      `json:"permission_level" yaml:"permission_level" db:"permission_level" q_config:"primary,delete,join,update,where:<="`
 	Methods         []string        `json:"methods" yaml:"methods" db:"-"`
-	HandlerFunc     EndpointHandler `db:"-"`
-	Handler         http.Handler    `db:"-"`
+	HandlerFunc     EndpointHandler `db:"-" json:"-"`
+	Handler         http.Handler    `db:"-" json:"-"`
 }
