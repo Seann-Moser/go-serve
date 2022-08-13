@@ -69,6 +69,7 @@ func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
 			if !found {
 				sr := s.router.Host(sub).Subrouter()
 				subRouter = endpoint_manager.NewManager(s.ctx, sr, s.logger)
+				subRouter.SetExtraFunc(s.EndpointManager.ExtraAddEndpointProcess)
 				s.subrouters[e.SubDomain] = subRouter
 
 			}
