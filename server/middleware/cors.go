@@ -11,11 +11,11 @@ type CorsMiddleware struct {
 	AllowedHeaders []string
 }
 
-func NewCorsMiddleware() *CorsMiddleware {
+func NewCorsMiddleware(origin, methods, headers []string) *CorsMiddleware {
 	return &CorsMiddleware{
-		AllowedOrigins: []string{},
-		AllowedMethods: []string{},
-		AllowedHeaders: []string{},
+		AllowedOrigins: origin,
+		AllowedMethods: methods,
+		AllowedHeaders: headers,
 	}
 }
 func (c *CorsMiddleware) Cors(next http.Handler) http.Handler {
@@ -44,6 +44,9 @@ func (c *CorsMiddleware) getHeaders() string {
 }
 
 func getCorsData(list []string) string {
+	if list == nil {
+		return "*"
+	}
 	if len(list) == 0 {
 		return "*"
 	}
