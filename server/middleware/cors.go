@@ -2,20 +2,23 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 type CorsMiddleware struct {
-	AllowedOrigins []string
-	AllowedMethods []string
-	AllowedHeaders []string
+	AllowedOrigins     []string
+	AllowedMethods     []string
+	AllowedHeaders     []string
+	AllowedCredentials bool
 }
 
-func NewCorsMiddleware(origin, methods, headers []string) *CorsMiddleware {
+func NewCorsMiddleware(origin, methods, headers []string, creds bool) *CorsMiddleware {
 	return &CorsMiddleware{
-		AllowedOrigins: origin,
-		AllowedMethods: methods,
-		AllowedHeaders: headers,
+		AllowedOrigins:     origin,
+		AllowedMethods:     methods,
+		AllowedHeaders:     headers,
+		AllowedCredentials: creds,
 	}
 }
 func (c *CorsMiddleware) Cors(next http.Handler) http.Handler {
@@ -23,6 +26,7 @@ func (c *CorsMiddleware) Cors(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", c.getOrigins())
 		w.Header().Set("Access-Control-Allow-Methods", c.getMethods())
 		w.Header().Set("Access-Control-Allow-Headers", c.getHeaders())
+		w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(c.AllowedCredentials))
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
