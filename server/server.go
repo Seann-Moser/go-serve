@@ -61,9 +61,8 @@ func (s *Server) GetContext() context.Context {
 	return s.ctx
 }
 func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
-
 	for _, e := range endpoint {
-		if len(e.SubDomain) > 0 {
+		if len(e.SubDomain) > 0 && len(s.host) > 0 {
 			sub := fmt.Sprintf("%s.%s", e.SubDomain, s.host)
 			if s.host == "" {
 				sub = e.SubDomain
@@ -72,8 +71,8 @@ func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
 			if !found {
 				sr := s.router.Host(sub).Subrouter()
 				subRouter = endpoint_manager.NewManager(s.ctx, sr, s.logger)
+				subRouter.SetExtraFunc(s.EndpointManager.ExtraAddEndpointProcess)
 				s.subrouters[e.SubDomain] = subRouter
-
 			}
 			err := subRouter.AddEndpoint(e)
 			if err != nil {

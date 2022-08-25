@@ -16,7 +16,7 @@ type Manager struct {
 	ctx                     context.Context
 	Router                  *mux.Router
 	logger                  *zap.Logger
-	extraAddEndpointProcess func(endpoint *endpoints.Endpoint) error
+	ExtraAddEndpointProcess func(endpoint *endpoints.Endpoint) error
 }
 
 func NewManager(ctx context.Context, router *mux.Router, logger *zap.Logger) *Manager {
@@ -24,11 +24,11 @@ func NewManager(ctx context.Context, router *mux.Router, logger *zap.Logger) *Ma
 		ctx:                     ctx,
 		Router:                  router,
 		logger:                  logger,
-		extraAddEndpointProcess: nil,
+		ExtraAddEndpointProcess: nil,
 	}
 }
 func (m *Manager) SetExtraFunc(v func(endpoint *endpoints.Endpoint) error) {
-	m.extraAddEndpointProcess = v
+	m.ExtraAddEndpointProcess = v
 }
 
 func (m *Manager) AddEndpoint(endpoint *endpoints.Endpoint) error {
@@ -46,8 +46,8 @@ func (m *Manager) AddEndpoint(endpoint *endpoints.Endpoint) error {
 			zap.Strings("methods", endpoint.Methods))
 		m.Router.Handle(endpoint.URLPath, endpoint.Handler).Methods(endpoint.Methods...)
 	}
-	if m.extraAddEndpointProcess == nil {
+	if m.ExtraAddEndpointProcess == nil {
 		return nil
 	}
-	return m.extraAddEndpointProcess(endpoint)
+	return m.ExtraAddEndpointProcess(endpoint)
 }
