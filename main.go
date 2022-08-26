@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"go.uber.org/zap"
 	"log"
 	"net/http"
+
+	"go.uber.org/zap"
 
 	"github.com/Seann-Moser/go-serve/server"
 	"github.com/Seann-Moser/go-serve/server/endpoints"
 	"github.com/Seann-Moser/go-serve/server/handlers"
-	"github.com/Seann-Moser/go-serve/server/middleware"
 )
 
 func main() {
@@ -59,7 +59,7 @@ func main() {
 	}, logger)
 	s.AddEndpoints(h)
 
-	s.AddMiddleware(middleware.NewMetrics(true, logger).Middleware, middleware.NewCorsMiddleware().Cors)
+	//s.AddMiddleware(middle.NewMetrics(true, logger).Middleware, middle.NewCorsMiddleware().Cors)
 	if err := s.StartServer(); err != nil {
 		log.Fatal(err)
 	}

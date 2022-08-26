@@ -11,8 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Seann-Moser/go-serve/pkg/pagination"
 	"go.uber.org/zap"
+
+	"github.com/Seann-Moser/go-serve/pkg/pagination"
 )
 
 type Response struct {
@@ -31,8 +32,9 @@ func NewResponse(showErr bool, logger *zap.Logger) *Response {
 
 func (resp *Response) Error(w http.ResponseWriter, err error, code int, message string) {
 	w.WriteHeader(code)
-
-	resp.logger.Error(message, zap.Error(err), zap.Int("code", code))
+	if err != nil {
+		resp.logger.Error(message, zap.Error(err), zap.Int("code", code))
+	}
 	var dataErr error
 	if err != nil && resp.showError {
 		dataErr = err

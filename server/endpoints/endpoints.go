@@ -10,6 +10,7 @@ const (
 	All Permission = iota
 	SignedIn
 	Admin
+	SuperAdmin = Permission(int(^uint(0) >> 1))
 )
 
 type EndpointHandler func(w http.ResponseWriter, r *http.Request)

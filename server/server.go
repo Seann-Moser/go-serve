@@ -57,6 +57,9 @@ func NewServer(ctx context.Context, servingPort string, host string, mb int64, s
 	}
 }
 
+func (s *Server) GetContext() context.Context {
+	return s.ctx
+}
 func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
 	for _, e := range endpoint {
 		if len(e.SubDomain) > 0 && len(s.host) > 0 {
