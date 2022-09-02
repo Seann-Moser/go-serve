@@ -35,15 +35,17 @@ type Cookies struct {
 	VerifySignature        bool
 	Response               *response.Response
 	Logger                 *zap.Logger
+	authFunctions          AuthFunctions
 }
 
-func NewCookies(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, Logger *zap.Logger) *Cookies {
+func NewCookies(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, authFunctions AuthFunctions, Logger *zap.Logger) *Cookies {
 	return &Cookies{
 		DefaultExpiresDuration: defaultExpires,
 		Salt:                   salt,
 		VerifySignature:        verifySignature,
 		Response:               response.NewResponse(showError, Logger),
 		Logger:                 Logger,
+		authFunctions:          authFunctions,
 	}
 }
 
@@ -55,7 +57,7 @@ func (c *Cookies) CookiesDeviceID(next http.Handler) http.Handler {
 	})
 }
 
-func (c *Cookies) CookiesAuth(next http.Handler, authFunctions AuthFunctions) http.Handler {
+func (c *Cookies) CookiesAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth := AuthFromCookies(r)
 		if c.VerifySignature {
@@ -79,13 +81,13 @@ func (c *Cookies) CookiesAuth(next http.Handler, authFunctions AuthFunctions) ht
 		for _, v := range mux.Vars(r) {
 			path = strings.ReplaceAll(path, v, "%")
 		}
-		if access, err := authFunctions.HasAccessToEndpoint(auth.ID, auth.Key, path); !access || err != nil {
+		if access, err := c.authFunctions.HasAccessToEndpoint(auth.ID, auth.Key, path); !access || err != nil {
 			c.RemoveCookies(w, r)
 			c.Response.Error(w, nil, http.StatusUnauthorized, "unauthorized access to endpoint")
 			return
 		}
 
-		if access, err := authFunctions.ValidDevice(auth.ID, auth.DeviceID, path); !access || err != nil {
+		if access, err := c.authFunctions.ValidDevice(auth.ID, auth.DeviceID, path); !access || err != nil {
 			c.RemoveCookies(w, r)
 			c.Response.Error(w, nil, http.StatusUnauthorized, "invalid device")
 			return
