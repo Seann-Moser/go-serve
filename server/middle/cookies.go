@@ -97,7 +97,7 @@ func (c *Cookies) CookiesAuth(next http.Handler) http.Handler {
 	})
 }
 
-func (c *Cookies) SetAuthCookies(w http.ResponseWriter, r *http.Request, id string, key string) error {
+func (c *Cookies) SetAuthCookies(w http.ResponseWriter, r *http.Request, id string, key string, path string) error {
 	auth := &AuthSignature{
 		ID:  id,
 		Key: key,
@@ -105,24 +105,33 @@ func (c *Cookies) SetAuthCookies(w http.ResponseWriter, r *http.Request, id stri
 	auth.computeSignature(r, c.DefaultExpiresDuration, c.Salt)
 
 	var cookies []*http.Cookie
-	cookies = append(cookies, getCookie(auth, CookieDeviceId, auth.DeviceID))
-	cookies = append(cookies, getCookie(auth, CookieID, auth.ID))
-	cookies = append(cookies, getCookie(auth, CookieKey, auth.Key))
-	cookies = append(cookies, getCookie(auth, CookieSignature, auth.Signature))
-	cookies = append(cookies, getCookie(auth, CookieTimestamp, strconv.Itoa(int(time.Now().Unix()))))
-	cookies = append(cookies, getCookie(auth, CookieExpires, strconv.Itoa(int(auth.Expires.Unix()))))
-	cookies = append(cookies, getCookie(auth, CookieMaxAge, strconv.Itoa(int(auth.MaxAge))))
+	cookies = append(cookies, getCookie(auth, CookieDeviceId, auth.DeviceID, path))
+	cookies = append(cookies, getCookie(auth, CookieID, auth.ID, path))
+	cookies = append(cookies, getCookie(auth, CookieKey, auth.Key, path))
+	cookies = append(cookies, getCookie(auth, CookieSignature, auth.Signature, path))
+	cookies = append(cookies, getCookie(auth, CookieTimestamp, strconv.Itoa(int(time.Now().Unix())), path))
+	cookies = append(cookies, getCookie(auth, CookieExpires, strconv.Itoa(int(auth.Expires.Unix())), path))
+	cookies = append(cookies, getCookie(auth, CookieMaxAge, strconv.Itoa(int(auth.MaxAge)), path))
 	for _, c := range cookies {
 		r.AddCookie(c)
 		http.SetCookie(w, c)
 	}
 	return nil
 }
-func getCookie(auth *AuthSignature, key, value string) *http.Cookie {
+func getCookie(auth *AuthSignature, key, value, path string) *http.Cookie {
+	if len(path) == 0 {
+		return &http.Cookie{
+			Name:    key,
+			Value:   value,
+			Expires: auth.Expires,
+			MaxAge:  auth.MaxAge,
+		}
+	}
 	return &http.Cookie{
 		Name:    key,
 		Value:   value,
 		Expires: auth.Expires,
+		Path:    path,
 		MaxAge:  auth.MaxAge,
 	}
 }
