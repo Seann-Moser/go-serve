@@ -84,13 +84,13 @@ func (c *Cookies) CookiesAuth(next http.Handler) http.Handler {
 		for _, v := range mux.Vars(r) {
 			path = strings.ReplaceAll(path, v, "%")
 		}
-		if access, err := c.authFunctions.HasAccessToEndpoint(auth.ID, auth.Key, path); !access || err != nil {
+		if access, err := c.authFunctions.HasAccessToEndpoint(auth.ID, auth.Key, path, r); !access || err != nil {
 			c.RemoveCookies(w, r)
 			c.Response.Error(w, nil, http.StatusUnauthorized, "unauthorized access to endpoint")
 			return
 		}
 
-		if access, err := c.authFunctions.ValidDevice(auth.ID, auth.DeviceID, path); !access || err != nil {
+		if access, err := c.authFunctions.ValidDevice(auth.ID, auth.DeviceID, path, r); !access || err != nil {
 			c.RemoveCookies(w, r)
 			c.Response.Error(w, nil, http.StatusUnauthorized, "invalid device")
 			return
