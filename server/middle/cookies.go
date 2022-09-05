@@ -28,6 +28,7 @@ const (
 type AuthFunctions interface {
 	HasAccessToEndpoint(id string, string, path string) (bool, error)
 	ValidDevice(id string, deviceId string, path string) (bool, error)
+	CanSkipValidation(r *http.Request) bool
 }
 type Cookies struct {
 	DefaultExpiresDuration time.Duration
@@ -59,8 +60,10 @@ func (c *Cookies) CookiesDeviceID(next http.Handler) http.Handler {
 
 func (c *Cookies) CookiesAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		canSkip := c.authFunctions.CanSkipValidation(r)
+
 		auth := AuthFromCookies(r)
-		if c.VerifySignature {
+		if c.VerifySignature && !canSkip {
 			if !auth.Valid() {
 				c.RemoveCookies(w, r)
 				c.Response.Error(w, nil, http.StatusUnauthorized, "missing cookies")
@@ -112,9 +115,9 @@ func (c *Cookies) SetAuthCookies(w http.ResponseWriter, r *http.Request, id stri
 	cookies = append(cookies, getCookie(auth, CookieTimestamp, strconv.Itoa(int(time.Now().Unix())), path))
 	cookies = append(cookies, getCookie(auth, CookieExpires, strconv.Itoa(int(auth.Expires.Unix())), path))
 	cookies = append(cookies, getCookie(auth, CookieMaxAge, strconv.Itoa(int(auth.MaxAge)), path))
-	for _, c := range cookies {
-		r.AddCookie(c)
-		http.SetCookie(w, c)
+	for _, cookie := range cookies {
+		r.AddCookie(cookie)
+		http.SetCookie(w, cookie)
 	}
 	return nil
 }
