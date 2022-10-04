@@ -2,6 +2,7 @@ package endpoint_manager
 
 import (
 	"context"
+	"github.com/Seann-Moser/go-serve/server/metrics"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -50,4 +51,10 @@ func (m *Manager) AddEndpoint(endpoint *endpoints.Endpoint) error {
 		return nil
 	}
 	return m.ExtraAddEndpointProcess(endpoint)
+}
+
+func (m *Manager) AddDefaultMetrics() {
+	m.Router.Use(metrics.PrometheusTotalRequestsMiddleware)
+	metrics.AddMetricsEndpoint(m.Router)
+	metrics.RegisterDefaultMetrics()
 }

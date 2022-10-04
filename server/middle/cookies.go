@@ -73,7 +73,8 @@ func (c *Cookies) CookiesAuth(next http.Handler) http.Handler {
 				ID:  auth.ID,
 				Key: auth.Key,
 			}
-			auth.computeSignature(r, c.DefaultExpiresDuration, c.Salt)
+			device := LoadDeviceDetails(r)
+			auth.computeSignature(c.DefaultExpiresDuration, c.Salt, device.GenerateDeviceKey(c.Salt))
 			if auth.Signature != authSignature.Signature {
 				c.RemoveCookies(w, r)
 				c.Response.Error(w, nil, http.StatusUnauthorized, "invalid signature")
@@ -105,7 +106,8 @@ func (c *Cookies) SetAuthCookies(w http.ResponseWriter, r *http.Request, id stri
 		ID:  id,
 		Key: key,
 	}
-	auth.computeSignature(r, c.DefaultExpiresDuration, c.Salt)
+	device := LoadDeviceDetails(r)
+	auth.computeSignature(c.DefaultExpiresDuration, c.Salt, device.GenerateDeviceKey(c.Salt))
 
 	var cookies []*http.Cookie
 	cookies = append(cookies, getCookie(auth, CookieDeviceId, auth.DeviceID, path))
@@ -175,11 +177,10 @@ func (c *AuthSignature) Valid() bool {
 	}
 	return true
 }
-func (c *AuthSignature) computeSignature(r *http.Request, defaultExpires time.Duration, salt string) {
-	device := LoadDeviceDetails(r)
-	if c.DeviceID == "" {
-		c.DeviceID = device.GenerateDeviceKey(salt)
-	}
+
+func (c *AuthSignature) computeSignature(defaultExpires time.Duration, salt string, deviceID string) {
+	c.DeviceID = deviceID
+
 	if c.Expires.Unix() == 0 {
 		c.Expires = time.Now().Add(defaultExpires)
 	}
@@ -191,7 +192,6 @@ func (c *AuthSignature) computeSignature(r *http.Request, defaultExpires time.Du
 	hasher.Write([]byte(signatureRaw))
 	c.Signature = base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
-
 func (c *Cookies) RemoveCookies(w http.ResponseWriter, r *http.Request) {
 	for _, c := range r.Cookies() {
 		c.MaxAge = -1
