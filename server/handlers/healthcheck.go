@@ -7,8 +7,7 @@ import (
 )
 
 var HealthCheck = &endpoints.Endpoint{
-	URLPath:         "/health_check",
-	Methods:         []string{http.MethodGet, http.MethodPost},
+	URLPath:         "/healthcheck",
 	PermissionLevel: endpoints.All,
 	HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
