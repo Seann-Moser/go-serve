@@ -81,7 +81,6 @@ func (req *Request) GetUploadedFile(uploadDir string, r *http.Request) (string, 
 	if err != nil {
 		return newPath, 0, err
 	}
-	defer func() { _ = newFile.Close() }()
 
 	if _, err := newFile.Write(fileBytes); err != nil {
 		return "", 0, err
