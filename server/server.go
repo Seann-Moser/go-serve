@@ -3,12 +3,14 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/Seann-Moser/go-serve/pkg/request"
-	"github.com/Seann-Moser/go-serve/pkg/response"
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
+
+	"github.com/Seann-Moser/go-serve/pkg/request"
+	"github.com/Seann-Moser/go-serve/pkg/response"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -33,7 +35,7 @@ type Server struct {
 
 func NewServer(ctx context.Context, servingPort string, pathPrefix, host string, mb int64, showErr bool, logger *zap.Logger) *Server {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	notifyContext, cancel := context.WithCancel(ctx)
 	go func() {
 		osCall := <-c
@@ -41,12 +43,7 @@ func NewServer(ctx context.Context, servingPort string, pathPrefix, host string,
 		cancel()
 	}()
 	router := mux.NewRouter()
-	if host != "" {
-		router = router.Host(fmt.Sprintf("{subdomain:[a-z]+}.%s", host)).Subrouter()
-	}
-	if len(pathPrefix) > 0 {
-		router = router.PathPrefix(pathPrefix).Subrouter()
-	}
+
 	return &Server{
 		Endpoint:        "",
 		host:            host,
@@ -67,28 +64,28 @@ func (s *Server) GetContext() context.Context {
 }
 func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
 	for _, e := range endpoint {
-		if len(e.SubDomain) > 0 && len(s.host) > 0 {
-			sub := fmt.Sprintf("%s.%s", e.SubDomain, s.host)
-			if s.host == "" {
-				sub = e.SubDomain
-			}
-			subRouter, found := s.subrouters[sub]
-			if !found {
-				sr := s.router.Host(sub).Subrouter()
-				subRouter = endpoint_manager.NewManager(s.ctx, sr, s.logger)
-				subRouter.SetExtraFunc(s.EndpointManager.ExtraAddEndpointProcess)
-				s.subrouters[e.SubDomain] = subRouter
-			}
-			err := subRouter.AddEndpoint(e)
-			if err != nil {
-				return fmt.Errorf("failed adding endpoint: %w", err)
-			}
-		} else {
-			err := s.EndpointManager.AddEndpoint(e)
-			if err != nil {
-				return fmt.Errorf("failed adding endpoint: %w", err)
-			}
+		//if len(e.SubDomain) > 0 && len(s.host) > 0 {
+		//	sub := fmt.Sprintf("%s.%s", e.SubDomain, s.host)
+		//	if s.host == "" {
+		//		sub = e.SubDomain
+		//	}
+		//	subRouter, found := s.subrouters[sub]
+		//	if !found {
+		//		sr := s.router.Host(sub).Subrouter()
+		//		subRouter = endpoint_manager.NewManager(s.ctx, sr, s.logger)
+		//		subRouter.SetExtraFunc(s.EndpointManager.ExtraAddEndpointProcess)
+		//		s.subrouters[e.SubDomain] = subRouter
+		//	}
+		//	err := subRouter.AddEndpoint(e)
+		//	if err != nil {
+		//		return fmt.Errorf("failed adding endpoint: %w", err)
+		//	}
+		//} else {
+		err := s.EndpointManager.AddEndpoint(e)
+		if err != nil {
+			return fmt.Errorf("failed adding endpoint: %w", err)
 		}
+
 	}
 	return nil
 }
@@ -106,6 +103,30 @@ func (s *Server) AddMiddlewareWithSubdomain(subdomain string, middlewareFunc ...
 	}
 	subRouter.Router.Use(middlewareFunc...)
 	return nil
+}
+
+type NotFound struct {
+	logger *zap.Logger
+	resp   *response.Response
+}
+
+func NewNF(logger *zap.Logger) *NotFound {
+	return &NotFound{
+		logger: logger,
+		resp:   response.NewResponse(false, logger),
+	}
+}
+
+func (n *NotFound) ServeHTTP(writer http.ResponseWriter, r *http.Request) {
+	n.resp.Error(writer, nil, http.StatusNotFound, fmt.Sprintf(
+		"%d: path not found: %s", http.StatusNotFound, r.URL.String()))
+	n.logger.Error("failed to find routing path", zap.String("url", r.URL.String()))
+}
+
+var _ http.Handler = &NotFound{}
+
+func (s *Server) NotFoundHandler(nf *NotFound) {
+	s.router.NotFoundHandler = nf
 }
 
 func (s *Server) StartServer() error {

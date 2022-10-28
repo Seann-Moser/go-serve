@@ -2,8 +2,9 @@ package endpoint_manager
 
 import (
 	"context"
-	"github.com/Seann-Moser/go-serve/server/metrics"
 	"net/http"
+
+	"github.com/Seann-Moser/go-serve/server/metrics"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -46,6 +47,8 @@ func (m *Manager) AddEndpoint(endpoint *endpoints.Endpoint) error {
 			zap.String("path", endpoint.URLPath),
 			zap.Strings("methods", endpoint.Methods))
 		m.Router.Handle(endpoint.URLPath, endpoint.Handler).Methods(endpoint.Methods...)
+	} else {
+		m.logger.Error("failed to add handler for", zap.String("path", endpoint.URLPath), zap.Strings("methods", endpoint.Methods))
 	}
 	if m.ExtraAddEndpointProcess == nil {
 		return nil
