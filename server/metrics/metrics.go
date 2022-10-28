@@ -43,9 +43,7 @@ func PrometheusTotalRequestsMiddleware(next http.Handler) http.Handler {
 
 		//responseStatus.WithLabelValues(strconv.Itoa(statusCode)).Inc()
 		totalRequests.WithLabelValues(path).Inc()
-
 		timer.ObserveDuration()
-
 		totalRequests.WithLabelValues(urlPath).Inc()
 
 	})
@@ -58,5 +56,5 @@ func RegisterDefaultMetrics() {
 }
 
 func AddMetricsEndpoint(router *mux.Router) {
-	router.Path("/prometheus").Handler(promhttp.Handler())
+	router.Path("/metrics").Handler(promhttp.Handler())
 }

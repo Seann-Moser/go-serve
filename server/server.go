@@ -30,9 +30,10 @@ type Server struct {
 	subrouters      map[string]*endpoint_manager.Manager
 	Response        *response.Response
 	Request         *request.Request
+	PathPrefix      string
 }
 
-func NewServer(ctx context.Context, servingPort string, host string, mb int64, showErr bool, logger *zap.Logger) *Server {
+func NewServer(ctx context.Context, servingPort string, pathPrefix, host string, mb int64, showErr bool, logger *zap.Logger) *Server {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	notifyContext, cancel := context.WithCancel(ctx)
@@ -42,9 +43,6 @@ func NewServer(ctx context.Context, servingPort string, host string, mb int64, s
 		cancel()
 	}()
 	router := mux.NewRouter()
-	//if host != "" {
-	//	router = router.Host(fmt.Sprintf("{subdomain:[a-z]+}.%s", host)).Subrouter()
-	//}
 
 	return &Server{
 		Endpoint:        "",
@@ -57,6 +55,7 @@ func NewServer(ctx context.Context, servingPort string, host string, mb int64, s
 		subrouters:      map[string]*endpoint_manager.Manager{},
 		Response:        response.NewResponse(showErr, logger),
 		Request:         request.NewRequest(mb, logger),
+		PathPrefix:      pathPrefix,
 	}
 }
 
