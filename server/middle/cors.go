@@ -61,7 +61,7 @@ func NewCorsMiddleware(origin []string, methods, headers []string, creds bool, l
 		AllowedCredentials: creds,
 		logger:             logger,
 	}
-	for _, o := range viper.GetStringSlice(corsAllowedOrigins) {
+	for _, o := range origin {
 		exp, err := regexp.Compile(o)
 		if err != nil {
 			return nil, fmt.Errorf("failed compiling regex origin %s:%w", o, err)
@@ -82,12 +82,12 @@ func (c *CorsMiddleware) Cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin, err := c.matchOrigin(r)
 		if err == nil {
+			c.logger.Debug("valid origin", zap.String("origin", origin))
 			c.setHeaders(w, origin)
 			return
 		} else {
-			c.logger.Error("failed to match origin", zap.String("origin", r.URL.Host), zap.Error(err))
+			c.logger.Error("failed to match origin", zap.String("origin", getOrigin(r)), zap.Error(err))
 		}
-		c.logger.Debug("valid origin", zap.String("origin", origin))
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
@@ -100,12 +100,23 @@ func (c *CorsMiddleware) Cors(next http.Handler) http.Handler {
 }
 
 func (c *CorsMiddleware) matchOrigin(r *http.Request) (string, error) {
+	origin := getOrigin(r)
 	for _, o := range c.AllowedOrigins {
-		if o.MatchString(r.URL.Host) {
-			return r.URL.Host, nil
+		if o.MatchString(origin) {
+			return origin, nil
 		}
 	}
-	return "", fmt.Errorf("invalid origin %s", r.URL.Host)
+	return "", fmt.Errorf("invalid origin %s", origin)
+}
+
+func getOrigin(r *http.Request) string {
+	if v := r.Header.Get("Origin"); v != "" {
+		return v
+	}
+	if v := r.Header.Get("Referer"); v != "" {
+		return v
+	}
+	return ""
 }
 
 func (c *CorsMiddleware) setHeaders(w http.ResponseWriter, origin string) {
