@@ -30,6 +30,7 @@ type AuthFunctions interface {
 	ValidDevice(id string, deviceId string, path string, r *http.Request) (bool, error)
 	CanSkipValidation(r *http.Request) bool
 }
+
 type Cookies struct {
 	DefaultExpiresDuration time.Duration
 	Salt                   string

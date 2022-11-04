@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/Seann-Moser/go-serve/server/middle"
 	"log"
 	"net/http"
 
@@ -18,7 +19,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	s := server.NewServer(context.Background(), "8888", "mnlib.com", "", 0, false, logger)
+	s := server.NewServer(context.Background(), "8888", "/test", 0, false, logger)
 	if err := s.AddEndpoints(handlers.HealthCheck); err != nil {
 		log.Fatal(err)
 	}
@@ -55,10 +56,17 @@ func main() {
 	h, err := handlers.NewProxy(&endpoints.Endpoint{
 		SubDomain: "proxy",
 		Redirect:  "https://www.google.com",
-		URLPath:   "/{path}",
-	}, logger)
-	s.AddEndpoints(h)
-
+		URLPath:   "search/search",
+	}, "/test/search/search", logger)
+	err = s.AddEndpoints(h)
+	if err := s.StartServer(); err != nil {
+		logger.Fatal("failed creating cors", zap.Error(err))
+	}
+	cors, err := middle.NewCorsMiddleware([]string{}, []string{}, []string{}, false, logger)
+	if err := s.StartServer(); err != nil {
+		logger.Fatal("failed creating cors", zap.Error(err))
+	}
+	s.AddMiddleware(cors.Cors)
 	//s.AddMiddleware(middle.NewMetrics(true, logger).Middleware, middle.NewCorsMiddleware().Cors)
 	if err := s.StartServer(); err != nil {
 		log.Fatal(err)
