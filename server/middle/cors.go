@@ -84,7 +84,6 @@ func (c *CorsMiddleware) Cors(next http.Handler) http.Handler {
 		if err == nil {
 			c.logger.Debug("valid origin", zap.String("origin", origin))
 			c.setHeaders(w, origin)
-			return
 		} else {
 			c.logger.Error("failed to match origin", zap.String("origin", getOrigin(r)), zap.Error(err))
 		}
