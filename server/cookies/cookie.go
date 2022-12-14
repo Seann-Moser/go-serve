@@ -50,6 +50,7 @@ func (c *Cookies) AuthMiddleware(next http.Handler) http.Handler {
 			authSignature := c.GetAuthSignature(auth.ID, auth.Key, &auth.Expires, r)
 			if auth.Signature != authSignature.Signature {
 				c.RemoveCookies(w, r)
+				c.Logger.Warn("invalid signature", zap.String("current", auth.Signature), zap.String("expected", authSignature.Signature))
 				c.Response.Error(w, nil, http.StatusUnauthorized, "invalid signature")
 				return
 			}

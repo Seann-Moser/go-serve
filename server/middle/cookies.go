@@ -68,6 +68,7 @@ func (c *Cookies) CookiesAuth(next http.Handler) http.Handler {
 			authSignature := c.GetAuthSignature(auth.ID, auth.Key, &auth.Expires, r)
 			if auth.Signature != authSignature.Signature {
 				c.RemoveCookies(w, r)
+				c.Logger.Warn("invalid signature", zap.String("current", auth.Signature), zap.String("expected", authSignature.Signature))
 				c.Response.Error(w, nil, http.StatusUnauthorized, "invalid signature")
 				return
 			}
@@ -185,7 +186,7 @@ func (c *AuthSignature) Valid() bool {
 	return true
 }
 func (c *AuthSignature) ContainsFields() bool {
-	return len(c.Key) > 0 || len(c.ID) > 0 || c.Expires.Unix() > 0 || len(c.Signature) > 0 || len(c.DeviceID) > 0
+	return len(c.Key) > 0 || len(c.ID) > 0 || c.Expires.Unix() > 0 || len(c.Signature) > 0
 }
 
 func (c *AuthSignature) computeSignature(salt string) {
