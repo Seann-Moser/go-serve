@@ -2,13 +2,14 @@ package middle
 
 import (
 	"fmt"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-	"go.uber.org/zap"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type CorsMiddleware struct {
@@ -82,10 +83,7 @@ func (c *CorsMiddleware) Cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin, err := c.matchOrigin(r)
 		if err == nil {
-			c.logger.Debug("valid origin", zap.String("origin", origin))
 			c.setHeaders(w, origin)
-		} else {
-			c.logger.Error("failed to match origin", zap.String("origin", getOrigin(r)), zap.Error(err))
 		}
 
 		if r.Method == "OPTIONS" {
