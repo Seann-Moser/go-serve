@@ -1,4 +1,4 @@
-package middle
+package cors
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type CorsMiddleware struct {
+type Cors struct {
 	AllowedOrigins     []*regexp.Regexp
 	AllowedMethods     []string
 	AllowedHeaders     []string
@@ -27,7 +27,7 @@ const (
 	corsAllowedCredentials = "cors-allow-credentials"
 )
 
-func CorsFlags() *pflag.FlagSet {
+func Flags() *pflag.FlagSet {
 	fs := pflag.NewFlagSet("cors", pflag.ExitOnError)
 	fs.StringSlice(corsAllowedOrigins, []string{}, "")
 	fs.StringSlice(corsAllowedMethods, []string{}, "")
@@ -36,8 +36,8 @@ func CorsFlags() *pflag.FlagSet {
 	return fs
 }
 
-func NewCorsFromFlags(logger *zap.Logger) (*CorsMiddleware, error) {
-	c := &CorsMiddleware{
+func NewFromFlags(logger *zap.Logger) (*Cors, error) {
+	c := &Cors{
 		AllowedOrigins:     []*regexp.Regexp{},
 		AllowedMethods:     viper.GetStringSlice(corsAllowedMethods),
 		AllowedHeaders:     viper.GetStringSlice(corsAllowedHeaders),
@@ -54,8 +54,8 @@ func NewCorsFromFlags(logger *zap.Logger) (*CorsMiddleware, error) {
 	return c, nil
 }
 
-func NewCorsMiddleware(origin []string, methods, headers []string, creds bool, logger *zap.Logger) (*CorsMiddleware, error) {
-	c := &CorsMiddleware{
+func New(origin []string, methods, headers []string, creds bool, logger *zap.Logger) (*Cors, error) {
+	c := &Cors{
 		AllowedOrigins:     []*regexp.Regexp{},
 		AllowedMethods:     methods,
 		AllowedHeaders:     headers,
@@ -79,7 +79,7 @@ func NewCorsMiddleware(origin []string, methods, headers []string, creds bool, l
 	return c, nil
 }
 
-func (c *CorsMiddleware) Cors(next http.Handler) http.Handler {
+func (c *Cors) Cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin, err := c.matchOrigin(r)
 		if err == nil {
@@ -96,7 +96,7 @@ func (c *CorsMiddleware) Cors(next http.Handler) http.Handler {
 	})
 }
 
-func (c *CorsMiddleware) matchOrigin(r *http.Request) (string, error) {
+func (c *Cors) matchOrigin(r *http.Request) (string, error) {
 	origin := getOrigin(r)
 	for _, o := range c.AllowedOrigins {
 		if o.MatchString(origin) {
@@ -116,18 +116,18 @@ func getOrigin(r *http.Request) string {
 	return ""
 }
 
-func (c *CorsMiddleware) setHeaders(w http.ResponseWriter, origin string) {
+func (c *Cors) setHeaders(w http.ResponseWriter, origin string) {
 	w.Header().Set("Access-Control-Allow-Origin", origin)
 	w.Header().Set("Access-Control-Allow-Methods", c.getMethods())
 	w.Header().Set("Access-Control-Allow-Headers", c.getHeaders())
 	w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(c.AllowedCredentials))
 }
 
-func (c *CorsMiddleware) getMethods() string {
+func (c *Cors) getMethods() string {
 	return getCorsData(c.AllowedMethods)
 }
 
-func (c *CorsMiddleware) getHeaders() string {
+func (c *Cors) getHeaders() string {
 	return getCorsData(c.AllowedHeaders)
 }
 

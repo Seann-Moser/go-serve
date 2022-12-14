@@ -1,4 +1,4 @@
-package middle
+package cookies
 
 import (
 	"testing"
@@ -48,7 +48,7 @@ func TestAuthSignature_Valid(t *testing.T) {
 			CompareKey:   "1",
 		},
 	}
-	cookies := NewCookies("1234", true, 5*time.Minute, false, nil, zap.L())
+	cookies := New("1234", true, 5*time.Minute, false, nil, zap.L())
 	for _, tc := range tcs {
 		t.Run(tc.Name, func(t *testing.T) {
 			day, _ := time.Parse("2006-04-02", "2022-10-14")

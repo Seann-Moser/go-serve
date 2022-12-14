@@ -54,7 +54,6 @@ func (resp *Response) PaginationResponse(w http.ResponseWriter, data interface{}
 		resp.logger.Error("failed to marshall data", zap.Error(err))
 		return
 	}
-	resp.logger.Info(string(d))
 	var pageData []interface{}
 	err = json.Unmarshal(d, &pageData)
 	if err != nil {

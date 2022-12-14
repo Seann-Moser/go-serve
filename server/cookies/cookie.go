@@ -1,9 +1,6 @@
-package middle
+package cookies
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,23 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/Seann-Moser/go-serve/pkg/response"
+	"github.com/Seann-Moser/go-serve/server/device"
 )
-
-const (
-	CookieID        = "id"
-	CookieKey       = "key"
-	CookieSignature = "signature"
-	CookieTimestamp = "timestamp"
-	CookieExpires   = "expires"
-	CookieDeviceId  = "device_id"
-	CookieMaxAge    = "max_age"
-)
-
-type AuthFunctions interface {
-	HasAccessToEndpoint(id string, string, path string, r *http.Request) (bool, error)
-	ValidDevice(id string, deviceId string, path string, r *http.Request) (bool, error)
-	CanSkipValidation(r *http.Request) bool
-}
 
 type Cookies struct {
 	DefaultExpiresDuration time.Duration
@@ -40,7 +22,7 @@ type Cookies struct {
 	authFunctions          AuthFunctions
 }
 
-func NewCookies(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, authFunctions AuthFunctions, Logger *zap.Logger) *Cookies {
+func New(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, authFunctions AuthFunctions, Logger *zap.Logger) *Cookies {
 	return &Cookies{
 		DefaultExpiresDuration: defaultExpires,
 		Salt:                   salt,
@@ -51,7 +33,7 @@ func NewCookies(salt string, verifySignature bool, defaultExpires time.Duration,
 	}
 }
 
-func (c *Cookies) CookiesDeviceID(next http.Handler) http.Handler {
+func (c *Cookies) DeviceIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c.SetDeviceID(w, r)
 		next.ServeHTTP(w, r)
@@ -59,7 +41,7 @@ func (c *Cookies) CookiesDeviceID(next http.Handler) http.Handler {
 	})
 }
 
-func (c *Cookies) CookiesAuth(next http.Handler) http.Handler {
+func (c *Cookies) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//canSkip := c.authFunctions.CanSkipValidation(r)
 
@@ -104,7 +86,7 @@ func (c *Cookies) GetAuthSignature(id, key string, expires *time.Time, r *http.R
 			ID:       id,
 			Key:      key,
 			Expires:  time.Now().Add(c.DefaultExpiresDuration),
-			DeviceID: LoadDeviceDetails(r).GenerateDeviceKey(c.Salt),
+			DeviceID: device.GetDeviceFromRequest(r).GenerateDeviceKey(c.Salt),
 		}
 	}
 	if expires != nil {
@@ -130,75 +112,6 @@ func (c *Cookies) SetAuthCookies(w http.ResponseWriter, r *http.Request, id stri
 	}
 	return nil
 }
-func getCookie(auth *AuthSignature, key, value, path string) *http.Cookie {
-	if len(path) == 0 {
-		return &http.Cookie{
-			Name:    key,
-			Value:   value,
-			Expires: auth.Expires,
-			MaxAge:  auth.MaxAge,
-		}
-	}
-	return &http.Cookie{
-		Name:    key,
-		Value:   value,
-		Expires: auth.Expires,
-		Path:    path,
-		MaxAge:  auth.MaxAge,
-	}
-}
-
-type AuthSignature struct {
-	ID        string
-	Key       string
-	DeviceID  string
-	Expires   time.Time
-	MaxAge    int
-	Signature string
-}
-
-func AuthFromCookies(r *http.Request) *AuthSignature {
-	auth := &AuthSignature{}
-	auth.ID = getCookieValue(CookieID, r)
-	auth.Key = getCookieValue(CookieKey, r)
-	auth.Signature = getCookieValue(CookieSignature, r)
-	auth.DeviceID = getCookieValue(CookieDeviceId, r)
-	expires, _ := strconv.Atoi(getCookieValue(CookieExpires, r))
-
-	auth.Expires = time.Unix(int64(expires), 0)
-	maxAge, _ := strconv.Atoi(getCookieValue(CookieMaxAge, r))
-
-	auth.MaxAge = maxAge
-	return auth
-}
-func getCookieValue(key string, r *http.Request) string {
-	cookie, err := r.Cookie(key)
-	if err != nil {
-		return ""
-	}
-	return cookie.Value
-}
-func (c *AuthSignature) Valid() bool {
-	if len(c.Key) == 0 || len(c.ID) == 0 || c.Expires.Unix() == 0 || len(c.Signature) == 0 || len(c.DeviceID) == 0 {
-		return false
-	}
-	return true
-}
-func (c *AuthSignature) ContainsFields() bool {
-	return len(c.Key) > 0 || len(c.ID) > 0 || c.Expires.Unix() > 0 || len(c.Signature) > 0 || len(c.DeviceID) > 0
-}
-
-func (c *AuthSignature) computeSignature(salt string) {
-	c.Signature = c.GetSignature(salt)
-}
-
-func (c *AuthSignature) GetSignature(salt string) string {
-	c.MaxAge = int(c.Expires.Unix())
-	signatureRaw := fmt.Sprintf("%s-%s-%s-%d-%d-%s", c.ID, c.Key, c.DeviceID, c.MaxAge, c.Expires.Unix(), salt)
-	hasher := sha256.New()
-	hasher.Write([]byte(signatureRaw))
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-}
 
 func (c *Cookies) RemoveCookies(w http.ResponseWriter, r *http.Request) {
 	for _, c := range r.Cookies() {
@@ -208,7 +121,7 @@ func (c *Cookies) RemoveCookies(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Cookies) SetDeviceID(w http.ResponseWriter, r *http.Request) {
-	device := LoadDeviceDetails(r)
+	device := device.GetDeviceFromRequest(r)
 	key := device.GenerateDeviceKey("")
 	cookie := http.Cookie{
 		Name:    CookieDeviceId,
