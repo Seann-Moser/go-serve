@@ -3,8 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,6 +10,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 
 	"github.com/Seann-Moser/go-serve/pkg/request"
 	"github.com/Seann-Moser/go-serve/pkg/response"
@@ -42,8 +43,8 @@ const (
 )
 
 func Flags() *pflag.FlagSet {
-	fs := pflag.NewFlagSet("cors", pflag.ExitOnError)
-	fs.String(serverPortFlag, "", "")
+	fs := pflag.NewFlagSet("server", pflag.ExitOnError)
+	fs.String(serverPortFlag, "8080", "")
 	fs.String(serverPrefixFlag, "", "")
 	fs.Int64(serverMaxReceivedBytesFlag, int64(20*1024*1024), "")
 	fs.Bool(serverShowErrFlag, false, "")
@@ -148,7 +149,8 @@ func (s *Server) StartServer() error {
 			s.logger.Error("failed creating server", zap.Error(err))
 		}
 	}()
-	s.logger.Info("staring server", zap.String("port", s.ServingPort), zap.String("prefix", s.PathPrefix))
+
+	s.logger.Info("staring server", zap.String("address", server.Addr), zap.String("port", s.ServingPort), zap.String("prefix", s.PathPrefix))
 	<-s.ctx.Done()
 	s.logger.Info("server stopped")
 	ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
