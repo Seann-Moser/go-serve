@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
 	"github.com/Seann-Moser/go-serve/pkg/response"
@@ -20,6 +22,33 @@ type Cookies struct {
 	Response               *response.Response
 	Logger                 *zap.Logger
 	authFunctions          AuthFunctions
+}
+
+const (
+	cookiesDefaultExpiresFlag  = "cookies-default-expires"
+	cookiesSaltFlag            = "cookies-salt"
+	cookiesVerifySignatureFlag = "cookies-verify-signature-flag"
+	cookiesShowErrFlag         = "cookies-show-err"
+)
+
+func Flags() *pflag.FlagSet {
+	fs := pflag.NewFlagSet("cookies", pflag.ExitOnError)
+	fs.Duration(cookiesDefaultExpiresFlag, 24*time.Hour, "")
+	fs.String(cookiesSaltFlag, "12345678", "")
+	fs.Bool(cookiesVerifySignatureFlag, false, "verify cookie signature")
+	fs.Bool(cookiesShowErrFlag, false, "return error in http response(not secure)")
+	return fs
+}
+
+func NewFromFlags(authFunctions AuthFunctions, Logger *zap.Logger) *Cookies {
+	return &Cookies{
+		DefaultExpiresDuration: viper.GetDuration(cookiesDefaultExpiresFlag),
+		Salt:                   viper.GetString(cookiesSaltFlag),
+		VerifySignature:        viper.GetBool(cookiesVerifySignatureFlag),
+		Response:               response.NewResponse(viper.GetBool(cookiesShowErrFlag), Logger),
+		Logger:                 Logger,
+		authFunctions:          authFunctions,
+	}
 }
 
 func New(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, authFunctions AuthFunctions, Logger *zap.Logger) *Cookies {
