@@ -78,6 +78,12 @@ func getRange(data []interface{}, page *pagination.Pagination) []interface{} {
 	if page.ItemsPerPage == 0 {
 		page.ItemsPerPage = pagination.MaxItemsPerPage
 	}
+	if page.ItemsPerPage <= 0 {
+		page.ItemsPerPage = 1
+	}
+	if page.CurrentPage <= 0 {
+		page.CurrentPage = 1
+	}
 	if page.TotalItems < page.ItemsPerPage {
 		page.TotalPages = 1
 	} else {
@@ -94,6 +100,9 @@ func getRange(data []interface{}, page *pagination.Pagination) []interface{} {
 		return data
 	}
 	min := int((page.CurrentPage - 1) * page.ItemsPerPage)
+	if min < 0 {
+		min = 0
+	}
 	max := min + int(page.ItemsPerPage)
 	fmt.Printf("Min %d Max %d\n", min, max)
 	if min > len(data) {
