@@ -68,6 +68,7 @@ func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb in
 		logger.Info(fmt.Sprintf("system call:%+v", osCall))
 		cancel()
 	}()
+
 	router := mux.NewRouter()
 	if !strings.HasPrefix(pathPrefix, "/") {
 		pathPrefix = "/" + pathPrefix
@@ -80,7 +81,7 @@ func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb in
 		logger:          logger,
 		EndpointManager: endpoint_manager.NewManager(ctx, router, logger),
 		Response:        response.NewResponse(showErr, logger),
-		Request:         request.NewRequest(mb, logger),
+		Request:         request.NewRequest(mb),
 		PathPrefix:      pathPrefix,
 	}
 }

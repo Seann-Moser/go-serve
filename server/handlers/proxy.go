@@ -17,9 +17,10 @@ type proxy struct {
 	redirectURL *url.URL
 	logger      *zap.Logger
 	respManager *response.Response
+	timeout     time.Duration
 }
 
-func NewProxyHandler(ep *endpoints.Endpoint, logger *zap.Logger) (*proxy, error) {
+func NewProxyHandler(ep *endpoints.Endpoint, timeout time.Duration, logger *zap.Logger) (*proxy, error) {
 	respManger := response.NewResponse(false, logger)
 	redirectURL, err := url.Parse(ep.Redirect)
 	if err != nil {
@@ -29,11 +30,12 @@ func NewProxyHandler(ep *endpoints.Endpoint, logger *zap.Logger) (*proxy, error)
 		redirectURL: redirectURL,
 		logger:      logger,
 		respManager: respManger,
+		timeout:     timeout,
 	}, nil
 }
 
 func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), p.timeout)
 	defer func() {
 		cancel()
 	}()
@@ -67,7 +69,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p.respManager.Raw(w, resp)
 }
 
-func NewProxy(ep *endpoints.Endpoint, trimPath string, logger *zap.Logger) (*endpoints.Endpoint, error) {
+func NewProxy(ep *endpoints.Endpoint, timeout time.Duration, trimPath string, logger *zap.Logger) (*endpoints.Endpoint, error) {
 	respManger := response.NewResponse(false, logger)
 	redirectURL, err := url.Parse(ep.Redirect)
 	if err != nil {
@@ -82,7 +84,7 @@ func NewProxy(ep *endpoints.Endpoint, trimPath string, logger *zap.Logger) (*end
 		PermissionLevel: endpoints.All,
 
 		HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
-			ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(r.Context(), timeout)
 			defer func() {
 				cancel()
 			}()

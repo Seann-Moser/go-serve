@@ -1,8 +1,10 @@
 package request
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"io"
 	"math"
 	"mime"
 	"net/http"
@@ -15,20 +17,18 @@ import (
 )
 
 type Request struct {
-	logger        *zap.Logger
 	maxUploadSize int64
 }
 
-func NewRequest(maxUploadSize int64, logger *zap.Logger) *Request {
+func NewRequest(maxUploadSize int64) *Request {
 	return &Request{
-		logger:        logger,
 		maxUploadSize: maxUploadSize,
 	}
 }
 
 func (req *Request) GetUploadedFile(uploadDir string, r *http.Request) (string, int64, error) {
 	if err := r.ParseMultipartForm(req.maxUploadSize); err != nil {
-		req.logger.Error("could not parse multipart form", zap.Error(err))
+		ctxLogger.Error(r.Context(), "could not parse multipart form", zap.Error(err))
 		return "", 0, err
 	}
 	file, fileHeader, err := r.FormFile("uploadFile")
@@ -38,14 +38,14 @@ func (req *Request) GetUploadedFile(uploadDir string, r *http.Request) (string, 
 	defer func() { _ = file.Close() }()
 
 	fileSize := fileHeader.Size
-	req.logger.Debug(fmt.Sprintf("file size (bytes): %v\n", fileSize))
+	ctxLogger.Debug(r.Context(), fmt.Sprintf("file size (bytes): %v\n", fileSize))
 
 	if fileSize > req.maxUploadSize {
 		return "", fileSize, fmt.Errorf("file was too large %s, max size: %s",
 			formatBytes(fileSize),
 			formatBytes(req.maxUploadSize))
 	}
-	fileBytes, err := ioutil.ReadAll(file)
+	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		return "", 0, err
 	}
@@ -68,13 +68,13 @@ func (req *Request) GetUploadedFile(uploadDir string, r *http.Request) (string, 
 	}
 
 	newPath := filepath.Join(uploadDir, fileName+fileEndings[0])
-	req.logger.Debug(fmt.Sprintf("File_Type: %s, File: %s\n", detectedFileType, newPath))
+	ctxLogger.Debug(r.Context(), fmt.Sprintf("File_Type: %s, File: %s\n", detectedFileType, newPath))
 	if info, err := os.Stat(newPath); err == nil && !info.IsDir() {
 		return "", 0, nil
 	}
 	dir, _ := filepath.Split(newPath)
 	err = os.MkdirAll(dir, 0755)
-	if err != nil && err != os.ErrExist {
+	if err != nil && !errors.Is(err, os.ErrExist) {
 		return "", 0, err
 	}
 	newFile, err := os.Create(newPath)

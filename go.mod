@@ -1,10 +1,13 @@
 module github.com/Seann-Moser/go-serve
 
-go 1.18
+go 1.19
 
 require (
+	github.com/Seann-Moser/QueryHelper v1.10.7
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
+	github.com/jmoiron/sqlx v1.3.5
 	github.com/prometheus/client_golang v1.13.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0

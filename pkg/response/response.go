@@ -2,7 +2,6 @@ package response
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"math"
@@ -104,7 +103,6 @@ func getRange(data []interface{}, page *pagination.Pagination) []interface{} {
 		min = 0
 	}
 	max := min + int(page.ItemsPerPage)
-	fmt.Printf("Min %d Max %d\n", min, max)
 	if min > len(data) {
 		return []interface{}{}
 	}

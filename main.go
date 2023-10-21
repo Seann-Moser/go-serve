@@ -6,6 +6,7 @@ import (
 	"github.com/Seann-Moser/go-serve/server/middle"
 	"log"
 	"net/http"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -57,7 +58,7 @@ func main() {
 		SubDomain: "proxy",
 		Redirect:  "https://www.google.com",
 		URLPath:   "search/search",
-	}, "/test/search/search", logger)
+	}, 10*time.Second, "/test/search/search", logger)
 	err = s.AddEndpoints(h)
 	if err := s.StartServer(); err != nil {
 		logger.Fatal("failed creating cors", zap.Error(err))
