@@ -3,16 +3,18 @@ package db
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"reflect"
+	"time"
+
 	"github.com/Seann-Moser/QueryHelper"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"net/http"
-	"reflect"
-	"time"
+
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 )
 
 type DAO struct {
@@ -20,6 +22,7 @@ type DAO struct {
 	dropTable     bool
 	updateColumns bool
 	ctx           context.Context
+	tablesNames   []string
 }
 
 const (
@@ -48,7 +51,10 @@ func GetDaoFlags() *pflag.FlagSet {
 func (d *DAO) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if d.ctx != nil {
-			r = r.WithContext(d.ctx)
+			ctx, err := QueryHelper.WithTableContext(r.Context(), d.ctx, d.tablesNames...)
+			if err == nil {
+				r = r.WithContext(ctx)
+			}
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -65,7 +71,7 @@ func NewDao(ctx context.Context) (*DAO, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DAO{db: db, updateColumns: viper.GetBool(DBUpdateTablesFlag)}, nil
+	return &DAO{db: db, updateColumns: viper.GetBool(DBUpdateTablesFlag), tablesNames: make([]string, 0)}, nil
 }
 
 func AddTable[T any](ctx context.Context, dao *DAO, datasetName string) (context.Context, error) {
@@ -79,6 +85,7 @@ func AddTable[T any](ctx context.Context, dao *DAO, datasetName string) (context
 	if err != nil {
 		return nil, err
 	}
+	dao.tablesNames = append(dao.tablesNames, table.Name)
 	ctxLogger.Debug(ctx, "adding table", zap.String("table", table.FullTableName()))
 	dao.ctx = tmpCtx
 	return tmpCtx, nil
