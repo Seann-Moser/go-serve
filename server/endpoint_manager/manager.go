@@ -2,6 +2,7 @@ package endpoint_manager
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/Seann-Moser/go-serve/server/metrics"
@@ -13,6 +14,10 @@ import (
 )
 
 type AddEndpoints func(manager Manager) error
+
+type EndpointHandler interface {
+	GetEndpoints() []*endpoints.Endpoint
+}
 
 type Manager struct {
 	ctx                     context.Context
@@ -31,6 +36,18 @@ func NewManager(ctx context.Context, router *mux.Router, logger *zap.Logger) *Ma
 }
 func (m *Manager) SetExtraFunc(v func(endpoint *endpoints.Endpoint) error) {
 	m.ExtraAddEndpointProcess = v
+}
+
+func (m *Manager) AddEndpoints(handlers []EndpointHandler) error {
+	for _, h := range handlers {
+		for _, endpoint := range h.GetEndpoints() {
+			err := m.AddEndpoint(endpoint)
+			if err != nil {
+				return fmt.Errorf("failed adding endpoint %s: %w", endpoint.URLPath, err)
+			}
+		}
+	}
+	return nil
 }
 
 func (m *Manager) AddEndpoint(endpoint *endpoints.Endpoint) error {
