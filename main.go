@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/Seann-Moser/go-serve/server/middle"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/Seann-Moser/go-serve/server/middle"
 
 	"go.uber.org/zap"
 
@@ -31,7 +32,7 @@ func main() {
 			Methods:         []string{http.MethodGet, http.MethodPost},
 			PermissionLevel: 0,
 			HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
-				json.NewEncoder(w).Encode(map[string]string{
+				_ = json.NewEncoder(w).Encode(map[string]string{
 					"message": "mnlib endpoint",
 				})
 			},
@@ -46,7 +47,7 @@ func main() {
 			Methods:         []string{http.MethodGet, http.MethodPost},
 			PermissionLevel: 0,
 			HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
-				json.NewEncoder(w).Encode(map[string]string{
+				_ = json.NewEncoder(w).Encode(map[string]string{
 					"message": "auth endpoint",
 				})
 			},
@@ -54,16 +55,16 @@ func main() {
 		}); err != nil {
 		log.Fatal(err)
 	}
-	h, err := handlers.NewProxy(&endpoints.Endpoint{
+	h, _ := handlers.NewProxy(&endpoints.Endpoint{
 		SubDomain: "proxy",
 		Redirect:  "https://www.google.com",
 		URLPath:   "search/search",
 	}, 10*time.Second, "/test/search/search", logger)
-	err = s.AddEndpoints(h)
+	_ = s.AddEndpoints(h)
 	if err := s.StartServer(); err != nil {
 		logger.Fatal("failed creating cors", zap.Error(err))
 	}
-	cors, err := middle.NewCorsMiddleware([]string{}, []string{}, []string{}, false, logger)
+	cors, _ := middle.NewCorsMiddleware([]string{}, []string{}, []string{}, false, logger)
 	if err := s.StartServer(); err != nil {
 		logger.Fatal("failed creating cors", zap.Error(err))
 	}

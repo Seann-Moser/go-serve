@@ -66,7 +66,6 @@ func (c *Cookies) DeviceIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c.SetDeviceID(w, r)
 		next.ServeHTTP(w, r)
-		return
 	})
 }
 

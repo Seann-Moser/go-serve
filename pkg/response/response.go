@@ -3,7 +3,6 @@ package response
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -129,7 +128,7 @@ func (resp *Response) Raw(w http.ResponseWriter, r *http.Response) {
 	w.WriteHeader(r.StatusCode)
 	if r.Body != nil {
 		defer r.Body.Close()
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		if err != nil {
 			resp.logger.Error("failed reading body", zap.Error(err))
 			return

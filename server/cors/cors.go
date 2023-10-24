@@ -92,7 +92,6 @@ func (c *Cors) Cors(next http.Handler) http.Handler {
 		}
 		// Next
 		next.ServeHTTP(w, r)
-		return
 	})
 }
 
