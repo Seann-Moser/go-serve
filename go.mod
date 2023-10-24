@@ -3,7 +3,7 @@ module github.com/Seann-Moser/go-serve
 go 1.19
 
 require (
-	github.com/Seann-Moser/QueryHelper v1.10.10
+	github.com/Seann-Moser/QueryHelper v1.10.11
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
