@@ -15,14 +15,14 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v1
         with:
-          node-version: 14
+          node-version: 16
       - run: npm install --save-dev @commitlint/{config-conventional,cli}
       - run: npx commitlint --from=${{ github.event.pull_request.base.sha }}
   tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.19']
+        go: ['1.21']
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v2
