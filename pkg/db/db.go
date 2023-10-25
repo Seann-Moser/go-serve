@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -58,6 +60,25 @@ func (d *DAO) Middleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (d *DAO) ContextWithTransaction(ctx context.Context) (context.Context, error) {
+	tx, err := d.db.BeginTxx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return ctx, err
+	}
+	return context.WithValue(ctx, "transaction", tx), nil
+}
+
+func ContextGetTransaction(ctx context.Context) (*sqlx.Tx, error) {
+	value := ctx.Value("transaction")
+	if value == nil {
+		return nil, errors.New("no valid transaction in context")
+	}
+	if v, found := value.(*sqlx.Tx); found {
+		return v, nil
+	}
+	return nil, errors.New("unable to type cast transaction")
 }
 
 func NewDao(ctx context.Context) (*DAO, error) {
