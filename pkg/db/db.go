@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -20,7 +19,7 @@ import (
 )
 
 type DAO struct {
-	db            *sqlx.DB
+	db            QueryHelper.DB
 	dropTable     bool
 	updateColumns bool
 	ctx           context.Context
@@ -62,13 +61,13 @@ func (d *DAO) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-func (d *DAO) ContextWithTransaction(ctx context.Context) (context.Context, error) {
-	tx, err := d.db.BeginTxx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return ctx, err
-	}
-	return context.WithValue(ctx, "transaction", tx), nil
-}
+//func (d *DAO) ContextWithTransaction(ctx context.Context) (context.Context, error) {
+//	tx, err := d.db.BeginTxx(ctx, &sql.TxOptions{})
+//	if err != nil {
+//		return ctx, err
+//	}
+//	return context.WithValue(ctx, "transaction", tx), nil
+//}
 
 func ContextGetTransaction(ctx context.Context) (*sqlx.Tx, error) {
 	value := ctx.Value("transaction")
@@ -81,7 +80,7 @@ func ContextGetTransaction(ctx context.Context) (*sqlx.Tx, error) {
 	return nil, errors.New("unable to type cast transaction")
 }
 
-func NewDao(ctx context.Context) (*DAO, error) {
+func NewSQLDao(ctx context.Context) (*DAO, error) {
 	db, err := connectToDB(
 		ctx,
 		viper.GetString(DBUserNameFlag),
@@ -92,11 +91,12 @@ func NewDao(ctx context.Context) (*DAO, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DAO{db: db, updateColumns: viper.GetBool(DBUpdateTablesFlag), tablesNames: make([]string, 0)}, nil
+
+	return &DAO{db: QueryHelper.NewSql(db), updateColumns: viper.GetBool(DBUpdateTablesFlag), tablesNames: make([]string, 0)}, nil
 }
 
-func AddTable[T any](ctx context.Context, dao *DAO, datasetName string) (context.Context, error) {
-	tmpCtx, err := QueryHelper.AddTableCtx[T](ctx, dao.db, datasetName, dao.dropTable, dao.updateColumns)
+func AddTable[T any](ctx context.Context, dao *DAO, datasetName string, queryType QueryHelper.QueryType) (context.Context, error) {
+	tmpCtx, err := QueryHelper.AddTableCtx[T](ctx, dao.db, datasetName, queryType)
 	if err != nil {
 		var t T
 		ctxLogger.Error(ctx, "failed creating table", zap.String("table", getType(t)))
