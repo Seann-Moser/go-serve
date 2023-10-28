@@ -3,11 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/Seann-Moser/go-serve/server/middle"
 	"log"
 	"net/http"
-	"time"
-
-	"github.com/Seann-Moser/go-serve/server/middle"
 
 	"go.uber.org/zap"
 
@@ -22,10 +20,10 @@ func main() {
 		log.Fatal(err)
 	}
 	s := server.NewServer(context.Background(), "8888", "/test", 0, false, logger)
-	if err := s.AddEndpoints(handlers.HealthCheck); err != nil {
+	if err := s.AddEndpoints(context.Background(), handlers.HealthCheck); err != nil {
 		log.Fatal(err)
 	}
-	if err := s.AddEndpoints(
+	if err := s.AddEndpoints(context.Background(),
 		&endpoints.Endpoint{
 			SubDomain:       "books",
 			URLPath:         "/{path}",
@@ -40,7 +38,7 @@ func main() {
 		}); err != nil {
 		log.Fatal(err)
 	}
-	if err := s.AddEndpoints(
+	if err := s.AddEndpoints(context.Background(),
 		&endpoints.Endpoint{
 			SubDomain:       "auth",
 			URLPath:         "/{path}",
@@ -55,12 +53,12 @@ func main() {
 		}); err != nil {
 		log.Fatal(err)
 	}
-	h, _ := handlers.NewProxy(&endpoints.Endpoint{
+	h, _ := handlers.NewProxy(context.Background(), &endpoints.Endpoint{
 		SubDomain: "proxy",
 		Redirect:  "https://www.google.com",
 		URLPath:   "search/search",
-	}, 10*time.Second, "/test/search/search", logger)
-	_ = s.AddEndpoints(h)
+	}, "/test/search/search")
+	_ = s.AddEndpoints(context.Background(), h)
 	if err := s.StartServer(); err != nil {
 		logger.Fatal("failed creating cors", zap.Error(err))
 	}

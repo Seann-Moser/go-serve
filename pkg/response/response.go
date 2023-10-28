@@ -1,7 +1,9 @@
 package response
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"io"
 	"math"
 	"net/http"
@@ -15,7 +17,6 @@ import (
 )
 
 type Response struct {
-	logger    *zap.Logger
 	showError bool
 }
 type BaseResponse struct {
@@ -24,14 +25,14 @@ type BaseResponse struct {
 	Page    *pagination.Pagination `json:"page,omitempty"`
 }
 
-func NewResponse(showErr bool, logger *zap.Logger) *Response {
-	return &Response{logger: logger, showError: showErr}
+func NewResponse(showErr bool) *Response {
+	return &Response{showError: showErr}
 }
 
-func (resp *Response) Error(w http.ResponseWriter, err error, code int, message string) {
+func (resp *Response) Error(ctx context.Context, w http.ResponseWriter, err error, code int, message string) {
 	w.WriteHeader(code)
 	if err != nil {
-		resp.logger.Error(message, zap.Error(err), zap.Int("code", code))
+		ctxLogger.Error(ctx, message, zap.Error(err), zap.Int("code", code))
 	}
 	var dataErr error
 	if err != nil && resp.showError {
@@ -42,20 +43,20 @@ func (resp *Response) Error(w http.ResponseWriter, err error, code int, message 
 		Data:    dataErr,
 	})
 	if EncodeErr != nil {
-		resp.logger.Error("failed encoding response", zap.Error(EncodeErr))
+		ctxLogger.Warn(ctx, "failed encoding response", zap.Error(EncodeErr))
 	}
 }
 
-func (resp *Response) PaginationResponse(w http.ResponseWriter, data interface{}, page *pagination.Pagination) {
+func (resp *Response) PaginationResponse(ctx context.Context, w http.ResponseWriter, data interface{}, page *pagination.Pagination) {
 	d, err := json.Marshal(data)
 	if err != nil {
-		resp.logger.Error("failed to marshall data", zap.Error(err))
+		ctxLogger.Error(ctx, "failed to marshall data", zap.Error(err))
 		return
 	}
 	var pageData []interface{}
 	err = json.Unmarshal(d, &pageData)
 	if err != nil {
-		resp.logger.Error("failed to encode to []interface", zap.Error(err))
+		ctxLogger.Error(ctx, "failed to encode to []interface", zap.Error(err))
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -64,11 +65,11 @@ func (resp *Response) PaginationResponse(w http.ResponseWriter, data interface{}
 		Page: page,
 	}, "", "    ")
 	if err != nil {
-		resp.logger.Error("failed to encode response")
+		ctxLogger.Error(ctx, "failed to encode response")
 	}
 	_, EncodeErr := w.Write(bytes)
 	if EncodeErr != nil {
-		resp.logger.Error("failed encoding response", zap.Error(EncodeErr))
+		ctxLogger.Warn(ctx, "failed encoding response", zap.Error(EncodeErr))
 	}
 }
 func getRange(data []interface{}, page *pagination.Pagination) []interface{} {
@@ -111,26 +112,26 @@ func getRange(data []interface{}, page *pagination.Pagination) []interface{} {
 	return data[min:max]
 }
 
-func (resp *Response) Message(w http.ResponseWriter, msg string) {
+func (resp *Response) Message(ctx context.Context, w http.ResponseWriter, msg string) {
 	w.WriteHeader(http.StatusOK)
 	bytes, err := json.MarshalIndent(BaseResponse{
 		Message: msg,
 	}, "", "    ")
 	if err != nil {
-		resp.logger.Error("failed to encode response")
+		ctxLogger.Error(ctx, "failed to encode response")
 	}
 	_, EncodeErr := w.Write(bytes)
 	if EncodeErr != nil {
-		resp.logger.Error("failed encoding response", zap.Error(EncodeErr))
+		ctxLogger.Error(ctx, "failed encoding response", zap.Error(EncodeErr))
 	}
 }
-func (resp *Response) Raw(w http.ResponseWriter, r *http.Response) {
+func (resp *Response) Raw(ctx context.Context, w http.ResponseWriter, r *http.Response) {
 	w.WriteHeader(r.StatusCode)
 	if r.Body != nil {
 		defer r.Body.Close()
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
-			resp.logger.Error("failed reading body", zap.Error(err))
+			ctxLogger.Error(ctx, "failed reading body", zap.Error(err))
 			return
 		}
 		for k, v := range r.Header {
@@ -138,22 +139,22 @@ func (resp *Response) Raw(w http.ResponseWriter, r *http.Response) {
 		}
 		_, err = w.Write(b)
 		if err != nil {
-			resp.logger.Error("failed encoding response", zap.Error(err))
+			ctxLogger.Error(ctx, "failed encoding response", zap.Error(err))
 			return
 		}
 	}
 }
-func (resp *Response) DataResponse(w http.ResponseWriter, data interface{}, code int) {
+func (resp *Response) DataResponse(ctx context.Context, w http.ResponseWriter, data interface{}, code int) {
 	w.WriteHeader(code)
 	bytes, err := json.MarshalIndent(BaseResponse{
 		Data: data,
 	}, "", "    ")
 	if err != nil {
-		resp.logger.Error("failed to encode response")
+		ctxLogger.Error(ctx, "failed to encode response")
 	}
 	_, EncodeErr := w.Write(bytes)
 	if EncodeErr != nil {
-		resp.logger.Error("failed encoding response", zap.Error(EncodeErr))
+		ctxLogger.Error(ctx, "failed encoding response", zap.Error(EncodeErr))
 	}
 }
 
