@@ -1,6 +1,7 @@
 package middle
 
 import (
+	device "github.com/Seann-Moser/go-serve/server/device"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -20,13 +21,13 @@ func NewMetrics(logDevice bool, logger *zap.Logger) *Metrics {
 func (m *Metrics) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if m.LogDeviceInfo {
-			device := LoadDeviceDetails(r)
+			deviceDetails := device.GetDeviceFromRequest(r)
 			m.logger.Debug("device hit endpoint",
 				zap.String("endpoint", r.URL.String()),
-				zap.String("ipv4", device.IPv4),
-				zap.String("ipv6", device.IPv6),
-				zap.String("user-agent", device.UserAgent),
-				zap.String("device-hash", device.GenerateDeviceKey("")),
+				zap.String("ipv4", deviceDetails.IPv4),
+				zap.String("ipv6", deviceDetails.IPv6),
+				zap.String("user-agent", deviceDetails.UserAgent),
+				zap.String("device-hash", deviceDetails.GenerateDeviceKey("")),
 			)
 		} else {
 			m.logger.Debug("hit endpoint",

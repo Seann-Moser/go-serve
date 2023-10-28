@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -79,8 +80,8 @@ func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb in
 		ctx:             notifyContext,
 		router:          router,
 		logger:          logger,
-		EndpointManager: endpoint_manager.NewManager(ctx, router, logger),
-		Response:        response.NewResponse(showErr, logger),
+		EndpointManager: endpoint_manager.NewManager(router),
+		Response:        response.NewResponse(showErr),
 		Request:         request.NewRequest(mb),
 		PathPrefix:      pathPrefix,
 	}
@@ -90,7 +91,7 @@ func (s *Server) GetContext() context.Context {
 	return s.ctx
 }
 
-func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
+func (s *Server) AddEndpoints(ctx context.Context, endpoint ...*endpoints.Endpoint) error {
 	for _, e := range endpoint {
 		if s.PathPrefix > "" {
 			var err error
@@ -103,7 +104,7 @@ func (s *Server) AddEndpoints(endpoint ...*endpoints.Endpoint) error {
 				return err
 			}
 		}
-		err := s.EndpointManager.AddEndpoint(e)
+		err := s.EndpointManager.AddEndpoint(ctx, e)
 		if err != nil {
 			return fmt.Errorf("failed adding endpoint: %w", err)
 		}
@@ -120,15 +121,14 @@ type NotFound struct {
 	resp   *response.Response
 }
 
-func NewNF(logger *zap.Logger) *NotFound {
+func NewNF() *NotFound {
 	return &NotFound{
-		logger: logger,
-		resp:   response.NewResponse(false, logger),
+		resp: response.NewResponse(false),
 	}
 }
 
 func (n *NotFound) ServeHTTP(writer http.ResponseWriter, r *http.Request) {
-	n.resp.Error(writer, nil, http.StatusNotFound, fmt.Sprintf(
+	n.resp.Error(r.Context(), writer, nil, http.StatusNotFound, fmt.Sprintf(
 		"%d: path not found: %s", http.StatusNotFound, r.URL.String()))
 	n.logger.Error("failed to find routing path", zap.String("url", r.URL.String()))
 }
@@ -146,7 +146,7 @@ func (s *Server) StartServer() error {
 	}
 
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			s.logger.Error("failed creating server", zap.Error(err))
 		}
 	}()

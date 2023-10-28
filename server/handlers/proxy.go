@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"net/http"
 	"net/url"
 	"strings"
@@ -20,8 +21,8 @@ type proxy struct {
 	timeout     time.Duration
 }
 
-func NewProxyHandler(ep *endpoints.Endpoint, timeout time.Duration, logger *zap.Logger) (*proxy, error) {
-	respManger := response.NewResponse(false, logger)
+func NewProxyHandler(ep *endpoints.Endpoint, logger *zap.Logger) (*proxy, error) {
+	respManger := response.NewResponse(false)
 	redirectURL, err := url.Parse(ep.Redirect)
 	if err != nil {
 		return nil, err
@@ -30,12 +31,19 @@ func NewProxyHandler(ep *endpoints.Endpoint, timeout time.Duration, logger *zap.
 		redirectURL: redirectURL,
 		logger:      logger,
 		respManager: respManger,
-		timeout:     timeout,
+		timeout:     time.Duration(ep.Timeout) * time.Millisecond,
 	}, nil
 }
 
 func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), p.timeout)
+	var ctx context.Context
+	var cancel context.CancelFunc
+	if p.timeout > 0 {
+		ctx, cancel = context.WithTimeout(r.Context(), p.timeout)
+	} else {
+		cancel = func() {}
+		ctx = r.Context()
+	}
 	defer func() {
 		cancel()
 	}()
@@ -54,7 +62,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p.logger.Info("redirecting to proxy endpoint", zap.String("endpoint", u.String()), zap.String("path", r.URL.Path))
 	req, err := http.NewRequestWithContext(ctx, r.Method, u.String(), r.Body)
 	if err != nil {
-		p.respManager.Error(w, err, http.StatusInternalServerError, "failed creating proxy request")
+		p.respManager.Error(r.Context(), w, err, http.StatusInternalServerError, "failed creating proxy request")
 		return
 	}
 	for _, c := range r.Cookies() {
@@ -63,19 +71,19 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req.Header = r.Header
 	resp, err := (&http.Client{}).Do(req)
 	if err != nil {
-		p.respManager.Error(w, err, http.StatusInternalServerError, "failed sending proxy request")
+		p.respManager.Error(r.Context(), w, err, http.StatusInternalServerError, "failed sending proxy request")
 		return
 	}
-	p.respManager.Raw(w, resp)
+	p.respManager.Raw(r.Context(), w, resp)
 }
 
-func NewProxy(ep *endpoints.Endpoint, timeout time.Duration, trimPath string, logger *zap.Logger) (*endpoints.Endpoint, error) {
-	respManger := response.NewResponse(false, logger)
+func NewProxy(ctx context.Context, ep *endpoints.Endpoint, trimPath string) (*endpoints.Endpoint, error) {
+	respManger := response.NewResponse(false)
 	redirectURL, err := url.Parse(ep.Redirect)
 	if err != nil {
 		return nil, err
 	}
-	logger.Debug("redirect url", zap.String("url", ep.Redirect), zap.String("subdomain", ep.SubDomain), zap.Strings("methods", ep.Methods), zap.String("path", ep.URLPath))
+	ctxLogger.Debug(ctx, "redirect url", zap.String("url", ep.Redirect), zap.String("subdomain", ep.SubDomain), zap.Strings("methods", ep.Methods), zap.String("path", ep.URLPath))
 
 	return &endpoints.Endpoint{
 		SubDomain:       ep.SubDomain,
@@ -84,7 +92,15 @@ func NewProxy(ep *endpoints.Endpoint, timeout time.Duration, trimPath string, lo
 		PermissionLevel: endpoints.All,
 
 		HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
-			ctx, cancel := context.WithTimeout(r.Context(), timeout)
+			var ctx context.Context
+			var cancel context.CancelFunc
+			if ep.Timeout > 0 {
+				ctx, cancel = context.WithTimeout(r.Context(), time.Duration(ep.Timeout)*time.Millisecond)
+			} else {
+				cancel = func() {}
+				ctx = r.Context()
+			}
+
 			defer func() {
 				cancel()
 			}()
@@ -100,10 +116,10 @@ func NewProxy(ep *endpoints.Endpoint, timeout time.Duration, trimPath string, lo
 				Fragment:    r.URL.Fragment,
 				RawFragment: r.URL.RawFragment,
 			}
-			logger.Info("redirecting to proxy endpoint", zap.String("endpoint", u.String()), zap.String("path", r.URL.Path))
+			ctxLogger.Info(ctx, "redirecting to proxy endpoint", zap.String("endpoint", u.String()), zap.String("path", r.URL.Path))
 			req, err := http.NewRequestWithContext(ctx, r.Method, u.String(), r.Body)
 			if err != nil {
-				respManger.Error(w, err, http.StatusInternalServerError, "failed creating proxy request")
+				respManger.Error(ctx, w, err, http.StatusInternalServerError, "failed creating proxy request")
 				return
 			}
 			for _, c := range r.Cookies() {
@@ -112,11 +128,11 @@ func NewProxy(ep *endpoints.Endpoint, timeout time.Duration, trimPath string, lo
 			req.Header = r.Header
 			resp, err := (&http.Client{}).Do(req)
 			if err != nil {
-				respManger.Error(w, err, http.StatusInternalServerError, "failed sending proxy request")
+				respManger.Error(ctx, w, err, http.StatusInternalServerError, "failed sending proxy request")
 				return
 			}
-			logger.Debug("finished redirecting data", zap.Int("status_code", resp.StatusCode))
-			respManger.Raw(w, resp)
+			ctxLogger.Debug(ctx, "finished redirecting data", zap.Int("status_code", resp.StatusCode))
+			respManger.Raw(ctx, w, resp)
 		},
 	}, nil
 

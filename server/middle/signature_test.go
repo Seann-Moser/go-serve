@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 type AuthTestCase struct {
@@ -48,7 +47,7 @@ func TestAuthSignature_Valid(t *testing.T) {
 			CompareKey:   "1",
 		},
 	}
-	cookies := NewCookies("1234", true, 5*time.Minute, false, nil, zap.L())
+	cookies := NewCookies("1234", true, 5*time.Minute, false, nil)
 	for _, tc := range tcs {
 		t.Run(tc.Name, func(t *testing.T) {
 			day, _ := time.Parse("2006-04-02", "2022-10-14")

@@ -4,6 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/Seann-Moser/go-serve/server/device"
 	"net/http"
 	"strconv"
 	"strings"
@@ -36,17 +38,15 @@ type Cookies struct {
 	Salt                   string
 	VerifySignature        bool
 	Response               *response.Response
-	Logger                 *zap.Logger
 	authFunctions          AuthFunctions
 }
 
-func NewCookies(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, authFunctions AuthFunctions, Logger *zap.Logger) *Cookies {
+func NewCookies(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, authFunctions AuthFunctions) *Cookies {
 	return &Cookies{
 		DefaultExpiresDuration: defaultExpires,
 		Salt:                   salt,
 		VerifySignature:        verifySignature,
-		Response:               response.NewResponse(showError, Logger),
-		Logger:                 Logger,
+		Response:               response.NewResponse(showError),
 		authFunctions:          authFunctions,
 	}
 }
@@ -67,8 +67,8 @@ func (c *Cookies) CookiesAuth(next http.Handler) http.Handler {
 			authSignature := c.GetAuthSignature(auth.ID, auth.Key, &auth.Expires, r)
 			if auth.Signature != authSignature.Signature {
 				c.RemoveCookies(w, r)
-				c.Logger.Warn("invalid signature", zap.String("current", auth.Signature), zap.String("expected", authSignature.Signature))
-				c.Response.Error(w, nil, http.StatusUnauthorized, "invalid signature")
+				ctxLogger.Warn(r.Context(), "invalid signature", zap.String("current", auth.Signature), zap.String("expected", authSignature.Signature))
+				c.Response.Error(r.Context(), w, nil, http.StatusUnauthorized, "invalid signature")
 				return
 			}
 		}
@@ -78,13 +78,13 @@ func (c *Cookies) CookiesAuth(next http.Handler) http.Handler {
 		}
 		if access, err := c.authFunctions.HasAccessToEndpoint(auth.ID, auth.Key, path, r); !access || err != nil {
 			c.RemoveCookies(w, r)
-			c.Response.Error(w, nil, http.StatusUnauthorized, "unauthorized access to endpoint")
+			c.Response.Error(r.Context(), w, nil, http.StatusUnauthorized, "unauthorized access to endpoint")
 			return
 		}
 
 		if access, err := c.authFunctions.ValidDevice(auth.ID, auth.DeviceID, path, r); !access || err != nil {
 			c.RemoveCookies(w, r)
-			c.Response.Error(w, nil, http.StatusUnauthorized, "invalid device")
+			c.Response.Error(r.Context(), w, nil, http.StatusUnauthorized, "invalid device")
 			return
 		}
 
@@ -104,7 +104,7 @@ func (c *Cookies) GetAuthSignature(id, key string, expires *time.Time, r *http.R
 			ID:       id,
 			Key:      key,
 			Expires:  time.Now().Add(c.DefaultExpiresDuration),
-			DeviceID: LoadDeviceDetails(r).GenerateDeviceKey(c.Salt),
+			DeviceID: device.GetDeviceFromRequest(r).GenerateDeviceKey(c.Salt),
 		}
 	}
 	if expires != nil {
@@ -208,8 +208,8 @@ func (c *Cookies) RemoveCookies(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Cookies) SetDeviceID(w http.ResponseWriter, r *http.Request) {
-	device := LoadDeviceDetails(r)
-	key := device.GenerateDeviceKey("")
+	deviceDetails := device.GetDeviceFromRequest(r)
+	key := deviceDetails.GenerateDeviceKey("")
 	cookie := http.Cookie{
 		Name:    CookieDeviceId,
 		Value:   key,

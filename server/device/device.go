@@ -11,14 +11,14 @@ import (
 )
 
 type Device struct {
-	ID          string `db:"id" json:"id" q_config:"primary,join,where:="`
-	Name        string `db:"name" json:"name" q_config:"primary,update"`
-	IPv4        string `db:"ip_v4" json:"ip_v4" q_config:"primary"`
-	IPv6        string `db:"ip_v6" json:"ip_v6" q_config:"primary"`
-	UserAgent   string `db:"user_agent" json:"user_agent" q_config:"data_type:text,primary"`
-	Active      bool   `db:"active" json:"active" q_config:"default:true,update,where:="`
-	UpdatedDate string `db:"updated_date" json:"updated_date" q_config:"skip,data_type:TIMESTAMP,default:NOW() ON UPDATE CURRENT_TIMESTAMP"`
-	CreatedDate string `db:"created_date" json:"created_date" q_config:"skip,data_type:TIMESTAMP,default:NOW()"`
+	ID          string `db:"id" json:"id" qc:"primary;join,where::="`
+	Name        string `db:"name" json:"name" qc:"primary;update"`
+	IPv4        string `db:"ip_v4" json:"ip_v4" qc:"primary"`
+	IPv6        string `db:"ip_v6" json:"ip_v6" qc:"primary"`
+	UserAgent   string `db:"user_agent" json:"user_agent" qc:"data_type::text;primary"`
+	Active      bool   `db:"active" json:"active" qc:"default::true;update;where::="`
+	UpdatedDate string `db:"updated_date" json:"updated_date" qc:"skip;data_type::TIMESTAMP;default::NOW() ON UPDATE CURRENT_TIMESTAMP"`
+	CreatedDate string `db:"created_date" json:"created_date" qc:"skip;data_type::TIMESTAMP;default::NOW()"`
 }
 
 func GetDeviceFromRequest(r *http.Request) *Device {

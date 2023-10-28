@@ -1,6 +1,7 @@
 package cookies
 
 import (
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,7 +21,6 @@ type Cookies struct {
 	Salt                   string
 	VerifySignature        bool
 	Response               *response.Response
-	Logger                 *zap.Logger
 	authFunctions          AuthFunctions
 }
 
@@ -40,24 +40,22 @@ func Flags() *pflag.FlagSet {
 	return fs
 }
 
-func NewFromFlags(authFunctions AuthFunctions, Logger *zap.Logger) *Cookies {
+func NewFromFlags(authFunctions AuthFunctions) *Cookies {
 	return &Cookies{
 		DefaultExpiresDuration: viper.GetDuration(cookiesDefaultExpiresFlag),
 		Salt:                   viper.GetString(cookiesSaltFlag),
 		VerifySignature:        viper.GetBool(cookiesVerifySignatureFlag),
-		Response:               response.NewResponse(viper.GetBool(cookiesShowErrFlag), Logger),
-		Logger:                 Logger,
+		Response:               response.NewResponse(viper.GetBool(cookiesShowErrFlag)),
 		authFunctions:          authFunctions,
 	}
 }
 
-func New(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, authFunctions AuthFunctions, Logger *zap.Logger) *Cookies {
+func New(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, authFunctions AuthFunctions) *Cookies {
 	return &Cookies{
 		DefaultExpiresDuration: defaultExpires,
 		Salt:                   salt,
 		VerifySignature:        verifySignature,
-		Response:               response.NewResponse(showError, Logger),
-		Logger:                 Logger,
+		Response:               response.NewResponse(showError),
 		authFunctions:          authFunctions,
 	}
 }
@@ -78,8 +76,8 @@ func (c *Cookies) AuthMiddleware(next http.Handler) http.Handler {
 			authSignature := c.GetAuthSignature(auth.ID, auth.Key, &auth.Expires, r)
 			if auth.Signature != authSignature.Signature {
 				c.RemoveCookies(w, r)
-				c.Logger.Warn("invalid signature", zap.String("current", auth.Signature), zap.String("expected", authSignature.Signature))
-				c.Response.Error(w, nil, http.StatusUnauthorized, "invalid signature")
+				ctxLogger.Warn(r.Context(), "invalid signature", zap.String("current", auth.Signature), zap.String("expected", authSignature.Signature))
+				c.Response.Error(r.Context(), w, nil, http.StatusUnauthorized, "invalid signature")
 				return
 			}
 		}
@@ -89,13 +87,13 @@ func (c *Cookies) AuthMiddleware(next http.Handler) http.Handler {
 		}
 		if access, err := c.authFunctions.HasAccessToEndpoint(auth.ID, auth.Key, path, r); !access || err != nil {
 			c.RemoveCookies(w, r)
-			c.Response.Error(w, nil, http.StatusUnauthorized, "unauthorized access to endpoint")
+			c.Response.Error(r.Context(), w, nil, http.StatusUnauthorized, "unauthorized access to endpoint")
 			return
 		}
 
 		if access, err := c.authFunctions.ValidDevice(auth.ID, auth.DeviceID, path, r); !access || err != nil {
 			c.RemoveCookies(w, r)
-			c.Response.Error(w, nil, http.StatusUnauthorized, "invalid device")
+			c.Response.Error(r.Context(), w, nil, http.StatusUnauthorized, "invalid device")
 			return
 		}
 
