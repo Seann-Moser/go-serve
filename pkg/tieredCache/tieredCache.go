@@ -15,6 +15,7 @@ var (
 type Cache interface {
 	SetCache
 	GetCache
+	Ping(ctx context.Context) error
 }
 type SetCache interface {
 	SetCache(ctx context.Context, key string, item interface{}) error
@@ -71,6 +72,9 @@ func NewTieredCache(setter GetCache, cacheList ...Cache) Cache {
 		cachePool: cacheList,
 		getter:    setter,
 	}
+}
+func (t *TieredCache) Ping(ctx context.Context) error {
+	return nil
 }
 
 func (t *TieredCache) SetCache(ctx context.Context, key string, item interface{}) error {
