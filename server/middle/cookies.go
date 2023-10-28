@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"github.com/Seann-Moser/go-serve/server/device"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"net/http"
 	"strconv"
 	"strings"
@@ -41,6 +43,22 @@ type Cookies struct {
 	authFunctions          AuthFunctions
 }
 
+func CookieFlags() *pflag.FlagSet {
+	fs := pflag.NewFlagSet("cookie", pflag.ExitOnError)
+	fs.String("cookie-salt", "", "")
+	fs.Duration("cookie-default-expires", 24*time.Hour, "")
+	fs.Bool("cookie-verify-signature", false, "")
+	return fs
+}
+func NewCookiesWithFlags(response *response.Response, authFunctions AuthFunctions) *Cookies {
+	return &Cookies{
+		DefaultExpiresDuration: viper.GetDuration("cookie-default-expires"),
+		Salt:                   viper.GetString("cookie-salt"),
+		VerifySignature:        viper.GetBool("cookie-verify-signature"),
+		Response:               response,
+		authFunctions:          authFunctions,
+	}
+}
 func NewCookies(salt string, verifySignature bool, defaultExpires time.Duration, showError bool, authFunctions AuthFunctions) *Cookies {
 	return &Cookies{
 		DefaultExpiresDuration: defaultExpires,
