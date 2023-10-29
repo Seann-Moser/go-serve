@@ -95,11 +95,12 @@ func (t *TieredCache) GetCache(ctx context.Context, key string) ([]byte, error) 
 		}
 	}()
 	for _, c := range t.cachePool {
-		if v, err = c.GetCache(ctx, key); err != nil && v != nil {
-			return v, err
-		} else {
+		v, err = c.GetCache(ctx, key)
+		if err != nil || v == nil {
 			missedCacheList = append(missedCacheList, c)
+			continue
 		}
+		return v, nil
 	}
 
 	v, err = t.getter.GetCache(ctx, key)
