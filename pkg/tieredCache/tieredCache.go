@@ -34,7 +34,7 @@ func Get[T any](ctx context.Context, key string) (*T, error) {
 		return nil, err
 	}
 	var output T
-	err = json.Unmarshal(data, output)
+	err = json.Unmarshal(data, &output)
 	if err != nil {
 		return nil, err
 	}
