@@ -44,8 +44,8 @@ firebase.google.com/go/v4 v4.12.1 h1:tDNvobifGsx/1HSFLnM0fmNfx/CDZSgsTO2KhZtgpcs
 firebase.google.com/go/v4 v4.12.1/go.mod h1:60c36dWLK4+j05Vw5XMllek3b3PCynU3BfI46OSwsUE=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/Seann-Moser/QueryHelper v1.10.18 h1:IMkYdDD1aWjOsQ8zYTC9Z9JYmdaOl30GFMx5L/Z87PM=
-github.com/Seann-Moser/QueryHelper v1.10.18/go.mod h1:y9RPLS0ZO61E/6xeZuCBE93mEUHwKcNDngxD49q6fKk=
+github.com/Seann-Moser/QueryHelper v1.10.19 h1:EgFJBuGUVnLoKzaT9e+IOWdT3WHTOnbS4QFstQPsmZg=
+github.com/Seann-Moser/QueryHelper v1.10.19/go.mod h1:y9RPLS0ZO61E/6xeZuCBE93mEUHwKcNDngxD49q6fKk=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
 github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874 h1:N7oVaKyGp8bttX0bfZGmcGkjz7DLQXhAn3DNd3T0ous=
