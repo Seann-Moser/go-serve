@@ -45,9 +45,14 @@ func (c *GoCache) SetCache(ctx context.Context, key string, item interface{}) er
 }
 
 func (c *GoCache) GetCache(ctx context.Context, key string) ([]byte, error) {
-	if data, found := c.cacher.Get(key); found {
+	if data, found := c.cacher.Get(key); !found {
 		return nil, ErrCacheMiss
 	} else {
-		return json.Marshal(data)
+		switch v := data.(type) {
+		case string:
+			return []byte(v), nil
+		default:
+			return json.Marshal(data)
+		}
 	}
 }
