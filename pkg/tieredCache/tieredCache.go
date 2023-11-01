@@ -41,6 +41,19 @@ func Get[T any](ctx context.Context, key string) (*T, error) {
 	return &output, nil
 }
 
+func GetFromCache[T any](ctx context.Context, cache Cache, key string) (*T, error) {
+	data, err := cache.GetCache(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	var output T
+	err = json.Unmarshal(data, &output)
+	if err != nil {
+		return nil, err
+	}
+	return &output, nil
+}
+
 const (
 	CTX_CACHE = "cache_ctx"
 )
@@ -102,7 +115,9 @@ func (t *TieredCache) GetCache(ctx context.Context, key string) ([]byte, error) 
 		}
 		return v, nil
 	}
-
+	if t.getter == nil {
+		return nil, ErrCacheMiss
+	}
 	v, err = t.getter.GetCache(ctx, key)
 	if err != nil {
 		missedCacheList = []Cache{}
