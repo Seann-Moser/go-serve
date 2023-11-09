@@ -35,6 +35,16 @@ func (m *Manager) SetExtraFunc(v func(ctx context.Context, endpoint *endpoints.E
 	m.ExtraAddEndpointProcess = v
 }
 
+func (m *Manager) AddRawEndpoints(ctx context.Context, endpoints ...*endpoints.Endpoint) error {
+	for _, endpoint := range endpoints {
+		err := m.AddEndpoint(ctx, endpoint)
+		if err != nil {
+			return fmt.Errorf("failed adding endpoint %s: %w", endpoint.URLPath, err)
+		}
+	}
+	return nil
+}
+
 func (m *Manager) AddEndpoints(ctx context.Context, handlers []EndpointHandler) error {
 	for _, h := range handlers {
 		for _, endpoint := range h.GetEndpoints() {
