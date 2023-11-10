@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"github.com/Seann-Moser/QueryHelper"
-	"github.com/Seann-Moser/go-serve/server/endpoint_manager"
 	"github.com/gorilla/mux"
 	"net/http"
 	"net/url"
@@ -50,14 +49,6 @@ func NewEndpoint(prefix string, urlPath string, role string, HandlerFunc Endpoin
 		Handler:         nil,
 		Timeout:         0,
 	}
-}
-
-func LoadEndpointsFromHandlers(ctx context.Context, endpointHandler ...endpoint_manager.EndpointHandler) ([]*Endpoint, error) {
-	var endpoints []*Endpoint
-	for _, h := range endpointHandler {
-		endpoints = append(endpoints, h.GetEndpoints()...)
-	}
-	return LoadEndpoints(ctx, endpoints...)
 }
 
 func LoadEndpoints(ctx context.Context, defaultEndpoints ...*Endpoint) ([]*Endpoint, error) {
