@@ -60,6 +60,19 @@ func (d *DAO) Middleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+func (d *DAO) GetContext() context.Context {
+	return d.ctx
+}
+
+func (d *DAO) AddTablesToCtx(ctx context.Context) context.Context {
+	if d.ctx != nil {
+		ctx, err := QueryHelper.WithTableContext(ctx, d.ctx, d.tablesNames...)
+		if err == nil {
+			return ctx
+		}
+	}
+	return d.ctx
+}
 
 //func (d *DAO) ContextWithTransaction(ctx context.Context) (context.Context, error) {
 //	tx, err := d.db.BeginTxx(ctx, &sql.TxOptions{})
