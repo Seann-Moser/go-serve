@@ -20,22 +20,20 @@ const (
 	SuperAdmin = Permission(int(^uint(0) >> 1))
 )
 
-type EndpointHandler func(w http.ResponseWriter, r *http.Request)
-
 type Endpoint struct {
-	SubDomain       string          `json:"sub_domain" db:"sub_domain" qc:"primary;where::="`
-	Redirect        string          `json:"redirect" db:"redirect" qc:"join;update"`
-	URLPath         string          `json:"url_path" yaml:"url_path" db:"url_path" qc:"primary;data_type::varchar(512);delete;join;update;where::="`
-	PermissionLevel Permission      `json:"permission_level" yaml:"permission_level" db:"permission_level" qc:"join;update;where::<="`
-	Role            string          `json:"role" db:"role" qc:"primary;join;update;default::default"`
-	Method          string          `json:"-" db:"method" qc:"primary;update"`
-	Methods         []string        `json:"methods" yaml:"methods" db:"-"`
-	HandlerFunc     EndpointHandler `db:"-" json:"-"`
-	Handler         http.Handler    `db:"-" json:"-"`
-	Timeout         int             `json:"timeout" db:"timeout" qc:"update;default::10"`
+	SubDomain       string           `json:"sub_domain" db:"sub_domain" qc:"primary;where::="`
+	Redirect        string           `json:"redirect" db:"redirect" qc:"join;update"`
+	URLPath         string           `json:"url_path" yaml:"url_path" db:"url_path" qc:"primary;data_type::varchar(512);delete;join;update;where::="`
+	PermissionLevel Permission       `json:"permission_level" yaml:"permission_level" db:"permission_level" qc:"join;update;where::<="`
+	Role            string           `json:"role" db:"role" qc:"primary;join;update;default::default"`
+	Method          string           `json:"-" db:"method" qc:"primary;update"`
+	Methods         []string         `json:"methods" yaml:"methods" db:"-"`
+	HandlerFunc     http.HandlerFunc `db:"-" json:"-"`
+	Handler         http.Handler     `db:"-" json:"-"`
+	Timeout         int              `json:"timeout" db:"timeout" qc:"update;default::10"`
 }
 
-func NewEndpoint(prefix string, urlPath string, role string, HandlerFunc EndpointHandler, methods ...string) *Endpoint {
+func NewEndpoint(prefix string, urlPath string, role string, HandlerFunc http.HandlerFunc, methods ...string) *Endpoint {
 	path, _ := url.JoinPath(prefix, urlPath)
 	return &Endpoint{
 		SubDomain:       "",
