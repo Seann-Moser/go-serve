@@ -101,7 +101,7 @@ func (e *Endpoint) Match(r *http.Request) bool {
 	rawPath := r.URL.Path
 	muxVars := mux.Vars(r)
 	for k, v := range muxVars {
-		rawPath = strings.ReplaceAll(rawPath, v, k)
+		rawPath = strings.ReplaceAll(rawPath, v, fmt.Sprintf("{%s}", k))
 	}
 	return strings.EqualFold(e.URLPath, rawPath)
 }
