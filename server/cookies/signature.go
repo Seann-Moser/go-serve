@@ -32,6 +32,7 @@ func (c *AuthSignature) Valid() bool {
 	}
 	return true
 }
+
 func (c *AuthSignature) ContainsFields() bool {
 	return len(c.Key) > 0 || len(c.ID) > 0 || c.Expires.Unix() > 0 || len(c.Signature) > 0
 }
