@@ -26,12 +26,12 @@ func NewRequest(maxUploadSize int64) *Request {
 	}
 }
 
-func (req *Request) GetUploadedFile(uploadDir string, r *http.Request) (string, int64, error) {
+func (req *Request) DownloadFile(headerName string, uploadDir string, r *http.Request) (string, int64, error) {
 	if err := r.ParseMultipartForm(req.maxUploadSize); err != nil {
 		ctxLogger.Error(r.Context(), "could not parse multipart form", zap.Error(err))
 		return "", 0, err
 	}
-	file, fileHeader, err := r.FormFile("uploadFile")
+	file, fileHeader, err := r.FormFile(headerName)
 	if err != nil {
 		return "", 0, err
 	}
@@ -86,6 +86,10 @@ func (req *Request) GetUploadedFile(uploadDir string, r *http.Request) (string, 
 		return "", 0, err
 	}
 	return newPath, int64(len(fileBytes)), nil
+}
+
+func (req *Request) GetUploadedFile(uploadDir string, r *http.Request) (string, int64, error) {
+	return req.DownloadFile("uploadFile", uploadDir, r)
 }
 
 func formatBytes(b int64) string {
