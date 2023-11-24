@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
 	serverCache "github.com/Seann-Moser/go-serve/pkg/tieredCache"
+	"github.com/Seann-Moser/go-serve/server/endpoints"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
@@ -30,17 +31,16 @@ func Flags(prefix string) *pflag.FlagSet {
 	return fs
 }
 
-func NewWithFlags(cache serverCache.Cache, client *http.Client) (*Client, error) {
+func NewWithFlags(prefix string, cache serverCache.Cache, client *http.Client) (*Client, error) {
 	return New(
-		viper.GetString("event-audit-endpoint"),
-		viper.GetString("event-audit-api-key"),
-		viper.GetString("event-audit-service-name"),
+		viper.GetString(prefix+"-endpoint"),
+		viper.GetString(prefix+"-service-name"),
 		cache,
 		client,
 	)
 }
 
-func New(endpoint, apiKey, serviceName string, cache serverCache.Cache, client *http.Client) (*Client, error) {
+func New(endpoint, serviceName string, cache serverCache.Cache, client *http.Client) (*Client, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
@@ -51,6 +51,10 @@ func New(endpoint, apiKey, serviceName string, cache serverCache.Cache, client *
 		client:      client,
 		serviceName: serviceName,
 	}, nil
+}
+
+func (c *Client) SendRequestToEndpoint(ctx context.Context, endpoint *endpoints.Endpoint, method string, body interface{}, params map[string]string, headers map[string]string) ([]byte, *pagination.Pagination, error) {
+	return c.SendRequest(ctx, endpoint.URLPath, method, body, params, headers)
 }
 
 func GetResponse[T any](body []byte, page *pagination.Pagination, err error) (T, error) {
