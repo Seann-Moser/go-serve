@@ -81,7 +81,7 @@ func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb in
 	if !strings.HasPrefix(pathPrefix, "/") {
 		pathPrefix = "/" + pathPrefix
 	}
-	m := metrics.New(nil)
+	m := metrics.New(map[string]string{"ver": VERSION})
 	if VERSION != "dev" {
 		m.Version = VERSION
 	}
