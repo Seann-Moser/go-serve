@@ -7,19 +7,13 @@ import (
 	"log"
 	"net/http"
 
-	"go.uber.org/zap"
-
 	"github.com/Seann-Moser/go-serve/server"
 	"github.com/Seann-Moser/go-serve/server/endpoints"
 	"github.com/Seann-Moser/go-serve/server/handlers"
 )
 
 func main() {
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		log.Fatal(err)
-	}
-	s := server.NewServer(context.Background(), "8888", "/test", 0, false, logger)
+	s := server.NewServer(context.Background(), "8888", "/test", 0, false)
 	if err := s.AddEndpoints(context.Background(), handlers.HealthCheck); err != nil {
 		log.Fatal(err)
 	}
@@ -59,16 +53,16 @@ func main() {
 		URLPath:   "search/search",
 	}, "/test/search/search")
 	_ = s.AddEndpoints(context.Background(), h)
-	if err := s.StartServer(); err != nil {
-		logger.Fatal("failed creating cors", zap.Error(err))
+	if err := s.StartServer(context.Background()); err != nil {
+		log.Fatal(err)
 	}
-	cors, _ := middle.NewCorsMiddleware([]string{}, []string{}, []string{}, false, logger)
-	if err := s.StartServer(); err != nil {
-		logger.Fatal("failed creating cors", zap.Error(err))
+	cors, _ := middle.NewCorsMiddleware([]string{}, []string{}, []string{}, false)
+	if err := s.StartServer(context.Background()); err != nil {
+		log.Fatal(err)
 	}
 	s.AddMiddleware(cors.Cors)
 	//s.AddMiddleware(middle.NewMetrics(true, logger).Middleware, middle.NewCorsMiddleware().Cors)
-	if err := s.StartServer(); err != nil {
+	if err := s.StartServer(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 }

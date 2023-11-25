@@ -9,7 +9,6 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 type CorsMiddleware struct {
@@ -17,7 +16,6 @@ type CorsMiddleware struct {
 	AllowedMethods     []string
 	AllowedHeaders     []string
 	AllowedCredentials bool
-	logger             *zap.Logger
 }
 
 const (
@@ -36,13 +34,12 @@ func CorsFlags() *pflag.FlagSet {
 	return fs
 }
 
-func NewCorsFromFlags(logger *zap.Logger) (*CorsMiddleware, error) {
+func NewCorsFromFlags() (*CorsMiddleware, error) {
 	c := &CorsMiddleware{
 		AllowedOrigins:     []*regexp.Regexp{},
 		AllowedMethods:     viper.GetStringSlice(corsAllowedMethods),
 		AllowedHeaders:     viper.GetStringSlice(corsAllowedHeaders),
 		AllowedCredentials: viper.GetBool(corsAllowedCredentials),
-		logger:             logger,
 	}
 	for _, o := range viper.GetStringSlice(corsAllowedOrigins) {
 		exp, err := regexp.Compile(o)
@@ -54,13 +51,12 @@ func NewCorsFromFlags(logger *zap.Logger) (*CorsMiddleware, error) {
 	return c, nil
 }
 
-func NewCorsMiddleware(origin []string, methods, headers []string, creds bool, logger *zap.Logger) (*CorsMiddleware, error) {
+func NewCorsMiddleware(origin []string, methods, headers []string, creds bool) (*CorsMiddleware, error) {
 	c := &CorsMiddleware{
 		AllowedOrigins:     []*regexp.Regexp{},
 		AllowedMethods:     methods,
 		AllowedHeaders:     headers,
 		AllowedCredentials: creds,
-		logger:             logger,
 	}
 	for _, o := range origin {
 		exp, err := regexp.Compile(o)

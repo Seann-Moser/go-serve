@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/Seann-Moser/go-serve/server/metrics"
+	"golang.org/x/sync/errgroup"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,15 +28,18 @@ import (
 	"github.com/Seann-Moser/go-serve/server/endpoints"
 )
 
+var VERSION = "dev"
+
 type Server struct {
 	ServingPort     string `yaml:"serving_port" json:"serving_port" env:"SERVING_PORT"`
 	ctx             context.Context
 	router          *mux.Router
-	logger          *zap.Logger
 	EndpointManager *endpoint_manager.Manager
 	Response        *response.Response
 	Request         *request.Request
 	PathPrefix      string
+
+	MetricsServer *metrics.Metrics
 }
 
 const (
@@ -49,24 +55,25 @@ func Flags() *pflag.FlagSet {
 	fs.String(serverPrefixFlag, "", "")
 	fs.Int64(serverMaxReceivedBytesFlag, int64(20*1024*1024), "")
 	fs.Bool(serverShowErrFlag, false, "")
+	fs.AddFlagSet(metrics.MetricFlags())
 	return fs
 }
 
-func New(ctx context.Context, logger *zap.Logger) *Server {
+func New(ctx context.Context) *Server {
 	return NewServer(ctx,
 		viper.GetString(serverPortFlag),
 		viper.GetString(serverPrefixFlag),
 		viper.GetInt64(serverMaxReceivedBytesFlag),
-		viper.GetBool(serverShowErrFlag), logger)
+		viper.GetBool(serverShowErrFlag))
 }
 
-func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb int64, showErr bool, logger *zap.Logger) *Server {
+func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb int64, showErr bool) *Server {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	notifyContext, cancel := context.WithCancel(ctx)
 	go func() {
 		osCall := <-c
-		logger.Info(fmt.Sprintf("system call:%+v", osCall))
+		ctxLogger.Info(ctx, fmt.Sprintf("system call:%+v", osCall))
 		cancel()
 	}()
 
@@ -74,17 +81,25 @@ func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb in
 	if !strings.HasPrefix(pathPrefix, "/") {
 		pathPrefix = "/" + pathPrefix
 	}
+	m := metrics.New(nil)
+	if VERSION != "dev" {
+		m.Version = VERSION
+	}
 
 	return &Server{
 		ServingPort:     servingPort,
 		ctx:             notifyContext,
 		router:          router,
-		logger:          logger,
 		EndpointManager: endpoint_manager.NewManager(router),
 		Response:        response.NewResponse(showErr),
 		Request:         request.NewRequest(mb),
 		PathPrefix:      pathPrefix,
+		MetricsServer:   m,
 	}
+}
+
+func (s *Server) GetResponseManager() *response.Response {
+	return s.Response
 }
 
 func (s *Server) GetContext() context.Context {
@@ -116,30 +131,26 @@ func (s *Server) AddMiddleware(middlewareFunc ...mux.MiddlewareFunc) {
 	s.router.Use(middlewareFunc...)
 }
 
-type NotFound struct {
-	logger *zap.Logger
-	resp   *response.Response
+func (s *Server) Start() error {
+	eg, errCtx := errgroup.WithContext(s.GetContext())
+	eg.Go(func() error {
+		err := s.MetricsServer.StartServer(errCtx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	eg.Go(func() error {
+		err := s.StartServer(errCtx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return eg.Wait()
 }
 
-func NewNF() *NotFound {
-	return &NotFound{
-		resp: response.NewResponse(false),
-	}
-}
-
-func (n *NotFound) ServeHTTP(writer http.ResponseWriter, r *http.Request) {
-	n.resp.Error(r.Context(), writer, nil, http.StatusNotFound, fmt.Sprintf(
-		"%d: path not found: %s", http.StatusNotFound, r.URL.String()))
-	n.logger.Error("failed to find routing path", zap.String("url", r.URL.String()))
-}
-
-var _ http.Handler = &NotFound{}
-
-func (s *Server) NotFoundHandler(nf http.Handler) {
-	s.router.NotFoundHandler = nf
-}
-
-func (s *Server) StartServer() error {
+func (s *Server) StartServer(ctx context.Context) error {
 	server := &http.Server{
 		Addr:    ":" + s.ServingPort,
 		Handler: s.router,
@@ -147,22 +158,22 @@ func (s *Server) StartServer() error {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			s.logger.Error("failed creating server", zap.Error(err))
+			ctxLogger.Error(ctx, "failed creating server", zap.Error(err))
 		}
 	}()
 
-	s.logger.Info("staring server", zap.String("address", server.Addr), zap.String("port", s.ServingPort), zap.String("prefix", s.PathPrefix))
-	<-s.ctx.Done()
-	s.logger.Info("server stopped")
+	ctxLogger.Info(ctx, "staring server", zap.String("address", server.Addr), zap.String("port", s.ServingPort), zap.String("prefix", s.PathPrefix))
+	<-ctx.Done()
+	ctxLogger.Info(ctx, "server stopped")
 	ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
 		cancel()
 	}()
 
 	if err := server.Shutdown(ctxShutDown); err != nil {
-		s.logger.Error("server Shutdown Failed", zap.Error(err))
+		ctxLogger.Error(ctx, "server Shutdown Failed", zap.Error(err))
 		return err
 	}
-	s.logger.Info("server exited properly")
+	ctxLogger.Info(ctx, "server exited properly")
 	return nil
 }
