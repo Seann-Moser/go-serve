@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
-	serverCache "github.com/Seann-Moser/go-serve/pkg/tieredCache"
 	"github.com/Seann-Moser/go-serve/server/endpoints"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -19,7 +18,6 @@ import (
 
 type Client struct {
 	endpoint    *url.URL
-	cache       serverCache.Cache
 	client      *http.Client
 	serviceName string
 }
@@ -31,22 +29,20 @@ func Flags(prefix string) *pflag.FlagSet {
 	return fs
 }
 
-func NewWithFlags(prefix string, cache serverCache.Cache, client *http.Client) (*Client, error) {
+func NewWithFlags(prefix string, client *http.Client) (*Client, error) {
 	return New(
 		viper.GetString(prefix+"-endpoint"),
 		viper.GetString(prefix+"-service-name"),
-		cache,
 		client,
 	)
 }
 
-func New(endpoint, serviceName string, cache serverCache.Cache, client *http.Client) (*Client, error) {
+func New(endpoint, serviceName string, client *http.Client) (*Client, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
-		cache:       cache,
 		endpoint:    u,
 		client:      client,
 		serviceName: serviceName,

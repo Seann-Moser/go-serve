@@ -20,7 +20,6 @@ import (
 
 type DAO struct {
 	db            QueryHelper.DB
-	dropTable     bool
 	updateColumns bool
 	ctx           context.Context
 	tablesNames   []string
