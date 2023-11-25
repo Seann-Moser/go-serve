@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"github.com/Seann-Moser/go-serve/server/handlers"
-	"github.com/Seann-Moser/go-serve/server/metrics"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -61,6 +60,16 @@ func (m *Manager) AddEndpoint(ctx context.Context, endpoint *endpoints.Endpoint)
 	if endpoint.Methods == nil || len(endpoint.Methods) == 0 {
 		endpoint.Methods = []string{http.MethodPost, http.MethodGet, http.MethodPatch, http.MethodPut, http.MethodDelete, http.MethodOptions}
 	}
+	var hasOption bool
+	for _, m := range endpoint.Methods {
+		if m == http.MethodOptions {
+			hasOption = true
+		}
+	}
+	if !hasOption {
+		endpoint.Methods = append(endpoint.Methods, http.MethodOptions)
+	}
+
 	if len(endpoint.Redirect) > 0 && endpoint.HandlerFunc == nil && endpoint.Handler == nil {
 		ep, err := handlers.NewProxy(ctx, endpoint, "")
 		if err != nil {
@@ -85,10 +94,4 @@ func (m *Manager) AddEndpoint(ctx context.Context, endpoint *endpoints.Endpoint)
 		return nil
 	}
 	return m.ExtraAddEndpointProcess(ctx, endpoint)
-}
-
-func (m *Manager) AddDefaultMetrics() {
-	m.Router.Use(metrics.PrometheusTotalRequestsMiddleware)
-	metrics.AddMetricsEndpoint(m.Router)
-	metrics.RegisterDefaultMetrics()
 }

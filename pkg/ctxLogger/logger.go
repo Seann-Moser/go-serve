@@ -14,6 +14,8 @@ const (
 	CTX_LOGGER = "logger"
 )
 
+var globalLogger *zap.Logger
+
 func Flags() *pflag.FlagSet {
 	fs := pflag.NewFlagSet("ctx_logger", pflag.ExitOnError)
 	fs.String("log-level", "debug", "")
@@ -27,17 +29,28 @@ func ConfigureCtx(logger *zap.Logger, ctx context.Context) context.Context {
 
 func GetLogger(ctx context.Context) *zap.Logger {
 	if ctx == nil {
+		if globalLogger != nil {
+			return globalLogger
+		}
 		return zap.L()
 	}
 	logger := ctx.Value(CTX_LOGGER)
 	if logger == nil {
+		if globalLogger != nil {
+			return globalLogger
+		}
 		return zap.L()
 	}
 	return logger.(*zap.Logger)
 }
 
 func NewLoggerFromFlags() (*zap.Logger, error) {
-	return NewLogger(viper.GetBool("is-prod"), viper.GetString("log-level"))
+	logger, err := NewLogger(viper.GetBool("is-prod"), viper.GetString("log-level"))
+	if err != nil {
+		return nil, err
+	}
+	globalLogger = logger
+	return logger, nil
 }
 
 func NewLogger(production bool, level string) (*zap.Logger, error) {
