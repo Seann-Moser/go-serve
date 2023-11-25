@@ -30,7 +30,6 @@ func MetricFlags() *pflag.FlagSet {
 	fs := pflag.NewFlagSet("metrics", pflag.ExitOnError)
 	fs.String("metrics-namespace", "", "")
 	fs.String("metrics-version", "dev", "")
-	fs.Duration("metrics-namespace", 24*time.Hour, "")
 	fs.Bool("metrics-enabled", false, "")
 	fs.Int("metrics-port", 8081, "")
 	return fs
@@ -87,8 +86,7 @@ func (m *Metrics) StartServer(ctx context.Context) error {
 	m.router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	m.router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	exporter, err := ocPromethus.NewExporter(ocPromethus.Options{
-		Namespace:   viper.GetString("metrics-namespace"),
-		Gatherer:    nil,
+		Namespace:   m.Namespace,
 		OnError:     m.OnError,
 		ConstLabels: m.ConstLabels,
 	})
