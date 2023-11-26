@@ -4,13 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/tidwall/gjson"
-	"io"
+	"strconv"
 
 	"net/http"
 	"net/url"
@@ -20,12 +17,14 @@ type Client struct {
 	endpoint    *url.URL
 	client      *http.Client
 	serviceName string
+	BackOff     *BackOff
 }
 
 func Flags(prefix string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet(prefix, pflag.ExitOnError)
 	fs.String(prefix+"-endpoint", "http://127.0.0.1:8080", "")
 	fs.String(prefix+"-service-name", "default", "")
+	fs.AddFlagSet(BackOffFlags(prefix))
 	return fs
 }
 
@@ -34,10 +33,11 @@ func NewWithFlags(prefix string, client *http.Client) (*Client, error) {
 		viper.GetString(prefix+"-endpoint"),
 		viper.GetString(prefix+"-service-name"),
 		client,
+		NewBackoffFromFlags(prefix),
 	)
 }
 
-func New(endpoint, serviceName string, client *http.Client) (*Client, error) {
+func New(endpoint, serviceName string, client *http.Client, backoff *BackOff) (*Client, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
@@ -46,65 +46,58 @@ func New(endpoint, serviceName string, client *http.Client) (*Client, error) {
 		endpoint:    u,
 		client:      client,
 		serviceName: serviceName,
+		BackOff:     backoff,
 	}, nil
 }
 
-func (c *Client) SendRequestToEndpoint(ctx context.Context, endpoint *endpoints.Endpoint, method string, body interface{}, params map[string]string, headers map[string]string) ([]byte, *pagination.Pagination, error) {
-	return c.SendRequest(ctx, endpoint.URLPath, method, body, params, headers)
+func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData) {
+	_ = c.BackOff.Retry(ctx, func() error {
+		resp = c.SendRequest(ctx, data, p)
+		if resp.Status == http.StatusTooManyRequests {
+			return resp.Err
+		}
+		return nil
+	})
+
+	return nil
 }
 
-func GetResponse[T any](body []byte, page *pagination.Pagination, err error) (T, error) {
-	var d T
+func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
+	u, err := url.JoinPath(c.endpoint.String(), data.Path)
 	if err != nil {
-		return d, err
+		return &ResponseData{Err: err}
 	}
-	err = json.Unmarshal(body, &d)
-	if err != nil {
-		return d, err
+	if p == nil {
+		p = &pagination.Pagination{ItemsPerPage: 100}
 	}
-	return d, nil
-}
-
-func (c *Client) SendRequest(ctx context.Context, path string, method string, body interface{}, params map[string]string, headers map[string]string) ([]byte, *pagination.Pagination, error) {
-	u, err := url.JoinPath(c.endpoint.String(), path)
-	if err != nil {
-		return nil, nil, err
+	if data.Headers == nil {
+		data.Headers = map[string]string{}
+	}
+	if data.Params == nil {
+		data.Params = map[string]string{}
 	}
 	var rawBody []byte
-	if body != nil {
-		rawBody, err = json.Marshal(body)
+	if data.Body != nil {
+		rawBody, err = json.Marshal(data.Body)
 		if err != nil {
-			return nil, nil, err
+			return &ResponseData{Err: err}
 		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, u, bytes.NewReader(rawBody))
+	req, err := http.NewRequestWithContext(ctx, data.Method, u, bytes.NewReader(rawBody))
 	if err != nil {
-		return nil, nil, err
+		return &ResponseData{Err: err}
 	}
-	for k, v := range headers {
+	for k, v := range data.Headers {
 		req.Header.Set(k, v)
 	}
 	queryParams := url.Values{}
-	for k, v := range params {
+	data.Params["items_per_page"] = strconv.Itoa(int(p.ItemsPerPage))
+	data.Params["page"] = strconv.Itoa(int(p.CurrentPage))
+
+	for k, v := range data.Params {
 		queryParams.Add(k, v)
 	}
 	req.URL.RawQuery = queryParams.Encode()
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	if resp.StatusCode != http.StatusOK {
-		return nil, nil, fmt.Errorf("invalid Status code: %d", resp.StatusCode)
-	}
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, err
-	}
-	var page pagination.Pagination
-	_ = json.Unmarshal([]byte(gjson.GetBytes(responseData, "page").Raw), &page)
-	return []byte(gjson.GetBytes(responseData, "data").Raw), &page, nil
+	return NewResponseData(c.client.Do(req))
 }
