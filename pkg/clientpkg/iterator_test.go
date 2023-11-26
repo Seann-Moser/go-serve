@@ -25,14 +25,14 @@ type Book struct {
 }
 
 func TestIterator(t *testing.T) {
-	c, err := New("https://auth.mnlib.com", "book", &http.Client{}, nil)
+	c, err := New("https://auth.mnlib.com", "book", 9, &http.Client{}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	it := NewIterator[Book](context.Background(), c.SendRequest, RequestData{
 		Path:   "/book/list",
 		Method: http.MethodGet,
-	}, 9)
+	})
 	for it.Next() {
 		println(it.Current().BookName)
 	}
