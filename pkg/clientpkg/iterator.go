@@ -6,7 +6,7 @@ import (
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
 )
 
-type Request func(ctx context.Context, data RequestData, page *pagination.Pagination) ([]byte, *pagination.Pagination, error)
+type Request func(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData
 
 type Iterator[T any] struct {
 	ctx          context.Context
@@ -91,15 +91,15 @@ func (i *Iterator[T]) Next() bool {
 }
 
 func (i *Iterator[T]) getPages() bool {
-	data, page, err := i.request(i.ctx, i.RequestData, i.nextPage())
-	if err != nil {
-		i.err = err
+	data := i.request(i.ctx, i.RequestData, i.nextPage())
+	if data.Err != nil {
+		i.err = data.Err
 		return false
 	} else {
-		i.err = json.Unmarshal(data, &i.currentPages)
-		i.totalItems = int(page.TotalItems)
+		i.err = json.Unmarshal(data.Data, &i.currentPages)
+		i.totalItems = int(data.Page.TotalItems)
 
-		i.offset = int((page.CurrentPage - 1) * page.ItemsPerPage)
+		i.offset = int((data.Page.CurrentPage - 1) * data.Page.ItemsPerPage)
 	}
 	if i.err != nil {
 		return false
