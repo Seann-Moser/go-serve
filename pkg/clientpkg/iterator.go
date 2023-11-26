@@ -9,10 +9,9 @@ import (
 type Request func(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData
 
 type Iterator[T any] struct {
-	ctx          context.Context
-	itemsPerPage uint
-	request      Request
-	err          error
+	ctx     context.Context
+	request Request
+	err     error
 
 	current     *T
 	currentItem int
@@ -25,13 +24,9 @@ type Iterator[T any] struct {
 	RequestData RequestData
 }
 
-func NewIterator[T any](ctx context.Context, request Request, data RequestData, itemsPerPage int) *Iterator[T] {
-	if itemsPerPage < 0 || itemsPerPage > 1000 {
-		itemsPerPage = 100
-	}
+func NewIterator[T any](ctx context.Context, request Request, data RequestData) *Iterator[T] {
 	return &Iterator[T]{
 		ctx:          ctx,
-		itemsPerPage: uint(itemsPerPage),
 		request:      request,
 		currentPages: make([]*T, 0),
 		RequestData:  data,
@@ -112,8 +107,7 @@ func (i *Iterator[T]) nextPage() *pagination.Pagination {
 		i.currentPage = 1
 	}
 	page := &pagination.Pagination{
-		CurrentPage:  i.currentPage,
-		ItemsPerPage: i.itemsPerPage,
+		CurrentPage: i.currentPage,
 	}
 	i.currentPage += 1
 	return page

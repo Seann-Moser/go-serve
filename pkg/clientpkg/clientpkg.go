@@ -14,39 +14,46 @@ import (
 )
 
 type Client struct {
-	endpoint    *url.URL
-	client      *http.Client
-	serviceName string
-	BackOff     *BackOff
+	endpoint     *url.URL
+	client       *http.Client
+	serviceName  string
+	BackOff      *BackOff
+	itemsPerPage uint
 }
 
 func Flags(prefix string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet(prefix, pflag.ExitOnError)
-	fs.String(prefix+"-endpoint", "http://127.0.0.1:8080", "")
-	fs.String(prefix+"-service-name", "default", "")
+	fs.String(GetFlagWithPrefix(prefix, "endpoint"), "http://127.0.0.1:8080", "")
+	fs.String(GetFlagWithPrefix(prefix, "service-name"), "default", "")
+	fs.Uint(GetFlagWithPrefix(prefix, "items-per-page"), 100, "") //todo move to client pkg
 	fs.AddFlagSet(BackOffFlags(prefix))
 	return fs
 }
 
 func NewWithFlags(prefix string, client *http.Client) (*Client, error) {
 	return New(
-		viper.GetString(prefix+"-endpoint"),
-		viper.GetString(prefix+"-service-name"),
+		viper.GetString(GetFlagWithPrefix(prefix, "endpoint")),
+		viper.GetString(GetFlagWithPrefix(prefix, "service-name")),
+		viper.GetUint(GetFlagWithPrefix(prefix, "items-per-page")),
 		client,
 		NewBackoffFromFlags(prefix),
 	)
 }
 
-func New(endpoint, serviceName string, client *http.Client, backoff *BackOff) (*Client, error) {
+func New(endpoint, serviceName string, itemsPerPage uint, client *http.Client, backoff *BackOff) (*Client, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
 	}
+	if itemsPerPage < 0 || itemsPerPage > 1000 {
+		itemsPerPage = 100
+	}
 	return &Client{
-		endpoint:    u,
-		client:      client,
-		serviceName: serviceName,
-		BackOff:     backoff,
+		endpoint:     u,
+		client:       client,
+		serviceName:  serviceName,
+		BackOff:      backoff,
+		itemsPerPage: itemsPerPage,
 	}, nil
 }
 
@@ -68,7 +75,9 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 		return &ResponseData{Err: err}
 	}
 	if p == nil {
-		p = &pagination.Pagination{ItemsPerPage: 100}
+		p = &pagination.Pagination{ItemsPerPage: c.itemsPerPage}
+	} else {
+		p.ItemsPerPage = c.itemsPerPage
 	}
 	if data.Headers == nil {
 		data.Headers = map[string]string{}
