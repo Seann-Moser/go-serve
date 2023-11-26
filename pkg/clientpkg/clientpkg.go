@@ -65,8 +65,7 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 		}
 		return nil
 	})
-
-	return nil
+	return
 }
 
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
