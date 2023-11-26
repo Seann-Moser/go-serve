@@ -66,6 +66,9 @@ func (i *Iterator[T]) Next() bool {
 		if !i.getPages() {
 			return false
 		}
+		if len(i.currentPages) == 0 {
+			return false
+		}
 		i.current = i.currentPages[i.currentItem-i.offset]
 		return true
 	}
