@@ -1,0 +1,120 @@
+package clientpkg
+
+import (
+	"context"
+	"encoding/json"
+	"github.com/Seann-Moser/go-serve/pkg/pagination"
+)
+
+type Request func(ctx context.Context, data RequestData, page *pagination.Pagination) ([]byte, *pagination.Pagination, error)
+
+type Iterator[T any] struct {
+	ctx          context.Context
+	itemsPerPage uint
+	request      Request
+	err          error
+
+	current     *T
+	currentItem int
+	currentPage uint
+
+	totalItems   int
+	offset       int
+	currentPages []*T
+
+	RequestData RequestData
+}
+
+func NewIterator[T any](ctx context.Context, request Request, data RequestData, itemsPerPage int) *Iterator[T] {
+	if itemsPerPage < 0 || itemsPerPage > 1000 {
+		itemsPerPage = 100
+	}
+	return &Iterator[T]{
+		ctx:          ctx,
+		itemsPerPage: uint(itemsPerPage),
+		request:      request,
+		currentPages: make([]*T, 0),
+		RequestData:  data,
+	}
+}
+
+func (i *Iterator[T]) Current() *T {
+	if i.current == nil {
+		if i.currentItem-i.offset >= len(i.currentPages) {
+			return nil
+		}
+		i.current = i.currentPages[i.currentItem-i.offset]
+	}
+	return i.current
+}
+
+func (i *Iterator[T]) Err() error {
+	return i.err
+}
+
+func (i *Iterator[T]) FullList() ([]*T, error) {
+	var fullList []*T
+	for i.Next() {
+		current := i.Current()
+		if current != nil {
+			fullList = append(fullList, current)
+		}
+	}
+	if i.Err() != nil {
+		return nil, i.Err()
+	}
+	return fullList, nil
+}
+
+func (i *Iterator[T]) Next() bool {
+	if i.totalItems == 0 {
+		if !i.getPages() {
+			return false
+		}
+		i.current = i.currentPages[i.currentItem-i.offset]
+		return true
+	}
+	if i.currentItem < i.totalItems {
+		i.currentItem += 1
+		if i.currentItem-i.offset >= len(i.currentPages) {
+			if !i.getPages() {
+				return false
+			}
+		}
+		if i.currentItem-i.offset >= len(i.currentPages) {
+			return false
+		}
+		i.current = i.currentPages[i.currentItem-i.offset]
+		return true
+	}
+	return false
+}
+
+func (i *Iterator[T]) getPages() bool {
+	data, page, err := i.request(i.ctx, i.RequestData, i.nextPage())
+	if err != nil {
+		i.err = err
+		return false
+	} else {
+		i.err = json.Unmarshal(data, &i.currentPages)
+		i.totalItems = int(page.TotalItems)
+
+		i.offset = int((page.CurrentPage - 1) * page.ItemsPerPage)
+	}
+	if i.err != nil {
+		return false
+	}
+	return true
+}
+
+func (i *Iterator[T]) nextPage() *pagination.Pagination {
+	if i.currentPage <= 0 {
+		i.currentPage = 1
+	}
+	page := &pagination.Pagination{
+		CurrentPage:  i.currentPage,
+		ItemsPerPage: i.itemsPerPage,
+	}
+	i.currentPage += 1
+	return page
+}

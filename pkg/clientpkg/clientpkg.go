@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 	"io"
+	"strconv"
 
 	"net/http"
 	"net/url"
@@ -49,44 +49,37 @@ func New(endpoint, serviceName string, client *http.Client) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) SendRequestToEndpoint(ctx context.Context, endpoint *endpoints.Endpoint, method string, body interface{}, params map[string]string, headers map[string]string) ([]byte, *pagination.Pagination, error) {
-	return c.SendRequest(ctx, endpoint.URLPath, method, body, params, headers)
-}
-
-func GetResponse[T any](body []byte, page *pagination.Pagination, err error) (T, error) {
-	var d T
-	if err != nil {
-		return d, err
-	}
-	err = json.Unmarshal(body, &d)
-	if err != nil {
-		return d, err
-	}
-	return d, nil
-}
-
-func (c *Client) SendRequest(ctx context.Context, path string, method string, body interface{}, params map[string]string, headers map[string]string) ([]byte, *pagination.Pagination, error) {
-	u, err := url.JoinPath(c.endpoint.String(), path)
+func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) ([]byte, *pagination.Pagination, error) {
+	u, err := url.JoinPath(c.endpoint.String(), data.Path)
 	if err != nil {
 		return nil, nil, err
 	}
+	if data.Headers == nil {
+		data.Headers = map[string]string{}
+	}
+	if data.Params == nil {
+		data.Params = map[string]string{}
+	}
 	var rawBody []byte
-	if body != nil {
-		rawBody, err = json.Marshal(body)
+	if data.Body != nil {
+		rawBody, err = json.Marshal(data.Body)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, u, bytes.NewReader(rawBody))
+	req, err := http.NewRequestWithContext(ctx, data.Method, u, bytes.NewReader(rawBody))
 	if err != nil {
 		return nil, nil, err
 	}
-	for k, v := range headers {
+	for k, v := range data.Headers {
 		req.Header.Set(k, v)
 	}
 	queryParams := url.Values{}
-	for k, v := range params {
+	data.Params["items_per_page"] = strconv.Itoa(int(p.ItemsPerPage))
+	data.Params["page"] = strconv.Itoa(int(p.CurrentPage))
+
+	for k, v := range data.Params {
 		queryParams.Add(k, v)
 	}
 	req.URL.RawQuery = queryParams.Encode()
