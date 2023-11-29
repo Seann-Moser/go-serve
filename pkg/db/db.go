@@ -2,8 +2,10 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/opencensus-integrations/ocsql"
 	"net/http"
 	"reflect"
 	"time"
@@ -33,6 +35,8 @@ const (
 	DBMaxConnectionsFlag     = "db-max-connections"
 	DBUpdateTablesFlag       = "db-update-table"
 	DBMaxConnectionRetryFlag = "db-max-connection-retry"
+	DBInstanceName           = "db-instance-name"
+	DBWriteStatDuration      = "db-write-stat-interval"
 )
 
 func GetDaoFlags() *pflag.FlagSet {
@@ -40,10 +44,13 @@ func GetDaoFlags() *pflag.FlagSet {
 	fs.String(DBUserNameFlag, "", "")
 	fs.String(DBPasswordFlag, "", "")
 	fs.String(DBHostFlag, "mysql", "")
+	fs.String(DBInstanceName, "resource", "ocsql instance name")
+
 	fs.Int(DBPortFlag, 3306, "")
 	fs.Int(DBMaxConnectionsFlag, 10, "")
 	fs.Int(DBMaxConnectionRetryFlag, 10, "")
 	fs.Bool(DBUpdateTablesFlag, false, "")
+	fs.Duration(DBWriteStatDuration, 30*time.Second, "")
 
 	return fs
 }
@@ -98,8 +105,11 @@ func NewSQLDao(ctx context.Context) (*DAO, error) {
 		viper.GetString(DBUserNameFlag),
 		viper.GetString(DBPasswordFlag),
 		viper.GetString(DBHostFlag),
+		viper.GetString(DBInstanceName),
 		viper.GetInt(DBPortFlag),
-		viper.GetInt(DBMaxConnectionsFlag))
+		viper.GetInt(DBMaxConnectionsFlag),
+		viper.GetDuration(DBWriteStatDuration),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +141,7 @@ func getType(myVar interface{}) string {
 		return t.Name()
 	}
 }
-func connectToDB(ctx context.Context, user, password, host string, port, maxConnections int) (*sqlx.DB, error) {
+func connectToDB(ctx context.Context, user, password, host, instanceName string, port, maxConnections int, writeStatDuration time.Duration) (*sqlx.DB, error) {
 	dbConf := mysql.Config{
 		AllowNativePasswords:    true,
 		User:                    user,
@@ -144,17 +154,28 @@ func connectToDB(ctx context.Context, user, password, host string, port, maxConn
 	}
 	//dns := fmt.Sprintf("%s:%s@tcp(%s:%d)/", user, password, host, port)
 	ctxLogger.Info(ctx, "connecting to db", zap.String("dsn", dbConf.FormatDSN()))
-
-	db, err := sqlx.Open("mysql", dbConf.FormatDSN())
+	driverName, err := ocsql.Register("mysql", ocsql.WithAllTraceOptions(), ocsql.WithInstanceName(instanceName))
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(maxConnections)
+	sqlDb, err := sql.Open(driverName, dbConf.FormatDSN())
+	if err != nil {
+		return nil, err
+	}
+	sqlDb.SetMaxOpenConns(maxConnections)
+
+	sqlx.NewDb(sqlDb, "mysql")
+	db := sqlx.NewDb(sqlDb, "mysql")
+
 	if err = db.Ping(); err == nil {
 		return db, nil
 	}
 	var retries int
 	ticker := time.NewTicker(5 * time.Second)
+	if writeStatDuration != 0 {
+		defer ocsql.RecordStats(sqlDb, writeStatDuration)()
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
