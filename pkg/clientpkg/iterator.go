@@ -21,6 +21,7 @@ type Iterator[T any] struct {
 	totalItems   int
 	offset       int
 	currentPages []*T
+	singlePage   bool
 
 	RequestData RequestData
 	message     string
@@ -72,6 +73,9 @@ func (i *Iterator[T]) FullList() ([]*T, error) {
 }
 
 func (i *Iterator[T]) Next() bool {
+	if i.singlePage {
+		return false
+	}
 	if i.totalItems == 0 {
 		if !i.getPages() {
 			return false
@@ -118,8 +122,9 @@ func (i *Iterator[T]) getPages() bool {
 			if tmpErr != nil {
 				return false
 			}
+			i.singlePage = true
 			i.currentPages = []*T{&single}
-			return false
+			return true
 		}
 		i.totalItems = int(data.Page.TotalItems)
 
