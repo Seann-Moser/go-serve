@@ -98,7 +98,7 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 		return &ResponseData{Err: err}
 	}
 	for k, v := range data.Headers {
-		req.Header.Set(snakeCaseToCamelCase(ToSnakeCase(k)), v)
+		req.Header.Set(snakeCaseToHeader(ToSnakeCase(k)), v)
 	}
 	queryParams := url.Values{}
 	data.Params["items_per_page"] = strconv.Itoa(int(p.ItemsPerPage))
