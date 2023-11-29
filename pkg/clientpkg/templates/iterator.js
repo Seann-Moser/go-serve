@@ -1,9 +1,13 @@
 export class Iterator {
-    constructor(axios,path,config,responseData){
+    constructor(axios,path,config,responseData,page){
         this.axios = axios
         this.config = config
         this.path = path
-        this.responseData = responseData
+        if (this.responseData !== null){
+            console.log(this.responseData)
+            this.responseData = new IteratorResponseData(responseData)
+            console.log(this.responseData)
+        }
 
         this.currentPages = []
         this.current=null
@@ -13,7 +17,12 @@ export class Iterator {
         this.offset = 0
         this.singlePage=false
         this.currentItem = 0
-        this.pagination = new Pagination(null)
+        if (page !== null){
+            this.pagination = page
+        }else{
+            this.pagination = new Pagination(null)
+        }
+
     }
 
     /**
@@ -162,18 +171,23 @@ export class Iterator {
      *
      * @returns {boolean}
      */
-    getPages(){
+    async getPages(){
         this.config.params["items_per_page"] = this.pagination.ItemsPerPage
         this.config.params["page"] = this.pagination.CurrentPage
-        const promise = this.axios(this.path,this.config)
-        const dataPromise = promise.then((response) => response.data)
-        this.err = promise.catch(err => err)
-        const responseData = new IteratorResponseData(dataPromise)
-        this.pagination = responseData.Page
+        try {
+            const data = await this.axios(this.path,this.config)
+            const responseData = new IteratorResponseData(data)
+            this.pagination = responseData.Page
 
-        this.currentPages = responseData.Data
-        this.offset = (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage
-        return this.err === null
+            this.currentPages = responseData.Data
+            this.offset = (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage
+            return true
+        }
+        catch(err) {
+            this.err = err
+
+            return false
+        }
     }
 
 }
