@@ -37,6 +37,7 @@ type Endpoint struct {
 	ResponseTypeMap map[string]interface{} `json:"-" db:"-"`
 	Headers         []string               `json:"-" db:"-"`
 	QueryParams     []string               `json:"-" db:"-"`
+	SkipGenerate    bool                   `json:"-" db:"-"`
 }
 
 func (e *Endpoint) SetResponseType(i interface{}, methods ...string) *Endpoint {
