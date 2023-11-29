@@ -33,6 +33,7 @@ type ResponseData struct {
 	Message string
 	Err     error
 	Data    []byte
+	Cookies []*http.Cookie
 }
 
 func NewResponseData(resp *http.Response, err error) *ResponseData {
@@ -70,6 +71,8 @@ func NewResponseData(resp *http.Response, err error) *ResponseData {
 			return rd
 		}
 	}
+	resp.Cookies()
+	rd.Cookies = resp.Cookies()
 	rd.Data = []byte(gjson.GetBytes(responseData, "data").Raw)
 	return rd
 }
