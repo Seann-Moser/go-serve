@@ -66,6 +66,30 @@ func MergeMap[T any](m1, m2 map[string]T) map[string]T {
 }
 
 func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.Endpoint) (string, error) {
+	currentPath, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	homeDir = path.Join(homeDir, "go", "src") + "/"
+
+	rootDir := ""
+	count := 0
+
+	for _, i := range strings.Split(strings.ReplaceAll(currentPath, homeDir, ""), "/") {
+		rootDir = path.Join(rootDir, i)
+		if count > 1 {
+
+			break
+		}
+		count++
+	}
+	_, projectName := path.Split(rootDir)
+	envVarName := snakeCaseToCamelCase(ToSnakeCase(GetFlagWithPrefix("base-url", projectName)))
+	envVarName = strings.ToLower(envVarName[:1]) + envVarName[1:]
 	var functions []string
 	var imports []string
 	var jsFunctions []string
@@ -91,7 +115,7 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 
 			functions = append(functions, output)
 		}
-		cfList = JSNewClientFunc(e)
+		cfList = JSNewClientFunc(envVarName, e)
 		for _, cf := range cfList {
 			output, err := templateReplaceData(jsFunctionTemplate, cf)
 			if err != nil {
@@ -107,28 +131,8 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 	if err != nil {
 		return "", err
 	}
-	currentPath, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	homeDir = path.Join(homeDir, "go", "src") + "/"
-
-	rootDir := ""
-	count := 0
-	for _, i := range strings.Split(strings.ReplaceAll(currentPath, homeDir, ""), "/") {
-		rootDir = path.Join(rootDir, i)
-		if count > 1 {
-
-			break
-		}
-		count++
-	}
 	imports = RemoveDuplicateValues[string](imports)
-	_, projectName := path.Split(rootDir)
+
 	pkgName := fmt.Sprintf("%s_client", ToSnakeCase(projectName))
 	clientDir := fmt.Sprintf("pkg/%s", pkgName)
 	clientDir = path.Join(homeDir, rootDir, clientDir)
@@ -180,9 +184,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 }
 
 type ClientFunc struct {
-	Name string
-
-	Return string
+	Name          string
+	UrlEnvVarName string
+	Return        string
 
 	Path        string
 	MethodType  string
@@ -201,7 +205,7 @@ type ClientFunc struct {
 	Objects map[string][]string
 }
 
-func JSNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
+func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*ClientFunc {
 	var output []*ClientFunc
 	if endpoint.SkipGenerate {
 		return output
@@ -209,12 +213,13 @@ func JSNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 	for _, m := range endpoint.Methods {
 		re := regexp.MustCompile(`\{(.*?)\}`)
 		cf := &ClientFunc{
-			Path:        endpoint.URLPath,
-			MuxVars:     re.FindAllString(endpoint.URLPath, -1),
-			MethodType:  strings.ToUpper(m),
-			Imports:     make([]string, 0),
-			QueryParams: endpoint.QueryParams,
-			Objects:     map[string][]string{},
+			UrlEnvVarName: projectName,
+			Path:          endpoint.URLPath,
+			MuxVars:       re.FindAllString(endpoint.URLPath, -1),
+			MethodType:    strings.ToUpper(m),
+			Imports:       make([]string, 0),
+			QueryParams:   endpoint.QueryParams,
+			Objects:       map[string][]string{},
 		}
 		cf.Name = UrlToName(cf.Path)
 
