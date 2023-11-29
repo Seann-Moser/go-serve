@@ -37,6 +37,11 @@ func NewIterator[T any](ctx context.Context, request Request, data RequestData) 
 
 func (i *Iterator[T]) Current() *T {
 	if i.current == nil {
+		if len(i.currentPages) == 0 {
+			if !i.getPages() {
+				return nil
+			}
+		}
 		if i.currentItem-i.offset >= len(i.currentPages) {
 			return nil
 		}

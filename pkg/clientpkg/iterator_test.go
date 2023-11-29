@@ -29,10 +29,12 @@ func TestIterator(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	it := NewIterator[Book](context.Background(), c.SendRequest, RequestData{
 		Path:   "/book/list",
 		Method: http.MethodGet,
 	})
+	//it.Current()
 	for it.Next() {
 		println(it.Current().BookName)
 	}
