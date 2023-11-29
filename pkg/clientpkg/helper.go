@@ -152,13 +152,17 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 	}
 	functions = append([]string{starting}, functions...)
 	jsFunctions = append([]string{fmt.Sprintf(`
-export default ({$axios}, inject) => {
+export default defineNuxtPlugin((nuxtApp) => {
 	const api = {
 	%s
 	}
-	inject('%s',api)
-}
-`, strings.Join(jsFunctions, ","), projectName),
+    return {
+        provide: {
+            %s: api,
+        },
+    };
+})
+`, strings.Join(jsFunctions, ","), ToSnakeCase(projectName)),
 		class})
 
 	if write {

@@ -17,5 +17,5 @@
             {{range .QueryParams}}params["{{.}}"] = {{.}}
             {{end}}{{if .UsesQueryParams }}config.params = params{{end}}
             {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}}
-            return $axios(path,config)
+            return nuxtApp.$axios(path,config)
         }
