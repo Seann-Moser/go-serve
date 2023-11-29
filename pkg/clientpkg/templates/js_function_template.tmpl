@@ -15,7 +15,9 @@
             const path = {{.Path}}
             config.method = '{{.MethodType}}'
             config.baseURL = nuxtApp.$config.public.{{.UrlEnvVarName}}
-
+            if (pagination == null){
+                pagination = new Pagination(null)
+            }
             let params = {}
             params["items_per_page"] = pagination.ItemsPerPage
             params["page"] = pagination.ItemsPerPage{{range .QueryParams}}

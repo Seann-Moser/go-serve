@@ -159,7 +159,7 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 	}
 	functions = append([]string{starting}, functions...)
 	jsFunctions = append(
-		[]string{fmt.Sprintf(`
+		[]string{jsIterator, class, fmt.Sprintf(`
 export default defineNuxtPlugin((nuxtApp) => {
 	const api = {
 	%s
@@ -170,8 +170,7 @@ export default defineNuxtPlugin((nuxtApp) => {
         },
     };
 })
-`, strings.Join(jsFunctions, ","), ToSnakeCase(projectName)),
-			class, jsIterator})
+`, strings.Join(jsFunctions, ","), ToSnakeCase(projectName))})
 
 	if write {
 		err = os.WriteFile(path.Join(clientDir, "generated_client.go"), []byte(strings.Join(functions, "")), os.ModePerm)
