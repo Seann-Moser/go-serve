@@ -31,6 +31,9 @@ var jsFunctionTemplate string
 //go:embed templates/js_classes.tmpl
 var jsClassesTemplate string
 
+//go:embed templates/iterator.js
+var jsIterator string
+
 var (
 	matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
 	matchAllCap   = regexp.MustCompile("([a-z0-9])([A-Z])")
@@ -155,7 +158,8 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 		return "", err
 	}
 	functions = append([]string{starting}, functions...)
-	jsFunctions = append([]string{fmt.Sprintf(`
+	jsFunctions = append(
+		[]string{fmt.Sprintf(`
 export default defineNuxtPlugin((nuxtApp) => {
 	const api = {
 	%s
@@ -167,7 +171,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     };
 })
 `, strings.Join(jsFunctions, ","), ToSnakeCase(projectName)),
-		class})
+			class, jsIterator})
 
 	if write {
 		err = os.WriteFile(path.Join(clientDir, "generated_client.go"), []byte(strings.Join(functions, "")), os.ModePerm)

@@ -1,22 +1,30 @@
 
         /**
          * {{.Name}} auto generated
+         * @param {Pagination} pagination
          * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
          * {{end}}  {{range .MuxVars}}
          * @param {string} {{.}}{{end}}
          * {{if .UsesQueryParams }}{{range .QueryParams}}
          * @param {string} {{.}}
          * {{end}}{{end}}
-         * {{if .Return}}@return {{"{"}}{{.Return}}{{"}"}}{{end}}
+         * {{if .Return}}@return {{"{"}}{{.Return}}{{if .UseIterator}}Iterator{{end}}{{"}"}}{{end}}
          */
-        {{.Name}}({{if .RequestType}}{{.RequestTypeName}},{{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}} {{.}},{{end}}{{end}}){
+        {{.Name}}({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}{{.}} ,{{end}}{{end}}pagination){
             const config = {}
             const path = {{.Path}}
             config.method = '{{.MethodType}}'
             config.baseURL = nuxtApp.$config.public.{{.UrlEnvVarName}}
-            {{if .UsesQueryParams }}let params = {}{{end}}
-            {{range .QueryParams}}params["{{.}}"] = {{.}}
-            {{end}}{{if .UsesQueryParams }}config.params = params{{end}}
-            {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}}
-            return nuxtApp.$axios(path,config)
+
+            let params = {}
+            params["items_per_page"] = pagination.ItemsPerPage
+            params["page"] = pagination.ItemsPerPage{{range .QueryParams}}
+            params["{{.}}"] = {{.}}{{end}}
+
+            config.params = params
+            {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}} {{if .UseIterator}}
+            const promise = nuxtApp.$axios(path,config)
+            const dataPromise = promise.then((response) => response.data)
+            return new {{.DataTypeName}}Iterator(nuxtApp.$axios,path,config,dataPromise) {{else}}
+            return nuxtApp.$axios(path,config){{end}}
         }
