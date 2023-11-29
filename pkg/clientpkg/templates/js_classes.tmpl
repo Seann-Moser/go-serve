@@ -12,4 +12,13 @@ export class {{$i}} {
         return obj
     }
 }
+
+export class {{$i}}Iterator extends Iterator{
+    /**
+     * @return {{"{"}}{{$i}}{{"}"}}
+     */
+    GetCurrent(){
+        return new {{$i}}(super.GetCurrent())
+    }
+}
 {{end}}
