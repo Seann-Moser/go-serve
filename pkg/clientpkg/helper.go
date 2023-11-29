@@ -157,6 +157,9 @@ type ClientFunc struct {
 
 func NewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 	var output []*ClientFunc
+	if endpoint.SkipGenerate {
+		return output
+	}
 	for _, m := range endpoint.Methods {
 		re := regexp.MustCompile(`\{(.*?)\}`)
 		cf := &ClientFunc{
