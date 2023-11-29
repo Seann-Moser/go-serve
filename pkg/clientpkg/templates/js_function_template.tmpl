@@ -25,14 +25,7 @@
 
             config.params = params
             {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}} {{if .UseIterator}}
-            try {
-                const response = await nuxtApp.$axios(path,config)
-                return new {{.DataTypeName}}Iterator(nuxtApp.$axios,path,config,response,pagination)
-            }catch(err){
-                let iter = new {{.DataTypeName}}Iterator(nuxtApp.$axios,path,config,null,null)
-                iter.err = err
-                return iter
-            }{{else}}
+            return new {{.DataTypeName}}Iterator(nuxtApp.$axios,path,config,null,pagination){{else}}
 
             return nuxtApp.$axios(path,config){{end}}
         }

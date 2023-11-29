@@ -30,7 +30,7 @@ export class Iterator {
      * @param {int} itemsPerPage
      * @constructor
      */
-    SetItemsPerPage(itemsPerPage){
+    async SetItemsPerPage(itemsPerPage){
         if (itemsPerPage > 500 || itemsPerPage < 1){
             return
         }
@@ -38,7 +38,7 @@ export class Iterator {
         return this.getPages()
     }
 
-    GetCurrent(){
+    async GetCurrent(){
         if (this.current == null){
             if (this.currentPages === null || this.currentPages.length === 0){
                 if (!this.getPages()){
@@ -56,7 +56,7 @@ export class Iterator {
     /**
      * @return {array|null}
      */
-    GetPage(){
+    async GetPage(){
         if (this.currentPages === null || this.currentPages.length === 0){
             if (!this.getPages()){
                 return null
@@ -70,7 +70,7 @@ export class Iterator {
      * @returns {boolean}
      * @constructor
      */
-    GoToPage(pageNumber){
+    async GoToPage(pageNumber){
         if (this.singlePage) {
             return false
         }
@@ -89,7 +89,7 @@ export class Iterator {
      * @return {boolean}
      * @constructor
      */
-    PreviousPage(){
+    async PreviousPage(){
         if (this.singlePage) {
             return false
         }
@@ -105,7 +105,7 @@ export class Iterator {
      * @return {boolean}
      * @constructor
      */
-    NextPage(){
+    async  NextPage(){
         if (this.singlePage) {
             return false
         }
@@ -124,7 +124,7 @@ export class Iterator {
      * @returns {boolean}
      * @constructor
      */
-    Next(){
+    async Next(){
         if (this.singlePage) {
             return false
         }
@@ -194,9 +194,9 @@ export class Iterator {
 
 class IteratorResponseData {
     constructor(rawResponse) {
-        this.Data = rawResponse.data
-        this.Page = new Pagination(rawResponse["page"])
-        this.Message = rawResponse.message
+        this.Data = rawResponse.data["data"]
+        this.Page = new Pagination(rawResponse.data["page"])
+        this.Message = rawResponse.data["message"]
     }
 }
 

@@ -15,9 +15,9 @@ export class {{$i}} {
 
 export class {{$i}}Iterator extends Iterator{
     /**
-     * @return {{"{"}}{{$i}}{{"}"}}
+     * @return {{"{"}}promise<{{$i}}>{{"}"}}
      */
-    GetCurrent(){
+    async GetCurrent(){
         let data = super.GetCurrent()
         if (data === null){
             return null
