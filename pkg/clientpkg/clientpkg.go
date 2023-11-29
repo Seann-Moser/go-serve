@@ -55,7 +55,7 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 		itemsPerPage = 100
 	}
 
-	if client.Jar != nil {
+	if client.Jar == nil {
 		jar, err := cookiejar.New(nil)
 		if err != nil {
 			return nil, err
