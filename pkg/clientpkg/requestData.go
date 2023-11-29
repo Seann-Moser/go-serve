@@ -57,10 +57,12 @@ func NewResponseData(resp *http.Response, err error) *ResponseData {
 		return rd
 	}
 	rd.Page = &pagination.Pagination{}
-	err = json.Unmarshal([]byte(gjson.GetBytes(responseData, "page").Raw), &rd.Page)
-	if err != nil {
-		rd.Err = err
-		return rd
+	if data := gjson.GetBytes(responseData, "page").Raw; len(data) > 0 {
+		err = json.Unmarshal([]byte(data), &rd.Page)
+		if err != nil {
+			rd.Err = err
+			return rd
+		}
 	}
 	rd.Data = []byte(gjson.GetBytes(responseData, "data").Raw)
 	return rd

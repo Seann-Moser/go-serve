@@ -151,6 +151,7 @@ type ClientFunc struct {
 	RequestType      string
 	RequestTypeName  string
 	DataTypeName     string
+	QueryParams      []string
 
 	Imports []string
 }
@@ -163,10 +164,11 @@ func NewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 	for _, m := range endpoint.Methods {
 		re := regexp.MustCompile(`\{(.*?)\}`)
 		cf := &ClientFunc{
-			Path:       endpoint.URLPath,
-			MuxVars:    re.FindAllString(endpoint.URLPath, -1),
-			MethodType: cases.Title(language.AmericanEnglish).String(strings.ToLower(m)),
-			Imports:    make([]string, 0),
+			Path:        endpoint.URLPath,
+			MuxVars:     re.FindAllString(endpoint.URLPath, -1),
+			MethodType:  cases.Title(language.AmericanEnglish).String(strings.ToLower(m)),
+			Imports:     make([]string, 0),
+			QueryParams: endpoint.QueryParams,
 		}
 		cf.Name = UrlToName(cf.Path)
 
