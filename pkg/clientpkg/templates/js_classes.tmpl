@@ -1,0 +1,15 @@
+{{ range $i, $k := . }}
+export class {{$i}} {
+    constructor(json){
+        {{range $j, $v := $k}}this.{{$v}} = json.{{$v}}
+        {{end}}
+    }
+
+    serialize(){
+        const obj = {}
+        {{range $j, $v := $k}}obj.{{$v}} = this.{{$v}}
+        {{end}}
+        return obj
+    }
+}
+{{end}}

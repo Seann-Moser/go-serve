@@ -19,11 +19,17 @@ import (
 	"github.com/Seann-Moser/go-serve/server/endpoints"
 )
 
-//go:embed templates/function_template.tmpl
+//go:embed templates/go_function_template.tmpl
 var functionTemplate string
 
 //go:embed templates/struct_template.tmpl
 var startingTemplate string
+
+//go:embed templates/js_function_template.tmpl
+var jsFunctionTemplate string
+
+//go:embed templates/js_classes.tmpl
+var jsClassesTemplate string
 
 var (
 	matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
@@ -62,6 +68,9 @@ func MergeMap[T any](m1, m2 map[string]T) map[string]T {
 func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.Endpoint) (string, error) {
 	var functions []string
 	var imports []string
+	var jsFunctions []string
+
+	var objects map[string][]string
 	imports = append(imports, []string{
 		`"context"`,
 		`"fmt"`,
@@ -70,8 +79,9 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 		`clientpkg "github.com/Seann-Moser/go-serve/pkg/clientpkg"`,
 		`"github.com/spf13/viper"`,
 	}...)
+
 	for _, e := range endpoints {
-		cfList := NewClientFunc(e)
+		cfList := GoNewClientFunc(e)
 		for _, cf := range cfList {
 			output, err := templateReplaceData(functionTemplate, cf)
 			if err != nil {
@@ -81,7 +91,21 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 
 			functions = append(functions, output)
 		}
+		cfList = JSNewClientFunc(e)
+		for _, cf := range cfList {
+			output, err := templateReplaceData(jsFunctionTemplate, cf)
+			if err != nil {
+				return "", err
+			}
+			jsFunctions = append(jsFunctions, output)
+			objects = MergeMap[[]string](cf.Objects, objects)
+		}
 
+	}
+
+	class, err := templateReplaceClasses(jsClassesTemplate, objects)
+	if err != nil {
+		return "", err
 	}
 	currentPath, err := os.Getwd()
 	if err != nil {
@@ -127,8 +151,23 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 		return "", err
 	}
 	functions = append([]string{starting}, functions...)
+	jsFunctions = append([]string{fmt.Sprintf(`
+export default ({$axios}, inject) => {
+	const api = {
+	%s
+	}
+	inject('%s',api)
+}
+`, strings.Join(jsFunctions, ","), projectName),
+		class})
+
 	if write {
 		err = os.WriteFile(path.Join(clientDir, "generated_client.go"), []byte(strings.Join(functions, "")), os.ModePerm)
+		if err != nil {
+			return "", err
+		}
+
+		err = os.WriteFile(path.Join(clientDir, "generated_client.js"), []byte(strings.Join(jsFunctions, "")), os.ModePerm)
 		if err != nil {
 			return "", err
 		}
@@ -154,9 +193,109 @@ type ClientFunc struct {
 	QueryParams      []string
 
 	Imports []string
+
+	Objects map[string][]string
 }
 
-func NewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
+func JSNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
+	var output []*ClientFunc
+	if endpoint.SkipGenerate {
+		return output
+	}
+	for _, m := range endpoint.Methods {
+		re := regexp.MustCompile(`\{(.*?)\}`)
+		cf := &ClientFunc{
+			Path:        endpoint.URLPath,
+			MuxVars:     re.FindAllString(endpoint.URLPath, -1),
+			MethodType:  strings.ToUpper(m),
+			Imports:     make([]string, 0),
+			QueryParams: endpoint.QueryParams,
+			Objects:     map[string][]string{},
+		}
+		cf.Name = UrlToName(cf.Path)
+
+		if requestType, found := endpoint.RequestTypeMap[strings.ToUpper(m)]; found {
+			//	fullPkg := getTypePkg(requestType)
+			//	_, pkg := path.Split(fullPkg)
+			cf.RequestType = fmt.Sprintf("%s", getType(requestType))
+			normalName := snakeCaseToCamelCase(ToSnakeCase(getType(requestType)))
+			n := strings.ToLower(normalName[:1]) + normalName[1:]
+			cf.RequestTypeName = n
+			//cf.Imports = append(cf.Imports, fmt.Sprintf(`import %s from "%s"`, pkg, fullPkg))
+			if _, found := cf.Objects[normalName]; !found {
+				cf.Objects[normalName] = GetObject(requestType)
+			}
+		}
+		if responseType, found := endpoint.ResponseTypeMap[strings.ToUpper(m)]; found {
+			fullPkg := getTypePkg(responseType)
+			_, pkg := path.Split(fullPkg)
+			cf.DataTypeName = fmt.Sprintf("%s", getType(responseType))
+			cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+
+			cf.Return = strings.Join([]string{fmt.Sprintf("%s", cf.DataTypeName)}, ",")
+			cf.UseIterator = true
+			if _, found := cf.Objects[cf.Return]; !found {
+				cf.Objects[cf.Return] = GetObject(responseType)
+			}
+		} else {
+			cf.Return = "promise"
+		}
+
+		for i := range cf.MuxVars {
+			original := cf.MuxVars[i]
+			n := snakeCaseToCamelCase(regexp.MustCompile(`[\{\}]`).ReplaceAllString(cf.MuxVars[i], ""))
+			n = strings.ToLower(n[:1]) + n[1:]
+			cf.MuxVars[i] = n
+			cf.Path = strings.ReplaceAll(cf.Path, original, fmt.Sprintf(`${%s}`, n))
+		}
+
+		if len(cf.MuxVars) == 0 {
+			cf.Path = fmt.Sprintf(`"%s"`, cf.Path)
+		} else {
+			cf.Path = fmt.Sprintf("`%s`", cf.Path)
+		}
+		if len(endpoint.Headers) > 0 {
+			cf.UsesHeaderParams = true
+		}
+		if len(endpoint.QueryParams) > 0 {
+			cf.UsesQueryParams = true
+		}
+		switch m {
+		case http.MethodGet:
+			cf.Name = "Get" + cf.Name
+		case http.MethodPost:
+			cf.Name = "New" + cf.Name
+		case http.MethodDelete:
+			cf.Name = "Delete" + cf.Name
+		//case http.MethodPatch:
+		//	cf.Name = "Update"+cf.Name
+		case http.MethodPut:
+			cf.Name = "Update" + cf.Name
+		default:
+			continue
+		}
+
+		output = append(output, cf)
+	}
+
+	return output
+}
+
+func GetObject(i interface{}) []string {
+	o := []string{}
+	structType := reflect.TypeOf(i)
+
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		name := field.Tag.Get("json")
+		if name == "" {
+			name = field.Name
+		}
+		o = append(o, name)
+	}
+	return o
+}
+func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 	var output []*ClientFunc
 	if endpoint.SkipGenerate {
 		return output
@@ -178,6 +317,8 @@ func NewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 			cf.RequestType = fmt.Sprintf("*%s.%s", pkg, getType(requestType))
 			n := snakeCaseToCamelCase(ToSnakeCase(getType(requestType)))
 			n = strings.ToLower(n[:1]) + n[1:]
+			cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+
 			cf.RequestTypeName = n
 
 		}
@@ -232,6 +373,7 @@ func NewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 
 	return output
 }
+
 func StringArray(key string, count int) []string {
 	var output []string
 	for i := 0; i < count; i++ {
@@ -239,6 +381,7 @@ func StringArray(key string, count int) []string {
 	}
 	return output
 }
+
 func UrlToName(url string) string {
 	re := regexp.MustCompile(`\{(.*?)\}`)
 	for _, d := range re.FindAllString(url, -1) {
@@ -264,6 +407,19 @@ func RemoveDuplicateValues[T comparable](intSlice []T) []T {
 	return list
 }
 
+func templateReplaceClasses(rawTmpl string, data map[string][]string) (string, error) {
+	tmpl, err := template.New("general").Parse(rawTmpl)
+	if err != nil {
+		panic(err)
+	}
+	buff := bytes.NewBufferString("")
+	err = tmpl.Execute(buff, data)
+	if err != nil {
+		panic(err)
+	}
+	return buff.String(), nil
+}
+
 func templateReplaceGenerate(rawTmpl string, data map[string]interface{}) (string, error) {
 	tmpl, err := template.New("general").Parse(rawTmpl)
 	if err != nil {
@@ -279,7 +435,7 @@ func templateReplaceGenerate(rawTmpl string, data map[string]interface{}) (strin
 func templateReplaceData(rawTmpl string, data *ClientFunc) (string, error) {
 	tmpl, err := template.New(data.Name).Parse(rawTmpl)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	buff := bytes.NewBufferString("")
 	err = tmpl.Execute(buff, data)

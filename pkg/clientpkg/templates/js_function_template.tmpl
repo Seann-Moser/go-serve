@@ -1,0 +1,21 @@
+
+        /**
+         * {{.Name}} auto generated
+         * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
+         * {{end}}  {{range .MuxVars}}
+         * @param {string} {{.}}{{end}}
+         * {{if .UsesQueryParams }}{{range .QueryParams}}
+         * @param {string} {{.}}
+         * {{end}}{{end}}
+         * {{if .Return}}@return {{"{"}}{{.Return}}{{"}"}}{{end}}
+         */
+        {{.Name}}({{if .RequestType}}{{.RequestTypeName}},{{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}} {{.}},{{end}}{{end}}){
+            const config = {}
+            const path = {{.Path}}
+            config.method = '{{.MethodType}}'
+            {{if .UsesQueryParams }}let params = {}{{end}}
+            {{range .QueryParams}}params["{{.}}"] = {{.}}
+            {{end}}{{if .UsesQueryParams }}config.params = params{{end}}
+            {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}}
+            return $axios(path,config)
+        }
