@@ -18,7 +18,11 @@ export class {{$i}}Iterator extends Iterator{
      * @return {{"{"}}{{$i}}{{"}"}}
      */
     GetCurrent(){
-        return new {{$i}}(super.GetCurrent())
+        let data = super.GetCurrent()
+        if (data === null){
+            return null
+        }
+        return new {{$i}}(data)
     }
 }
 {{end}}
