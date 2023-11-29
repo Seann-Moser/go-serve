@@ -141,6 +141,7 @@ func getType(myVar interface{}) string {
 		return t.Name()
 	}
 }
+
 func connectToDB(ctx context.Context, user, password, host, instanceName string, port, maxConnections int, writeStatDuration time.Duration) (*sqlx.DB, error) {
 	dbConf := mysql.Config{
 		AllowNativePasswords:    true,
