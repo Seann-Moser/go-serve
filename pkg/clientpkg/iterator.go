@@ -93,6 +93,7 @@ func (i *Iterator[T]) Next() bool {
 	return false
 }
 
+// todo support cookies
 func (i *Iterator[T]) getPages() bool {
 	data := i.request(i.ctx, i.RequestData, i.nextPage())
 	if data.Err != nil {
