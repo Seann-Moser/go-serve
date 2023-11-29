@@ -21,7 +21,7 @@ type Client struct {
 	serviceName  string
 	BackOff      *BackOff
 	itemsPerPage uint
-	CookieJar    *cookiejar.Jar
+	CookieJar    http.CookieJar
 	UseCookieJar bool
 }
 
@@ -54,9 +54,13 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 	if itemsPerPage < 0 || itemsPerPage > 1000 {
 		itemsPerPage = 100
 	}
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		return nil, err
+
+	if client.Jar != nil {
+		jar, err := cookiejar.New(nil)
+		if err != nil {
+			return nil, err
+		}
+		client.Jar = jar
 	}
 	return &Client{
 		endpoint:     u,
@@ -64,7 +68,7 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 		serviceName:  serviceName,
 		BackOff:      backoff,
 		itemsPerPage: itemsPerPage,
-		CookieJar:    jar,
+		CookieJar:    client.Jar,
 		UseCookieJar: useCookieJar,
 	}, nil
 }
