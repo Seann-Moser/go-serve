@@ -3,6 +3,7 @@ package clientpkg
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
 )
 
@@ -94,7 +95,20 @@ func (i *Iterator[T]) getPages() bool {
 		i.err = data.Err
 		return false
 	} else {
+		if data.Data == nil {
+			return false
+		}
 		i.err = json.Unmarshal(data.Data, &i.currentPages)
+		if i.err != nil {
+			var single T
+			//logic to read single response
+			tmpErr := json.Unmarshal(data.Data, &single)
+			if tmpErr != nil {
+				return false
+			}
+			i.currentPages = []*T{&single}
+			return false
+		}
 		i.totalItems = int(data.Page.TotalItems)
 
 		i.offset = int((data.Page.CurrentPage - 1) * data.Page.ItemsPerPage)

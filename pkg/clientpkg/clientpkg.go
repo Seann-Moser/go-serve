@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/Seann-Moser/go-serve/pkg/pagination"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-	"strconv"
-
 	"net/http"
 	"net/url"
+	"strconv"
+
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+
+	"github.com/Seann-Moser/go-serve/pkg/pagination"
 )
 
 type Client struct {
@@ -97,7 +98,7 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 		return &ResponseData{Err: err}
 	}
 	for k, v := range data.Headers {
-		req.Header.Set(k, v)
+		req.Header.Set(snakeCaseToCamelCase(ToSnakeCase(k)), v)
 	}
 	queryParams := url.Values{}
 	data.Params["items_per_page"] = strconv.Itoa(int(p.ItemsPerPage))
