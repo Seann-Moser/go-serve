@@ -25,7 +25,7 @@ type Book struct {
 }
 
 func TestIterator(t *testing.T) {
-	c, err := New("https://auth.mnlib.com", "book", 9, &http.Client{}, nil)
+	c, err := New("https://auth.mnlib.com", "book", 9, true, &http.Client{}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
