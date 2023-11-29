@@ -23,6 +23,7 @@ type Iterator[T any] struct {
 	currentPages []*T
 
 	RequestData RequestData
+	message     string
 }
 
 func NewIterator[T any](ctx context.Context, request Request, data RequestData) *Iterator[T] {
@@ -44,6 +45,9 @@ func (i *Iterator[T]) Current() *T {
 	return i.current
 }
 
+func (i *Iterator[T]) Message() string {
+	return i.message
+}
 func (i *Iterator[T]) Err() error {
 	return i.err
 }
@@ -95,7 +99,7 @@ func (i *Iterator[T]) getPages() bool {
 		i.err = data.Err
 		return false
 	} else {
-		if data.Data == nil {
+		if len(data.Data) == 0 {
 			return false
 		}
 		i.err = json.Unmarshal(data.Data, &i.currentPages)

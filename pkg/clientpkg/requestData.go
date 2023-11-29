@@ -28,10 +28,11 @@ func NewRequestData(path, method string, body interface{}, params, headers map[s
 }
 
 type ResponseData struct {
-	Status int
-	Page   *pagination.Pagination
-	Err    error
-	Data   []byte
+	Status  int
+	Page    *pagination.Pagination
+	Message string
+	Err     error
+	Data    []byte
 }
 
 func NewResponseData(resp *http.Response, err error) *ResponseData {
@@ -47,15 +48,20 @@ func NewResponseData(resp *http.Response, err error) *ResponseData {
 		Err:    nil,
 		Data:   nil,
 	}
+	var responseData []byte
+	if resp.Body != nil {
+		responseData, err = io.ReadAll(resp.Body)
+		if err != nil {
+			rd.Err = err
+			return rd
+		}
+		rd.Message = gjson.GetBytes(responseData, "message").Raw
+	}
 	if !(resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusFound) {
 		rd.Err = fmt.Errorf("invalid Status code: %d", resp.StatusCode)
 		return rd
 	}
-	responseData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		rd.Err = err
-		return rd
-	}
+
 	rd.Page = &pagination.Pagination{}
 	if data := gjson.GetBytes(responseData, "page").Raw; len(data) > 0 {
 		err = json.Unmarshal([]byte(data), &rd.Page)
