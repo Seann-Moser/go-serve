@@ -13,6 +13,7 @@
             const config = {}
             const path = {{.Path}}
             config.method = '{{.MethodType}}'
+            config.baseURL = nuxtApp.$config.public.{{.UrlEnvVarName}}
             {{if .UsesQueryParams }}let params = {}{{end}}
             {{range .QueryParams}}params["{{.}}"] = {{.}}
             {{end}}{{if .UsesQueryParams }}config.params = params{{end}}
