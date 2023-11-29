@@ -282,7 +282,7 @@ func JSNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 }
 
 func GetObject(i interface{}) []string {
-	o := []string{}
+	var o []string
 	structType := reflect.TypeOf(i)
 
 	for i := 0; i < structType.NumField(); i++ {
@@ -291,6 +291,10 @@ func GetObject(i interface{}) []string {
 		if name == "" {
 			name = field.Name
 		}
+		if name == "-" {
+			continue
+		}
+		name = strings.ReplaceAll(name, ",omitempty", "")
 		o = append(o, name)
 	}
 	return o
