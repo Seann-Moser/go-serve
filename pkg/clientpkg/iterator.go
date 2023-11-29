@@ -97,8 +97,10 @@ func (i *Iterator[T]) getPages() bool {
 	data := i.request(i.ctx, i.RequestData, i.nextPage())
 	if data.Err != nil {
 		i.err = data.Err
+		i.message = data.Message
 		return false
 	} else {
+		i.message = data.Message
 		if len(data.Data) == 0 {
 			return false
 		}
