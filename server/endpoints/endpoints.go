@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
-	"github.com/Seann-Moser/QueryHelper"
-	"github.com/gorilla/mux"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/Seann-Moser/QueryHelper"
+	"github.com/gorilla/mux"
 )
 
 type Permission int
@@ -31,6 +32,41 @@ type Endpoint struct {
 	HandlerFunc     http.HandlerFunc `db:"-" json:"-"`
 	Handler         http.Handler     `db:"-" json:"-"`
 	Timeout         int              `json:"timeout" db:"timeout" qc:"update;default::10"`
+
+	RequestTypeMap  map[string]interface{} `json:"-" db:"-"`
+	ResponseTypeMap map[string]interface{} `json:"-" db:"-"`
+	Headers         []string               `json:"-" db:"-"`
+	QueryParams     []string               `json:"-" db:"-"`
+}
+
+func (e *Endpoint) SetResponseType(i interface{}, methods ...string) *Endpoint {
+	if e.ResponseTypeMap == nil {
+		e.ResponseTypeMap = map[string]interface{}{}
+	}
+	if len(methods) == 0 {
+		for _, m := range e.Methods {
+			e.ResponseTypeMap[strings.ToUpper(m)] = i
+		}
+	} else {
+		for _, m := range e.Methods {
+			e.ResponseTypeMap[strings.ToUpper(m)] = i
+		}
+	}
+	return e
+}
+
+func (e *Endpoint) SetRequestType(i interface{}, method string) *Endpoint {
+	if e.RequestTypeMap == nil {
+		e.RequestTypeMap = map[string]interface{}{}
+	}
+	if method == "" {
+		for _, m := range e.Methods {
+			e.RequestTypeMap[m] = i
+		}
+	} else {
+		e.RequestTypeMap[strings.ToUpper(method)] = i
+	}
+	return e
 }
 
 func NewEndpoint(prefix string, urlPath string, role string, HandlerFunc http.HandlerFunc, methods ...string) *Endpoint {
