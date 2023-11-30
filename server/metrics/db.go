@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"github.com/Seann-Moser/QueryHelper"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"github.com/opencensus-integrations/ocsql"
 	"go.opencensus.io/stats/view"
@@ -13,6 +14,7 @@ func (m *Metrics) RegisterSQL(ctx context.Context, customTags ...tag.Key) *Metri
 		ocsql.GoSQLInstance,
 		ocsql.GoSQLMethod,
 		ocsql.GoSQLStatus,
+		QueryHelper.QueryNameTag,
 		m.VersionTag(),
 	}
 

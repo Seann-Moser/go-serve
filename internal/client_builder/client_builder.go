@@ -1,18 +1,15 @@
 package client_builder
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 	"os"
 	"path"
 	"regexp"
 	"strings"
-	"text/template"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"go.uber.org/zap"
 
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 )
@@ -65,17 +62,4 @@ func ToSnakeCase(str string) string {
 	snake := matchFirstCap.ReplaceAllString(str, "${1}_${2}")
 	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
 	return strings.ToLower(snake)
-}
-
-func templateReplaceData(rawTmpl string, data map[string]string) (string, error) {
-	tmpl, err := template.New("query").Parse(rawTmpl)
-	if err != nil {
-		panic(err)
-	}
-	buff := bytes.NewBufferString("")
-	err = tmpl.Execute(buff, data)
-	if err != nil {
-		panic(err)
-	}
-	return buff.String(), nil
 }
