@@ -30,7 +30,7 @@ export class Iterator {
      * @param {int} itemsPerPage
      * @constructor
      */
-    SetItemsPerPage(itemsPerPage){
+    async SetItemsPerPage(itemsPerPage){
         if (itemsPerPage > 500 || itemsPerPage < 1){
             return
         }
@@ -38,7 +38,7 @@ export class Iterator {
         return this.getPages()
     }
 
-    GetCurrent(){
+    async GetCurrent(){
         if (this.current == null){
             if (this.currentPages === null || this.currentPages.length === 0){
                 if (!this.getPages()){
@@ -56,7 +56,7 @@ export class Iterator {
     /**
      * @return {array|null}
      */
-    GetPage(){
+    async GetPage(){
         if (this.currentPages === null || this.currentPages.length === 0){
             if (!this.getPages()){
                 return null
@@ -70,7 +70,7 @@ export class Iterator {
      * @returns {boolean}
      * @constructor
      */
-    GoToPage(pageNumber){
+    async GoToPage(pageNumber){
         if (this.singlePage) {
             return false
         }
@@ -89,7 +89,7 @@ export class Iterator {
      * @return {boolean}
      * @constructor
      */
-    PreviousPage(){
+    async PreviousPage(){
         if (this.singlePage) {
             return false
         }
@@ -105,7 +105,7 @@ export class Iterator {
      * @return {boolean}
      * @constructor
      */
-    NextPage(){
+    async  NextPage(){
         if (this.singlePage) {
             return false
         }
@@ -124,7 +124,7 @@ export class Iterator {
      * @returns {boolean}
      * @constructor
      */
-    Next(){
+    async Next(){
         if (this.singlePage) {
             return false
         }
@@ -132,6 +132,7 @@ export class Iterator {
             if (!this.getPages()){
                 return false
             }
+            //todo check if it an array
             if (this.currentPages.length === 0){
                 return false
             }
@@ -164,6 +165,9 @@ export class Iterator {
      * @constructor
      */
     Message(){
+        if (this.message === null || this.message === ""){
+            return this.responseData.Message
+        }
         return this.message
     }
 
@@ -176,16 +180,17 @@ export class Iterator {
         this.config.params["page"] = this.pagination.CurrentPage
         try {
             const data = await this.axios(this.path,this.config)
-            const responseData = new IteratorResponseData(data)
-            this.pagination = responseData.Page
+            this.responseData = new IteratorResponseData(data)
+            this.pagination = this.responseData.Page
+            this.message = this.responseData.Message
+            this.currentPages = this.responseData.Data
 
-            this.currentPages = responseData.Data
             this.offset = (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage
             return true
         }
         catch(err) {
             this.err = err
-
+            this.message = err.Message
             return false
         }
     }
@@ -194,9 +199,18 @@ export class Iterator {
 
 class IteratorResponseData {
     constructor(rawResponse) {
-        this.Data = rawResponse.data
-        this.Page = new Pagination(rawResponse["page"])
-        this.Message = rawResponse.message
+        if ("data" in rawResponse.data) {
+            this.Data = rawResponse.data.data
+        }else{
+            this.Data = []
+        }
+        if ("page" in rawResponse.data) {
+            this.Page = new Pagination(rawResponse.data["page"])
+        }
+
+        if ("message" in rawResponse.data) {
+            this.Message = rawResponse.data.message
+        }
     }
 }
 
