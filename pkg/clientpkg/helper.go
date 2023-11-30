@@ -158,7 +158,7 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 		return "", err
 	}
 	functions = append([]string{starting}, functions...)
-	jsFunctions = append(
+	jsFunctions =
 		[]string{jsIterator, class, fmt.Sprintf(`
 export default defineNuxtPlugin((nuxtApp) => {
 	const api = {
@@ -170,7 +170,7 @@ export default defineNuxtPlugin((nuxtApp) => {
         },
     };
 })
-`, strings.Join(jsFunctions, ","), ToSnakeCase(projectName))})
+`, strings.Join(jsFunctions, ","), ToSnakeCase(projectName))}
 
 	if write {
 		err = os.WriteFile(path.Join(clientDir, "generated_client.go"), []byte(strings.Join(functions, "")), os.ModePerm)
@@ -227,9 +227,7 @@ func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*Client
 		cf.Name = UrlToName(cf.Path)
 
 		if requestType, found := endpoint.RequestTypeMap[strings.ToUpper(m)]; found {
-			//	fullPkg := getTypePkg(requestType)
-			//	_, pkg := path.Split(fullPkg)
-			cf.RequestType = fmt.Sprintf("%s", getType(requestType))
+			cf.RequestType = getType(requestType)
 			normalName := snakeCaseToCamelCase(ToSnakeCase(getType(requestType)))
 			n := strings.ToLower(normalName[:1]) + normalName[1:]
 			cf.RequestTypeName = n
@@ -241,10 +239,10 @@ func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*Client
 		if responseType, found := endpoint.ResponseTypeMap[strings.ToUpper(m)]; found {
 			fullPkg := getTypePkg(responseType)
 			_, pkg := path.Split(fullPkg)
-			cf.DataTypeName = fmt.Sprintf("%s", getType(responseType))
+			cf.DataTypeName = getType(responseType)
 			cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
 
-			cf.Return = strings.Join([]string{fmt.Sprintf("%s", cf.DataTypeName)}, ",")
+			cf.Return = strings.Join([]string{cf.DataTypeName}, ",")
 			cf.UseIterator = true
 			if _, found := cf.Objects[cf.Return]; !found {
 				cf.Objects[cf.Return] = GetObject(responseType)

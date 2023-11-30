@@ -51,7 +51,7 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 	if err != nil {
 		return nil, err
 	}
-	if itemsPerPage < 0 || itemsPerPage > 1000 {
+	if itemsPerPage == 0 || itemsPerPage > 1000 {
 		itemsPerPage = 100
 	}
 

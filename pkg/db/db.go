@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/opencensus-integrations/ocsql"
+	"go.uber.org/multierr"
 	"net/http"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/Seann-Moser/QueryHelper"
@@ -25,6 +27,7 @@ type DAO struct {
 	updateColumns bool
 	ctx           context.Context
 	tablesNames   []string
+	tableColumns  map[string]map[string]*QueryHelper.Column
 }
 
 const (
@@ -58,7 +61,8 @@ func GetDaoFlags() *pflag.FlagSet {
 func (d *DAO) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if d.ctx != nil {
-			ctx, err := QueryHelper.WithTableContext(r.Context(), d.ctx, d.tablesNames...)
+			daoCtx := context.WithValue(r.Context(), "go-serve-dao", d) //nolint staticcheck
+			ctx, err := QueryHelper.WithTableContext(daoCtx, d.ctx, d.tablesNames...)
 			if err == nil {
 				r = r.WithContext(ctx)
 			}
@@ -72,12 +76,39 @@ func (d *DAO) GetContext() context.Context {
 
 func (d *DAO) AddTablesToCtx(ctx context.Context) context.Context {
 	if d.ctx != nil {
-		ctx, err := QueryHelper.WithTableContext(ctx, d.ctx, d.tablesNames...)
+		daoCtx := context.WithValue(ctx, "go-serve-dao", d) //nolint staticcheck
+		ctx, err := QueryHelper.WithTableContext(daoCtx, d.ctx, d.tablesNames...)
 		if err == nil {
 			return ctx
 		}
 	}
 	return d.ctx
+}
+func GetDao(ctx context.Context) (*DAO, error) {
+	value := ctx.Value("go-serve-dao")
+	if value == nil {
+		return nil, errors.New("unable to get dao from context")
+	}
+	return value.(*DAO), nil
+}
+
+func DeleteAll[T any](ctx context.Context, i T) error {
+	table, err := QueryHelper.GetTableCtx[T](ctx)
+	if err != nil {
+		return err
+	}
+	dao, err := GetDao(ctx)
+	if err != nil {
+		return err
+	}
+	for tableName, columns := range dao.tableColumns {
+		tmpErr := table.DeleteWithColumns(ctx, tableName, columns, i)
+		if err != nil && !strings.Contains(tmpErr.Error(), "could not find") {
+			err = multierr.Combine(err, tmpErr)
+		}
+	}
+
+	return err
 }
 
 //func (d *DAO) ContextWithTransaction(ctx context.Context) (context.Context, error) {
@@ -114,7 +145,12 @@ func NewSQLDao(ctx context.Context) (*DAO, error) {
 		return nil, err
 	}
 
-	return &DAO{db: QueryHelper.NewSql(db), updateColumns: viper.GetBool(DBUpdateTablesFlag), tablesNames: make([]string, 0)}, nil
+	return &DAO{
+		db:            QueryHelper.NewSql(db),
+		updateColumns: viper.GetBool(DBUpdateTablesFlag),
+		tablesNames:   make([]string, 0),
+		tableColumns:  map[string]map[string]*QueryHelper.Column{},
+	}, nil
 }
 
 func AddTable[T any](ctx context.Context, dao *DAO, datasetName string, queryType QueryHelper.QueryType) (context.Context, error) {
@@ -129,6 +165,10 @@ func AddTable[T any](ctx context.Context, dao *DAO, datasetName string, queryTyp
 		return nil, err
 	}
 	dao.tablesNames = append(dao.tablesNames, table.Name)
+	if _, found := dao.tableColumns[table.FullTableName()]; !found {
+		dao.tableColumns[table.FullTableName()] = table.Columns
+	}
+
 	ctxLogger.Debug(ctx, "adding table", zap.String("table", table.FullTableName()))
 	dao.ctx = tmpCtx
 	return tmpCtx, nil
