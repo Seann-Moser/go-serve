@@ -10,7 +10,7 @@
          * {{end}}{{end}}
          * {{if .Return}}@return {{"{"}}{{.Return}}{{if .UseIterator}}Iterator{{end}}{{"}"}}{{end}}
          */
-        async {{.Name}}({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}{{.}} ,{{end}}{{end}}pagination){
+        {{.Name}}({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}{{.}} ,{{end}}{{end}}pagination){
             const config = {}
             const path = {{.Path}}
             config.method = '{{.MethodType}}'

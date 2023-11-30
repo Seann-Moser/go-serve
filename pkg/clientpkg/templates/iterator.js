@@ -1,12 +1,13 @@
 export class Iterator {
+    //todo look up better way of doing an async iterator in js
     constructor(axios,path,config,responseData,page){
         this.axios = axios
         this.config = config
         this.path = path
-        if (this.responseData !== null){
-            console.log(this.responseData)
+        if (responseData !== null){
             this.responseData = new IteratorResponseData(responseData)
-            console.log(this.responseData)
+        }else{
+            this.responseData = null
         }
 
         this.currentPages = []
@@ -54,7 +55,7 @@ export class Iterator {
     }
 
     /**
-     * @return {array|null}
+     * @return {promise<array>|promise<null>}
      */
     async GetPage(){
         if (this.currentPages === null || this.currentPages.length === 0){
@@ -67,12 +68,12 @@ export class Iterator {
 
     /**
      * @param {int} pageNumber
-     * @returns {boolean}
+     * @returns {promise<array>}
      * @constructor
      */
     async GoToPage(pageNumber){
         if (this.singlePage) {
-            return false
+            return null
         }
         this.pagination.CurrentPage = pageNumber
         if (this.pagination.CurrentPage < 1){
@@ -81,33 +82,35 @@ export class Iterator {
         if (this.pagination.CurrentPage > this.pagination.TotalPages){
             this.pagination.CurrentPage = this.pagination.TotalPages
         }
-        return this.getPages()
+        this.getPages();
+        return this.currentPages
     }
 
     /**
      *
-     * @return {boolean}
+     * @return {promise<array>}
      * @constructor
      */
     async PreviousPage(){
         if (this.singlePage) {
-            return false
+            return null
         }
         this.pagination.CurrentPage -= 1
         if (this.pagination.CurrentPage < 1){
             this.pagination.CurrentPage = 1
         }
-        return this.getPages()
+        this.getPages();
+        return this.currentPages
     }
 
     /**
      *
-     * @return {boolean}
+     * @return {promise<array>}
      * @constructor
      */
-    async  NextPage(){
+    async NextPage(){
         if (this.singlePage) {
-            return false
+            return null
         }
         this.pagination.CurrentPage += 1
         if (this.pagination.CurrentPage < 1){
@@ -116,43 +119,44 @@ export class Iterator {
         if (this.pagination.CurrentPage > this.pagination.CurrentPage){
             this.pagination.CurrentPage = this.pagination.TotalPages
         }
-        return this.getPages();
+        this.getPages();
+        return this.currentPages
 
     }
     /**
      *
-     * @returns {boolean}
+     * @returns {promise}
      * @constructor
      */
     async Next(){
         if (this.singlePage) {
-            return false
+            return null
         }
         if (this.pagination.TotalItems === 0){
             if (!this.getPages()){
-                return false
+                return null
             }
             //todo check if it an array
             if (this.currentPages.length === 0){
-                return false
+                return null
             }
             this.current = this.currentPages[this.currentItem - this.offset]
-            return true
+            return this.current
         }
         if (this.currentItem < this.pagination.TotalItems) {
             this.currentItem += 1
             if (this.currentItem-this.offset >= this.currentPages.length){
                 if (!this.NextPage()){
-                    return false
+                    return null
                 }
             }
             if (this.currentItem-this.offset >= this.currentPages.length){
-                return false
+                return null
             }
             this.current = this.currentPages[this.currentItem - this.offset]
-            return true
+            return this.current
         }
-        return false
+        return null
     }
 
     Err(){
@@ -161,12 +165,15 @@ export class Iterator {
 
     /**
      *
-     * @returns {string}
+     * @returns {promise<string>}
      * @constructor
      */
-    Message(){
+    async Message(){
         if (this.message === null || this.message === ""){
-            return this.responseData.Message
+            if (this.responseData !== null){
+                return this.responseData.Message
+            }
+
         }
         return this.message
     }
@@ -181,7 +188,9 @@ export class Iterator {
         try {
             const data = await this.axios(this.path,this.config)
             this.responseData = new IteratorResponseData(data)
-            this.pagination = this.responseData.Page
+            if (!(this.responseData.Page === undefined || this.responseData.Page === null)){
+                this.pagination = this.responseData.Page
+            }
             this.message = this.responseData.Message
             this.currentPages = this.responseData.Data
 
