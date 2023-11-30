@@ -36,7 +36,7 @@ export class Iterator {
             return
         }
         this.pagination.ItemsPerPage = itemsPerPage
-        return this.getPages()
+        return new Promise(resolve => resolve(this.currentPages))
     }
 
     async GetCurrent(){
@@ -45,13 +45,18 @@ export class Iterator {
                 if (!this.getPages()){
                     return null
                 }
+                if (!Array.isArray(this.currentPages)){
+                    this.singlePage = true
+                    this.current = this.currentPages
+                    return new Promise(resolve => resolve(this.current))
+                }
             }
             if (this.currentItem - this.offset >= this.currentPages.length){
                 return null
             }
             this.current = this.currentPages[this.currentItem - this.offset ]
         }
-        return this.current
+        return new Promise(resolve => resolve(this.current))
     }
 
     /**
@@ -63,7 +68,12 @@ export class Iterator {
                 return null
             }
         }
-        return this.currentPages
+        if (!Array.isArray(this.currentPages)){
+            this.singlePage = true
+            this.current = this.currentPages
+            return new Promise(resolve => resolve(this.current))
+        }
+        return new Promise(resolve => resolve(this.currentPages))
     }
 
     /**
@@ -83,7 +93,7 @@ export class Iterator {
             this.pagination.CurrentPage = this.pagination.TotalPages
         }
         this.getPages();
-        return this.currentPages
+        return new Promise(resolve => resolve(this.currentPages))
     }
 
     /**
@@ -100,7 +110,7 @@ export class Iterator {
             this.pagination.CurrentPage = 1
         }
         this.getPages();
-        return this.currentPages
+        return new Promise(resolve => resolve(this.currentPages))
     }
 
     /**
@@ -120,7 +130,7 @@ export class Iterator {
             this.pagination.CurrentPage = this.pagination.TotalPages
         }
         this.getPages();
-        return this.currentPages
+        return new Promise(resolve => resolve(this.currentPages))
 
     }
     /**
@@ -136,12 +146,17 @@ export class Iterator {
             if (!this.getPages()){
                 return null
             }
+            if (!Array.isArray(this.currentPages)){
+                this.singlePage = true
+                this.current = this.currentPages
+                return new Promise(resolve => resolve(this.current))
+            }
             //todo check if it an array
             if (this.currentPages.length === 0){
                 return null
             }
             this.current = this.currentPages[this.currentItem - this.offset]
-            return this.current
+            return new Promise(resolve => resolve(this.current))
         }
         if (this.currentItem < this.pagination.TotalItems) {
             this.currentItem += 1
@@ -154,7 +169,7 @@ export class Iterator {
                 return null
             }
             this.current = this.currentPages[this.currentItem - this.offset]
-            return this.current
+            return new Promise(resolve => resolve(this.current))
         }
         return null
     }
@@ -171,11 +186,11 @@ export class Iterator {
     async Message(){
         if (this.message === null || this.message === ""){
             if (this.responseData !== null){
-                return this.responseData.Message
+                return new Promise(resolve => resolve(this.responseData.Message))
             }
 
         }
-        return this.message
+        return new Promise(resolve => resolve(this.message))
     }
 
     /**
@@ -193,7 +208,11 @@ export class Iterator {
             }
             this.message = this.responseData.Message
             this.currentPages = this.responseData.Data
-
+            if (!Array.isArray(this.currentPages)){
+                this.singlePage = true
+                this.current = this.currentPages
+                return true
+            }
             this.offset = (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage
             return true
         }
