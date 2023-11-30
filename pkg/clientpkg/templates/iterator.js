@@ -132,6 +132,7 @@ export class Iterator {
             if (!this.getPages()){
                 return false
             }
+            //todo check if it an array
             if (this.currentPages.length === 0){
                 return false
             }
@@ -164,6 +165,9 @@ export class Iterator {
      * @constructor
      */
     Message(){
+        if (this.message === null || this.message === ""){
+            return this.responseData.Message
+        }
         return this.message
     }
 
@@ -176,16 +180,17 @@ export class Iterator {
         this.config.params["page"] = this.pagination.CurrentPage
         try {
             const data = await this.axios(this.path,this.config)
-            const responseData = new IteratorResponseData(data)
-            this.pagination = responseData.Page
+            this.responseData = new IteratorResponseData(data)
+            this.pagination = this.responseData.Page
+            this.message = this.responseData.Message
+            this.currentPages = this.responseData.Data
 
-            this.currentPages = responseData.Data
             this.offset = (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage
             return true
         }
         catch(err) {
             this.err = err
-
+            this.message = err.Message
             return false
         }
     }
@@ -194,9 +199,18 @@ export class Iterator {
 
 class IteratorResponseData {
     constructor(rawResponse) {
-        this.Data = rawResponse.data["data"]
-        this.Page = new Pagination(rawResponse.data["page"])
-        this.Message = rawResponse.data["message"]
+        if ("data" in rawResponse.data) {
+            this.Data = rawResponse.data.data
+        }else{
+            this.Data = []
+        }
+        if ("page" in rawResponse.data) {
+            this.Page = new Pagination(rawResponse.data["page"])
+        }
+
+        if ("message" in rawResponse.data) {
+            this.Message = rawResponse.data.message
+        }
     }
 }
 
