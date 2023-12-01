@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -230,7 +231,11 @@ func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*Client
 			cf.RequestType = getType(requestType)
 			normalName := snakeCaseToCamelCase(ToSnakeCase(getType(requestType)))
 			n := strings.ToLower(normalName[:1]) + normalName[1:]
+			if isArray(requestType) {
+				cf.RequestType = fmt.Sprintf("array<%s>", cf.RequestType)
+			}
 			cf.RequestTypeName = n
+
 			//cf.Imports = append(cf.Imports, fmt.Sprintf(`import %s from "%s"`, pkg, fullPkg))
 			if _, found := cf.Objects[normalName]; !found {
 				cf.Objects[normalName] = GetObject(requestType)
@@ -294,7 +299,9 @@ func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*Client
 func GetObject(i interface{}) []string {
 	var o []string
 	structType := reflect.TypeOf(i)
-
+	if structType.Name() == "" {
+		structType = structType.Elem()
+	}
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
 		name := field.Tag.Get("json")
@@ -328,8 +335,16 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 		if requestType, found := endpoint.RequestTypeMap[strings.ToUpper(m)]; found {
 			fullPkg := getTypePkg(requestType)
 			_, pkg := path.Split(fullPkg)
-			cf.RequestType = fmt.Sprintf("*%s.%s", pkg, getType(requestType))
+			if isArray(requestType) {
+				cf.RequestType = fmt.Sprintf("[]*%s.%s", pkg, getType(requestType))
+			} else {
+				cf.RequestType = fmt.Sprintf("*%s.%s", pkg, getType(requestType))
+			}
+
 			n := snakeCaseToCamelCase(ToSnakeCase(getType(requestType)))
+			if len(n) == 0 {
+				log.Fatal("unable to get name for requesttype")
+			}
 			n = strings.ToLower(n[:1]) + n[1:]
 			cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
 
@@ -461,15 +476,31 @@ func templateReplaceData(rawTmpl string, data *ClientFunc) (string, error) {
 
 func getTypePkg(myVar interface{}) string {
 	t := reflect.TypeOf(myVar)
+	if isArray(myVar) {
+		return t.Elem().PkgPath()
+	}
 	return t.PkgPath()
 }
-
+func isArray(myVar interface{}) bool {
+	t := reflect.TypeOf(myVar)
+	if t.Kind() == reflect.Ptr {
+		return isArray(t.Elem())
+	} else {
+		if t.Name() == "" {
+			return true
+		}
+		return false
+	}
+}
 func getType(myVar interface{}) string {
 	t := reflect.TypeOf(myVar)
 	println(t.PkgPath())
 	if t.Kind() == reflect.Ptr {
 		return t.Elem().Name()
 	} else {
+		if t.Name() == "" {
+			return t.Elem().Name()
+		}
 		return t.Name()
 	}
 }

@@ -28,12 +28,14 @@ type Iterator[T any] struct {
 }
 
 func NewIterator[T any](ctx context.Context, request Request, data RequestData) *Iterator[T] {
-	return &Iterator[T]{
+	it := &Iterator[T]{
 		ctx:          ctx,
 		request:      request,
 		currentPages: make([]*T, 0),
 		RequestData:  data,
 	}
+	it.getPages()
+	return it
 }
 
 func (i *Iterator[T]) Current() *T {
