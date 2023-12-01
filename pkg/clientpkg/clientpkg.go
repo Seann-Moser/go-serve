@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"go.opencensus.io/plugin/ochttp"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -54,7 +55,11 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 	if itemsPerPage == 0 || itemsPerPage > 1000 {
 		itemsPerPage = 100
 	}
-
+	if client == nil {
+		client = &http.Client{Transport: &ochttp.Transport{
+			Base: http.DefaultTransport,
+		}}
+	}
 	if client.Jar == nil {
 		jar, err := cookiejar.New(nil)
 		if err != nil {

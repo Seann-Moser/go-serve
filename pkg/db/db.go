@@ -70,6 +70,7 @@ func (d *DAO) Middleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
 func (d *DAO) GetContext() context.Context {
 	return d.ctx
 }
@@ -158,7 +159,7 @@ func AddTable[T any](ctx context.Context, dao *DAO, datasetName string, queryTyp
 	if err != nil {
 		var t T
 		ctxLogger.Error(ctx, "failed creating table", zap.String("table", getType(t)))
-		return nil, err
+		return ctx, err
 	}
 	table, err := QueryHelper.GetTableCtx[T](tmpCtx)
 	if err != nil {
