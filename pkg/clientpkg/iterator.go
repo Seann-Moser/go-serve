@@ -62,6 +62,7 @@ func (i *Iterator[T]) Err() error {
 
 func (i *Iterator[T]) FullList() ([]*T, error) {
 	var fullList []*T
+	fullList = append(fullList, i.currentPages...)
 	for i.Next() {
 		current := i.Current()
 		if current != nil {
