@@ -231,7 +231,9 @@ func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*Client
 			cf.RequestType = getType(requestType)
 			normalName := snakeCaseToCamelCase(ToSnakeCase(getType(requestType)))
 			n := strings.ToLower(normalName[:1]) + normalName[1:]
-			if isArray(requestType) {
+			if isMap(requestType) {
+				cf.RequestType = "Object"
+			} else if isArray(requestType) {
 				cf.RequestType = fmt.Sprintf("array<%s>", cf.RequestType)
 			}
 			cf.RequestTypeName = n
@@ -302,6 +304,18 @@ func GetObject(i interface{}) []string {
 	if structType.Name() == "" {
 		structType = structType.Elem()
 	}
+	switch i.(type) {
+	case map[string]string:
+		return []string{"string_map"}
+	case map[string]interface{}:
+		return []string{"string_interface_map"}
+	case map[interface{}]interface{}:
+		return []string{"interface_interface_map"}
+	case map[int64]interface{}:
+		return []string{"int64_interface_map"}
+	case map[int64]string:
+		return []string{"int64_string_map"}
+	}
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
 		name := field.Tag.Get("json")
@@ -335,7 +349,9 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 		if requestType, found := endpoint.RequestTypeMap[strings.ToUpper(m)]; found {
 			fullPkg := getTypePkg(requestType)
 			_, pkg := path.Split(fullPkg)
-			if isArray(requestType) {
+			if isMap(requestType) {
+				cf.RequestType = fmt.Sprintf("map[%s]%s", getType(requestType), getType(requestType))
+			} else if isArray(requestType) {
 				cf.RequestType = fmt.Sprintf("[]*%s.%s", pkg, getType(requestType))
 			} else {
 				cf.RequestType = fmt.Sprintf("*%s.%s", pkg, getType(requestType))
@@ -344,6 +360,9 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 			n := snakeCaseToCamelCase(ToSnakeCase(getType(requestType)))
 			if len(n) == 0 {
 				log.Fatal("unable to get name for requesttype")
+			}
+			if isMap(requestType) {
+				n += "Map"
 			}
 			n = strings.ToLower(n[:1]) + n[1:]
 			cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
@@ -491,6 +510,13 @@ func isArray(myVar interface{}) bool {
 		}
 		return false
 	}
+}
+func isMap(i interface{}) bool {
+	switch i.(type) {
+	case map[string]string, map[string]interface{}, map[interface{}]interface{}, map[int64]interface{}, map[int64]string:
+		return true
+	}
+	return false
 }
 func getType(myVar interface{}) string {
 	t := reflect.TypeOf(myVar)
