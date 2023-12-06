@@ -106,6 +106,7 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 		`"github.com/spf13/pflag"`,
 		`clientpkg "github.com/Seann-Moser/go-serve/pkg/clientpkg"`,
 		`"github.com/spf13/viper"`,
+		`"github.com/Seann-Moser/go-serve/pkg/response"`,
 	}...)
 
 	for _, e := range endpoints {

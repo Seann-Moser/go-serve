@@ -10,6 +10,7 @@ const prefix = "{{.Name}}"
 
 type Client struct {
 	base       *clientpkg.Client
+	rm          *response.Response
 	headers     map[string]string
 }
 
@@ -21,7 +22,7 @@ func Flags() *pflag.FlagSet {
 	return fs
 }
 
-func New(httpClient *http.Client) (*Client, error) {
+func New(httpClient *http.Client,rm *response.Response) (*Client, error) {
 	b, err := clientpkg.NewWithFlags(prefix, httpClient)
 	if err != nil {
 		return nil, err
@@ -31,6 +32,7 @@ func New(httpClient *http.Client) (*Client, error) {
     {{end}}
 	return &Client{
 		base:       b,
+		rm:         rm,
 		headers:    headers,
 	}, nil
 }
