@@ -36,3 +36,11 @@ func New(httpClient *http.Client,rm *response.Response) (*Client, error) {
 		headers:    headers,
 	}, nil
 }
+
+// Ping auto generated
+func (c *Client) Ping(ctx context.Context) bool {
+	requestDataInternal := clientpkg.NewRequestData("/healthcheck", http.MethodGet, nil, nil, clientpkg.MergeMap[string](nil, c.headers))
+	resp := c.base.RequestWithRetry(ctx, requestDataInternal, nil)
+	return resp.Status == http.StatusOK
+}
+
