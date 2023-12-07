@@ -155,6 +155,7 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 			"Package": pkgName,
 			"Imports": imports,
 			"Headers": headers,
+			//"Args": args
 		})
 	if err != nil {
 		return "", err
@@ -248,7 +249,10 @@ func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*Client
 			fullPkg := getTypePkg(responseType)
 			_, pkg := path.Split(fullPkg)
 			cf.DataTypeName = getType(responseType)
-			cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+			if fullPkg != "" {
+				cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+
+			}
 
 			cf.Return = strings.Join([]string{cf.DataTypeName}, ",")
 			cf.UseIterator = true
@@ -366,7 +370,9 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 				n += "Map"
 			}
 			n = strings.ToLower(n[:1]) + n[1:]
-			cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+			if fullPkg != "" {
+				cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+			}
 
 			cf.RequestTypeName = n
 
@@ -448,6 +454,10 @@ func RemoveDuplicateValues[T comparable](intSlice []T) []T {
 	keys := make(map[T]bool)
 	var list []T
 	for _, entry := range intSlice {
+		var t T
+		if entry == t {
+			continue
+		}
 		if _, value := keys[entry]; !value {
 			keys[entry] = true
 			list = append(list, entry)
@@ -506,10 +516,7 @@ func isArray(myVar interface{}) bool {
 	if t.Kind() == reflect.Ptr {
 		return isArray(t.Elem())
 	} else {
-		if t.Name() == "" {
-			return true
-		}
-		return false
+		return t.Name() == ""
 	}
 }
 func isMap(i interface{}) bool {
