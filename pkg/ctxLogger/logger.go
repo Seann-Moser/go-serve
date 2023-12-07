@@ -2,6 +2,7 @@ package ctxLogger
 
 import (
 	"context"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -15,6 +16,7 @@ const (
 )
 
 var globalLogger *zap.Logger
+var skip = []zap.Option{zap.AddCallerSkip(1)}
 
 func Flags() *pflag.FlagSet {
 	fs := pflag.NewFlagSet("ctx_logger", pflag.ExitOnError)
@@ -25,6 +27,13 @@ func Flags() *pflag.FlagSet {
 
 func ConfigureCtx(logger *zap.Logger, ctx context.Context) context.Context {
 	return context.WithValue(ctx, CTX_LOGGER, logger) //nolint:staticcheck
+}
+
+func With(ctx context.Context, fields ...zapcore.Field) context.Context {
+	if len(fields) == 0 {
+		return ctx
+	}
+	return ConfigureCtx(GetLogger(ctx).With(fields...), ctx)
 }
 
 func GetLogger(ctx context.Context) *zap.Logger {
@@ -68,22 +77,33 @@ func NewLogger(production bool, level string) (*zap.Logger, error) {
 	return conf.Build()
 }
 
+func Check(ctx context.Context, lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
+	return GetLogger(ctx).WithOptions(skip...).Check(lvl, msg)
+}
+
 func Debug(ctx context.Context, message string, fields ...zap.Field) {
-	GetLogger(ctx).Debug(message, fields...)
+	GetLogger(ctx).WithOptions(skip...).Debug(message, fields...)
 }
 
 func Info(ctx context.Context, message string, fields ...zap.Field) {
-	GetLogger(ctx).Info(message, fields...)
+	GetLogger(ctx).WithOptions(skip...).Info(message, fields...)
 }
 
 func Warn(ctx context.Context, message string, fields ...zap.Field) {
-	GetLogger(ctx).Warn(message, fields...)
+	GetLogger(ctx).WithOptions(skip...).Warn(message, fields...)
 }
 
 func Error(ctx context.Context, message string, fields ...zap.Field) {
-	GetLogger(ctx).Error(message, fields...)
+	GetLogger(ctx).WithOptions(skip...).Error(message, fields...)
 }
 
 func Fatal(ctx context.Context, message string, fields ...zap.Field) {
-	GetLogger(ctx).Fatal(message, fields...)
+	GetLogger(ctx).WithOptions(skip...).Fatal(message, fields...)
+}
+
+func Panic(ctx context.Context, msg string, fields ...zapcore.Field) {
+	GetLogger(ctx).WithOptions(skip...).Panic(msg, fields...)
+}
+func WithOptions(ctx context.Context, opts ...zap.Option) context.Context {
+	return ConfigureCtx(GetLogger(ctx).WithOptions(opts...), ctx)
 }
