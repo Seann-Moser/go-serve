@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"go.opencensus.io/plugin/ochttp"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -28,10 +30,10 @@ type Client struct {
 
 func Flags(prefix string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet(prefix, pflag.ExitOnError)
-	fs.String(GetFlagWithPrefix(prefix, "endpoint"), "http://127.0.0.1:8080", "")
-	fs.String(GetFlagWithPrefix(prefix, "service-name"), "default", "")
-	fs.Bool(GetFlagWithPrefix(prefix, "use-cookie-jar"), false, "")
-	fs.Uint(GetFlagWithPrefix(prefix, "items-per-page"), 100, "") //todo move to client pkg
+	fs.String(GetFlagWithPrefix(prefix, "endpoint"), "http://127.0.0.1:8080", fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "endpoint")))))
+	fs.String(GetFlagWithPrefix(prefix, "service-name"), "default", fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "service-name")))))
+	fs.Bool(GetFlagWithPrefix(prefix, "use-cookie-jar"), false, fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "use-cookie-jar")))))
+	fs.Uint(GetFlagWithPrefix(prefix, "items-per-page"), 100, fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "items-per-page")))))
 	fs.AddFlagSet(BackOffFlags(prefix))
 	return fs
 }

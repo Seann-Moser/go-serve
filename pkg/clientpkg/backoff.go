@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"strings"
 	"time"
 )
 
@@ -19,10 +20,10 @@ type BackOff struct {
 
 func BackOffFlags(prefix string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet(GetFlagWithPrefix("backoff", prefix), pflag.ExitOnError)
-	fs.Uint64(GetFlagWithPrefix("max-retry", prefix), 5, "")
-	fs.Duration(GetFlagWithPrefix("max-interval", prefix), 15*time.Second, "")
-	fs.Duration(GetFlagWithPrefix("max-elapsed-time", prefix), 45*time.Second, "")
-	fs.Duration(GetFlagWithPrefix("max-initial-interval", prefix), 100*time.Millisecond, "")
+	fs.Uint64(GetFlagWithPrefix("max-retry", prefix), 5, strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "max-retry"))))
+	fs.Duration(GetFlagWithPrefix("max-interval", prefix), 15*time.Second, strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "max-interval"))))
+	fs.Duration(GetFlagWithPrefix("max-elapsed-time", prefix), 45*time.Second, strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "max-elapsed-time"))))
+	fs.Duration(GetFlagWithPrefix("max-initial-interval", prefix), 100*time.Millisecond, strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "max-initial-interval"))))
 	return fs
 }
 
