@@ -125,6 +125,7 @@ func (i *Iterator[T]) getPages() bool {
 			if tmpErr != nil {
 				return false
 			}
+			i.err = nil
 			i.singlePage = true
 			i.currentPages = []*T{&single}
 			return true
