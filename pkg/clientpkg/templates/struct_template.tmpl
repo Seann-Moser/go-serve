@@ -18,7 +18,7 @@ func Flags() *pflag.FlagSet {
 	fs := pflag.NewFlagSet(prefix, pflag.ExitOnError)
 	fs.AddFlagSet(clientpkg.Flags(prefix))
 	{{range .Headers}}
-	fs.String(clientpkg.GetFlagWithPrefix(prefix,"{{.}}"),"",""){{end}}
+	fs.String(clientpkg.GetFlagWithPrefix(prefix,"{{.}}"),"",strings.ToUpper(clientpkg.ToSnakeCase(clientpkg.GetFlagWithPrefix(prefix,"{{.}}")))){{end}}
 	return fs
 }
 
@@ -36,6 +36,8 @@ func New(httpClient *http.Client,rm *response.Response) (*Client, error) {
 		headers:    headers,
 	}, nil
 }
+
+
 
 // Ping auto generated
 func (c *Client) Ping(ctx context.Context) bool {

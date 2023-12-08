@@ -40,10 +40,7 @@ var (
 	matchAllCap   = regexp.MustCompile("([a-z0-9])([A-Z])")
 )
 
-// todo
-// add caching logic
-// add required field
-func GetFlagWithPrefix(flag, prefix string) string {
+func GetFlagWithPrefix(prefix, flag string) string {
 	if prefix == "" {
 		return flag
 	}
@@ -106,6 +103,7 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 		`"github.com/spf13/pflag"`,
 		`clientpkg "github.com/Seann-Moser/go-serve/pkg/clientpkg"`,
 		`"github.com/spf13/viper"`,
+		`"strings"`,
 		`"github.com/Seann-Moser/go-serve/pkg/response"`,
 	}...)
 
