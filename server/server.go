@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"github.com/Seann-Moser/go-serve/server/metrics"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/plugin/ochttp/propagation/b3"
 	"golang.org/x/sync/errgroup"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -85,7 +88,15 @@ func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb in
 	if VERSION != "dev" {
 		m.Version = VERSION
 	}
-
+	router.Use(func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.EqualFold(r.URL.Path, "/healthcheck") {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			handler.ServeHTTP(w, r)
+		})
+	})
 	return &Server{
 		ServingPort:     servingPort,
 		ctx:             notifyContext,
@@ -131,8 +142,8 @@ func (s *Server) AddMiddleware(middlewareFunc ...mux.MiddlewareFunc) {
 	s.router.Use(middlewareFunc...)
 }
 
-func (s *Server) Start() error {
-	eg, errCtx := errgroup.WithContext(s.GetContext())
+func (s *Server) Start(ctx context.Context) error {
+	eg, errCtx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
 		err := s.MetricsServer.StartServer(errCtx)
 		if err != nil {
@@ -152,8 +163,15 @@ func (s *Server) Start() error {
 
 func (s *Server) StartServer(ctx context.Context) error {
 	server := &http.Server{
-		Addr:    ":" + s.ServingPort,
-		Handler: s.router,
+		Addr: ":" + s.ServingPort,
+
+		Handler: &ochttp.Handler{
+			Handler:     s.router,
+			Propagation: &b3.HTTPFormat{},
+		},
+		BaseContext: func(_ net.Listener) context.Context {
+			return ctxLogger.ConfigureCtx(ctxLogger.GetLogger(ctx), ctx)
+		},
 	}
 
 	go func() {
