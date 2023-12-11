@@ -1,11 +1,11 @@
 export class Iterator {
     //todo look up better way of doing an async iterator in js
-    constructor(axios,path,config,responseData,page){
-        this.axios = axios
+    constructor(pending,data,path,config,page){
+        this.pending = pending
         this.config = config
         this.path = path
-        if (responseData !== null){
-            this.responseData = new IteratorResponseData(responseData)
+        if (data !== null){
+            this.responseData = new IteratorResponseData(data)
         }else{
             this.responseData = null
         }
