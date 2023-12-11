@@ -174,12 +174,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 `, strings.Join(jsFunctions, ","), ToSnakeCase(projectName))}
 
 	if write {
-		err = os.WriteFile(path.Join(clientDir, "generated_client.go"), []byte(strings.Join(functions, "")), os.ModePerm)
+		err = os.WriteFile(path.Join(clientDir, fmt.Sprintf("generated_%s.go", ToSnakeCase(projectName))), []byte(strings.Join(functions, "")), os.ModePerm)
 		if err != nil {
 			return "", err
 		}
 
-		err = os.WriteFile(path.Join(clientDir, "generated_client.js"), []byte(strings.Join(jsFunctions, "")), os.ModePerm)
+		err = os.WriteFile(path.Join(clientDir, fmt.Sprintf("generated_%s.js", ToSnakeCase(projectName))), []byte(strings.Join(jsFunctions, "")), os.ModePerm)
 		if err != nil {
 			return "", err
 		}
