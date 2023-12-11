@@ -2,30 +2,45 @@
         /**
          * {{.Name}} auto generated
          * @param {Pagination} pagination
+         * @param {boolean} lazy
          * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
          * {{end}}  {{range .MuxVars}}
          * @param {string} {{.}}{{end}}
          * {{if .UsesQueryParams }}{{range .QueryParams}}
          * @param {string} {{.}}
          * {{end}}{{end}}
-         * {{if .Return}}@return {{"{"}}{{.Return}}{{if .UseIterator}}Iterator{{end}}{{"}"}}{{end}}
          */
-        {{.Name}}({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}{{.}} ,{{end}}{{end}}pagination){
+        {{.Name}}(lazy,{{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}{{.}} ,{{end}}{{end}}pagination){
             const config = {}
-            const path = {{.Path}}
-            config.method = '{{.MethodType}}'
-            config.baseURL = nuxtApp.$config.public.{{.UrlEnvVarName}}
+
             if (pagination == null){
                 pagination = new Pagination(null)
             }
-            let params = {}
-            params["items_per_page"] = pagination.ItemsPerPage
-            params["page"] = pagination.ItemsPerPage{{range .QueryParams}}
-            params["{{.}}"] = {{.}}{{end}}
+             let params = {}
+             params["items_per_page"] = pagination.ItemsPerPage
+             params["page"] = pagination.ItemsPerPage{{range .QueryParams}}
+             params["{{.}}"] = {{.}}{{end}}
+            const headers = useRequestHeaders(['cookie'])
 
-            config.params = params
+            const { pending, data: posts } = useFetch({{.Path}}, {
+                headers,
+                  lazy: lazy,
+                  server: false,
+                  method: "{{.MethodType}}",
+                  params: params,
+                  baseURL: nuxtApp.$config.public.{{.UrlEnvVarName}},
+               })
+
+
             {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}} {{if .UseIterator}}
-            return new {{.DataTypeName}}Iterator(nuxtApp.$axios,path,config,null,pagination){{else}}
+            return new {{.DataTypeName}}Iterator(pending,posts,{{.Path}},{
+                                                                                     headers,
+                                                                                       lazy: lazy,
+                                                                                       server: false,
+                                                                                       method: "{{.MethodType}}",
+                                                                                       params: params,
+                                                                                       baseURL: nuxtApp.$config.public.{{.UrlEnvVarName}},
+                                                                                    },pagination){{else}}
 
-            return nuxtApp.$axios(path,config){{end}}
+           return {pending,posts}{{end}}
         }
