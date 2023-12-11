@@ -33,6 +33,7 @@ type Endpoint struct {
 	Handler         http.Handler     `db:"-" json:"-"`
 	Timeout         int              `json:"timeout" db:"timeout" qc:"update;default::10"`
 
+	Async           bool                   `json:"-" db:"-"`
 	RequestTypeMap  map[string]interface{} `json:"-" db:"-"`
 	ResponseTypeMap map[string]interface{} `json:"-" db:"-"`
 	Headers         []string               `json:"-" db:"-"`

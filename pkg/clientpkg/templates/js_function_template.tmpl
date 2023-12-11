@@ -10,37 +10,27 @@
          * @param {string} {{.}}
          * {{end}}{{end}}
          */
-        {{.Name}}(lazy,{{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}{{.}} ,{{end}}{{end}}pagination){
-            const config = {}
-
-            if (pagination == null){
+        {{if .Async}}async {{end}}{{.Name}}(lazy,{{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}{{.}} ,{{end}}{{end}}pagination){
+            if (pagination === null){
                 pagination = new Pagination(null)
             }
              let params = {}
              params["items_per_page"] = pagination.ItemsPerPage
              params["page"] = pagination.ItemsPerPage{{range .QueryParams}}
              params["{{.}}"] = {{.}}{{end}}
-            const headers = useRequestHeaders(['cookie'])
-
-            const { pending, data: posts } = useFetch({{.Path}}, {
-                headers,
-                  lazy: lazy,
-                  server: false,
-                  method: "{{.MethodType}}",
-                  params: params,
-                  baseURL: nuxtApp.$config.public.{{.UrlEnvVarName}},
-               })
-
-
-            {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}} {{if .UseIterator}}
-            return new {{.DataTypeName}}Iterator(pending,posts,{{.Path}},{
-                                                                                     headers,
-                                                                                       lazy: lazy,
-                                                                                       server: false,
-                                                                                       method: "{{.MethodType}}",
-                                                                                       params: params,
-                                                                                       baseURL: nuxtApp.$config.public.{{.UrlEnvVarName}},
-                                                                                    },pagination){{else}}
-
-           return {pending,posts}{{end}}
+             const config = {
+                lazy: lazy,
+                server: false,
+                method: "{{.MethodType}}",
+                credentials: "include",
+                params: params,
+                baseURL: nuxtApp.$config.public.{{.UrlEnvVarName}},
+             }
+            {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}}{{if .Async}}
+            const data = await $fetch({{.Path}}, config){{else}}
+            const { pending, data: posts } = $fetch({{.Path}}, config){{end}}{{if .Async}}{{if .UseIterator}}
+            return new {{.DataTypeName}}Iterator(false,JSON.parse(data),{{.Path}},config,pagination){{else}}
+            return JSON.parse(data){{end}}{{else}}
+            {{if .UseIterator}}return new {{.DataTypeName}}Iterator(pending,posts,{{.Path}},config,pagination){{else}}
+            return {pending,posts}{{end}}{{end}}
         }

@@ -200,6 +200,7 @@ type ClientFunc struct {
 	UsesQueryParams  bool
 	UsesHeaderParams bool
 	RequestType      string
+	Async            bool
 	RequestTypeName  string
 	DataTypeName     string
 	QueryParams      []string
@@ -224,6 +225,7 @@ func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*Client
 			Imports:       make([]string, 0),
 			QueryParams:   endpoint.QueryParams,
 			Objects:       map[string][]string{},
+			Async:         endpoint.Async,
 		}
 		cf.Name = UrlToName(cf.Path)
 
@@ -526,7 +528,6 @@ func isMap(i interface{}) bool {
 }
 func getType(myVar interface{}) string {
 	t := reflect.TypeOf(myVar)
-	println(t.PkgPath())
 	if t.Kind() == reflect.Ptr {
 		return t.Elem().Name()
 	} else {

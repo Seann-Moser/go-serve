@@ -37,6 +37,7 @@ func GetEndpoints() []*endpoints.Endpoint {
 			URLPath:     "/account/{account_id}/user/{user_id}/settings/query",
 			Methods:     []string{http.MethodGet},
 			QueryParams: []string{"q", "query"},
+			Async:       true,
 		},
 	}
 	e[1] = e[1].SetResponseType(RequestData{}, http.MethodGet)
