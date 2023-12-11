@@ -1,7 +1,10 @@
 package cors
 
 import (
+	"context"
 	"fmt"
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"go.uber.org/zap"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -34,18 +37,20 @@ func Flags() *pflag.FlagSet {
 	return fs
 }
 
-func NewFromFlags() (*Cors, error) {
+func NewFromFlags(ctx context.Context) (*Cors, error) {
 	c := &Cors{
 		AllowedOrigins:     []*regexp.Regexp{},
 		AllowedMethods:     viper.GetStringSlice(corsAllowedMethods),
 		AllowedHeaders:     viper.GetStringSlice(corsAllowedHeaders),
 		AllowedCredentials: viper.GetBool(corsAllowedCredentials),
 	}
+	ctxLogger.Info(ctx, "cors headers", zap.Strings("headers", c.AllowedHeaders))
 	for _, o := range viper.GetStringSlice(corsAllowedOrigins) {
 		exp, err := regexp.Compile(o)
 		if err != nil {
 			return nil, fmt.Errorf("failed compiling regex origin %s:%w", o, err)
 		}
+		ctxLogger.Info(ctx, "cors,adding regex origin", zap.String("origin", o))
 		c.AllowedOrigins = append(c.AllowedOrigins, exp)
 	}
 	return c, nil
