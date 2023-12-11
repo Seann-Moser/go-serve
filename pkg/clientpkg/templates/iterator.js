@@ -1,7 +1,6 @@
 export class Iterator {
     //todo look up better way of doing an async iterator in js
-    constructor(pending,data,path,config,page){
-        this.pending = pending
+    constructor(data,path,config,page){
         this.config = config
         this.path = path
         if (data !== null){
@@ -197,6 +196,7 @@ export class Iterator {
      * @constructor
      */
     async Message(){
+        await this.responseData.LoadData()
         if (this.message === null || this.message === ""){
             if (this.responseData !== null){
                 return new Promise(resolve => resolve(this.responseData.Message))
@@ -217,48 +217,77 @@ export class Iterator {
      * @returns {promise<boolean>}
      */
     async getPages(){
-        this.config.params["items_per_page"] = this.pagination.ItemsPerPage
-        this.config.params["page"] = this.pagination.CurrentPage
-        try {
-            const data = await this.axios(this.path,this.config)
-            this.responseData = new IteratorResponseData(data)
-
-            if (!(this.responseData.Page === undefined || this.responseData.Page === null)){
-                this.pagination = this.responseData.Page
+        await this.responseData.LoadData()
+        console.log(this.responseData)
+        //todo or current page is greater than what we have
+        if (this.responseData.Data === undefined || this.responseData.Data === null){
+            this.config.params["items_per_page"] = this.pagination.ItemsPerPage
+            this.config.params["page"] = this.pagination.CurrentPage
+            try {
+                const data = await $fetch(this.path, this.config)
+                this.responseData = new IteratorResponseData(data)
+                await this.responseData.LoadData()
+            }catch (error){
+                this.err = error
+                this.message = error.Message
+                return new Promise(resolve => resolve(false),reject=>reject(error))
             }
-            this.message = this.responseData.Message
-            this.currentPages = this.responseData.Data
+        }
+        if (!(this.responseData.Page === undefined || this.responseData.Page === null)){
+            this.pagination = this.responseData.Page
+        }
+        this.message = this.responseData.Message
+        this.currentPages = this.responseData.Data
 
-            if (!Array.isArray(this.currentPages)){
-                this.singlePage = true
-                this.current = this.currentPages
-                return new Promise(resolve => resolve(true))
-            }
-            this.offset = (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage
+        if (!Array.isArray(this.currentPages)){
+            this.singlePage = true
+            this.current = this.currentPages
             return new Promise(resolve => resolve(true))
         }
-        catch(err) {
-            this.err = err
-            this.message = err.Message
-            return new Promise(resolve => resolve(false))
-        }
+        this.offset = (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage
+        return new Promise(resolve => resolve(true))
     }
 
 }
 
 class IteratorResponseData {
     constructor(rawResponse) {
-        if ("data" in rawResponse.data) {
-            this.Data = rawResponse.data.data
+        this.rawResponse = rawResponse
+        this.decoded = {}
+        if (rawResponse === undefined){
+            return
+        }
+        if ("data" in rawResponse) {
+            this.Data = rawResponse.data
         }else{
             this.Data = []
         }
-        if ("page" in rawResponse.data) {
-            this.Page = new Pagination(rawResponse.data["page"])
+        if ("page" in rawResponse) {
+            this.Page = new Pagination(rawResponse["page"])
         }
 
-        if ("message" in rawResponse.data) {
-            this.Message = rawResponse.data.message
+        if ("message" in rawResponse) {
+            this.Message = rawResponse.message
+        }
+    }
+    async LoadData() {
+        if (this.rawResponse === undefined){
+            return
+        }
+        console.log(this.rawResponse)
+        const rawData = await this.rawResponse
+        this.decoded = JSON.parse(rawData)
+        this.parse()
+    }
+    parse(){
+        if ("data" in this.decoded) {
+            this.Data = this.decoded.data
+        }
+        if ("page" in this.decoded) {
+            this.Page = new Pagination(this.decoded["page"])
+        }
+        if ("message" in this.decoded) {
+            this.Message = this.decoded.message
         }
     }
 }

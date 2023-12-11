@@ -28,9 +28,9 @@
              }
             {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}}{{if .Async}}
             const data = await $fetch({{.Path}}, config){{else}}
-            const { pending, data: posts } = $fetch({{.Path}}, config){{end}}{{if .Async}}{{if .UseIterator}}
-            return new {{.DataTypeName}}Iterator(false,JSON.parse(data),{{.Path}},config,pagination){{else}}
+            const data = $fetch({{.Path}}, config){{end}}{{if .Async}}{{if .UseIterator}}
+            return new {{.DataTypeName}}Iterator(JSON.parse(data),{{.Path}},config,pagination){{else}}
             return JSON.parse(data){{end}}{{else}}
-            {{if .UseIterator}}return new {{.DataTypeName}}Iterator(pending,posts,{{.Path}},config,pagination){{else}}
-            return {pending,posts}{{end}}{{end}}
+            {{if .UseIterator}}return new {{.DataTypeName}}Iterator(data,{{.Path}},config,pagination){{else}}
+            return data{{end}}{{end}}
         }
