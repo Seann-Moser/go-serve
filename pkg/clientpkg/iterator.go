@@ -7,13 +7,10 @@ import (
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
 )
 
-type Request func(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData
-
 type Iterator[T any] struct {
-	ctx     context.Context
-	request Request
-	err     error
-
+	ctx         context.Context
+	err         error
+	client      Client
 	current     *T
 	currentItem int
 	currentPage uint
@@ -22,22 +19,25 @@ type Iterator[T any] struct {
 	offset       int
 	currentPages []*T
 	singlePage   bool
-
-	RequestData RequestData
-	message     string
+	retry        bool
+	RequestData  RequestData
+	message      string
 }
 
-func NewIterator[T any](ctx context.Context, request Request, data RequestData) *Iterator[T] {
+func NewIterator[T any](ctx context.Context, client Client, data RequestData) *Iterator[T] {
 	it := &Iterator[T]{
 		ctx:          ctx,
-		request:      request,
+		client:       client,
 		currentPages: make([]*T, 0),
 		RequestData:  data,
 	}
 	it.getPages()
 	return it
 }
-
+func (i *Iterator[T]) WithRetry() *Iterator[T] {
+	i.retry = true
+	return i
+}
 func (i *Iterator[T]) Current() *T {
 	if i.current == nil {
 		if len(i.currentPages) == 0 {
@@ -107,7 +107,7 @@ func (i *Iterator[T]) Next() bool {
 
 // todo support cookies
 func (i *Iterator[T]) getPages() bool {
-	data := i.request(i.ctx, i.RequestData, i.nextPage())
+	data := i.client.Request(i.ctx, i.RequestData, i.nextPage(), i.retry)
 	if data.Err != nil {
 		i.err = data.Err
 		i.message = data.Message
