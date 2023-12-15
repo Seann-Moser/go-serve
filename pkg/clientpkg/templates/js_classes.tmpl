@@ -12,17 +12,4 @@ export class {{$i}} {
         return obj
     }
 }
-
-export class {{$i}}Iterator extends Iterator{
-    /**
-     * @return {{"{"}}promise<{{$i}}>{{"}"}}
-     */
-    async GetCurrentPromise(){
-        let data = super.GetCurrent()
-        if (data === null){
-            return null
-        }
-        return new {{$i}}(data)
-    }
-}
 {{end}}

@@ -79,6 +79,12 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 		UseCookieJar: useCookieJar,
 	}, nil
 }
+func (c *Client) Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData) {
+	if retry {
+		return c.RequestWithRetry(ctx, data, p)
+	}
+	return c.SendRequest(ctx, data, p)
+}
 
 func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData) {
 	_ = c.BackOff.Retry(ctx, func() error {
