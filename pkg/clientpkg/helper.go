@@ -203,7 +203,7 @@ type ClientFunc struct {
 	Async            bool
 	RequestTypeName  string
 	DataTypeName     string
-	QueryParams      []string
+	QueryParams      map[string]string
 
 	Imports []string
 
@@ -223,9 +223,13 @@ func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*Client
 			MuxVars:       re.FindAllString(endpoint.URLPath, -1),
 			MethodType:    strings.ToUpper(m),
 			Imports:       make([]string, 0),
-			QueryParams:   endpoint.QueryParams,
+			QueryParams:   map[string]string{},
 			Objects:       map[string][]string{},
 			Async:         endpoint.Async,
+		}
+		for _, q := range endpoint.QueryParams {
+			cf.QueryParams[q] = snakeCaseToCamelCase(ToSnakeCase(q))
+			cf.QueryParams[q] = strings.ToLower(cf.QueryParams[q][:1]) + cf.QueryParams[q][1:]
 		}
 		cf.Name = UrlToName(cf.Path)
 
@@ -347,7 +351,11 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 			MuxVars:     re.FindAllString(endpoint.URLPath, -1),
 			MethodType:  cases.Title(language.AmericanEnglish).String(strings.ToLower(m)),
 			Imports:     make([]string, 0),
-			QueryParams: endpoint.QueryParams,
+			QueryParams: map[string]string{},
+		}
+		for _, q := range endpoint.QueryParams {
+			cf.QueryParams[q] = snakeCaseToCamelCase(ToSnakeCase(q))
+			cf.QueryParams[q] = strings.ToLower(cf.QueryParams[q][:1]) + cf.QueryParams[q][1:]
 		}
 		cf.Name = UrlToName(cf.Path)
 

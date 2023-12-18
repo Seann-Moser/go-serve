@@ -43,9 +43,7 @@ export class Iterator {
             if (this.currentPages === null || this.currentPages.length === 0) {
                 const v = await this.getPages();
                 if (!v) {
-                    return new Promise((resolve, reject) =>
-                        reject(`failed loading pages ${this.err}`),
-                    );
+                    return Promise.reject(createError(`failed loading pages ${this.err}`));
                 }
                 if (!Array.isArray(this.currentPages)) {
                     this.singlePage = true;
@@ -123,7 +121,7 @@ export class Iterator {
         }
         let v = await this.getPages()
         if (!v) {
-            return new Promise((resolve, reject) => reject(`failed loading pages ${this.err}`))
+            return Promise.reject(createError(`failed loading pages ${this.err}`));
         }
         return new Promise(resolve => resolve(this.currentPages))
     }
@@ -232,7 +230,6 @@ export class Iterator {
      */
     async getPages(){
         await this.responseData.LoadData()
-        console.log(this.responseData)
         //todo or current page is greater than what we have
         if (this.responseData.Data === undefined || this.responseData.Data === null){
             this.config.params["items_per_page"] = this.pagination.ItemsPerPage
@@ -288,7 +285,7 @@ class IteratorResponseData {
         if (this.rawResponse === undefined){
             return
         }
-        console.log(this.rawResponse)
+
         const rawData = await this.rawResponse
         this.decoded = JSON.parse(rawData)
         this.parse()

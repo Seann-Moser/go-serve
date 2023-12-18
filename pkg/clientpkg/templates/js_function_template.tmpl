@@ -10,14 +10,14 @@
          * @param {string} {{.}}
          * {{end}}{{end}}
          */
-        {{if .Async}}async {{end}}{{.Name}}(lazy,{{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}{{.}} ,{{end}}{{end}}pagination){
+        {{if .Async}}async {{end}}{{.Name}}(lazy,{{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}pagination){
             if (pagination === null){
                 pagination = new Pagination(null)
             }
              let params = {}
              params["items_per_page"] = pagination.ItemsPerPage
-             params["page"] = pagination.ItemsPerPage{{range .QueryParams}}
-             params["{{.}}"] = {{.}}{{end}}
+             params["page"] = pagination.ItemsPerPage{{range $k,$v := .QueryParams}}
+             params["{{$k}}"] = {{$v}}{{end}}
              const config = {
                 lazy: lazy,
                 server: false,
