@@ -36,7 +36,7 @@ func GetEndpoints() []*endpoints.Endpoint {
 			SubDomain:   "test",
 			URLPath:     "/account/{account_id}/user/{user_id}/settings/query",
 			Methods:     []string{http.MethodGet},
-			QueryParams: []string{"q", "query"},
+			QueryParams: []string{"q", "query", "token_id"},
 			Async:       true,
 		},
 	}
