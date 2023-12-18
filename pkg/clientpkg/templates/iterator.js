@@ -30,51 +30,59 @@ export class Iterator {
      * @param {int} itemsPerPage
      * @constructor
      */
-    async SetItemsPerPage(itemsPerPage){
-        if (itemsPerPage > 500 || itemsPerPage < 1){
-            return
+    SetItemsPerPage(itemsPerPage) {
+        if (itemsPerPage > 500 || itemsPerPage < 1) {
+            return;
         }
-        this.pagination.ItemsPerPage = itemsPerPage
-        return new Promise(resolve => resolve(this.currentPages))
+        this.pagination.ItemsPerPage = itemsPerPage;
+        return new Promise((resolve) => resolve(this.currentPages));
     }
 
-    async GetCurrent(){
-        if (this.current == null){
-            if (this.currentPages === null || this.currentPages.length === 0){
-                let v = await this.getPages()
+    async GetCurrent() {
+        if (this.current == null) {
+            if (this.currentPages === null || this.currentPages.length === 0) {
+                const v = await this.getPages();
                 if (!v) {
-                    return new Promise((resolve, reject) => reject(`failed loading pages ${this.err}`))
+                    return new Promise((resolve, reject) =>
+                        reject(`failed loading pages ${this.err}`),
+                    );
                 }
-                if (!Array.isArray(this.currentPages)){
-                    this.singlePage = true
-                    this.current = this.currentPages
-                    return new Promise(resolve => resolve(this.current))
+                if (!Array.isArray(this.currentPages)) {
+                    this.singlePage = true;
+                    this.current = this.currentPages;
+                    return new Promise((resolve) => resolve(this.current));
                 }
             }
-            if (this.currentItem - this.offset >= this.currentPages.length){
-                return new Promise((resolve, reject)=> reject(`index out of bounds ${this.currentItem - this.offset} > ${this.currentPages.length}`))
+            if (this.currentItem - this.offset >= this.currentPages.length) {
+                return Promise.reject(
+                    createError(
+                        `index out of bounds ${this.currentItem - this.offset} > ${
+                            this.currentPages.length
+                        }`,
+                    ),
+                );
             }
-            this.current = this.currentPages[this.currentItem - this.offset ]
+            this.current = this.currentPages[this.currentItem - this.offset];
         }
-        return new Promise(resolve => resolve(this.current))
+        return new Promise((resolve) => resolve(this.current));
     }
 
     /**
      * @return {promise<array>|promise<null>}
      */
-    async GetPage(){
-        if (this.currentPages === null || this.currentPages.length === 0){
-            let v = await this.getPages()
+    async GetPage() {
+        if (this.currentPages === null || this.currentPages.length === 0) {
+            const v = await this.getPages();
             if (!v) {
-                return new Promise((resolve, reject) => reject(`failed loading pages ${this.err}`))
+                return Promise.reject(createError(`failed loading pages ${this.err}`));
             }
         }
-        if (!Array.isArray(this.currentPages)){
-            this.singlePage = true
-            this.current = this.currentPages
-            return new Promise(resolve => resolve(this.current))
+        if (!Array.isArray(this.currentPages)) {
+            this.singlePage = true;
+            this.current = this.currentPages;
+            return new Promise((resolve) => resolve(this.current));
         }
-        return new Promise(resolve => resolve(this.currentPages))
+        return new Promise((resolve) => resolve(this.currentPages));
     }
 
     /**
@@ -82,22 +90,22 @@ export class Iterator {
      * @returns {promise<array>}
      * @constructor
      */
-    async GoToPage(pageNumber){
+    async GoToPage(pageNumber) {
         if (this.singlePage) {
-            return null
+            return null;
         }
-        this.pagination.CurrentPage = pageNumber
-        if (this.pagination.CurrentPage < 1){
-            this.pagination.CurrentPage = 1
+        this.pagination.CurrentPage = pageNumber;
+        if (this.pagination.CurrentPage < 1) {
+            this.pagination.CurrentPage = 1;
         }
-        if (this.pagination.CurrentPage > this.pagination.TotalPages){
-            this.pagination.CurrentPage = this.pagination.TotalPages
+        if (this.pagination.CurrentPage > this.pagination.TotalPages) {
+            this.pagination.CurrentPage = this.pagination.TotalPages;
         }
-        let v = await this.getPages()
+        const v = await this.getPages();
         if (!v) {
-            return new Promise((resolve, reject) => reject(`failed loading pages ${this.err}`))
+            return Promise.reject(createError(`failed loading pages ${this.err}`));
         }
-        return new Promise(resolve => resolve(this.currentPages))
+        return new Promise((resolve) => resolve(this.currentPages));
     }
 
     /**
@@ -125,65 +133,70 @@ export class Iterator {
      * @return {promise<array>}
      * @constructor
      */
-    async NextPage(){
+    async NextPage() {
         if (this.singlePage) {
-            return null
+            return null;
         }
-        this.pagination.CurrentPage += 1
-        if (this.pagination.CurrentPage < 1){
-            this.pagination.CurrentPage = 1
+        this.pagination.CurrentPage += 1;
+        if (this.pagination.CurrentPage < 1) {
+            this.pagination.CurrentPage = 1;
         }
-        if (this.pagination.CurrentPage > this.pagination.CurrentPage){
-            this.pagination.CurrentPage = this.pagination.TotalPages
+        if (this.pagination.CurrentPage > this.pagination.TotalPages) {
+            this.pagination.CurrentPage = this.pagination.TotalPages;
         }
-        let v = await this.getPages()
+        const v = await this.getPages();
         if (!v) {
-            return new Promise((resolve, reject) => reject(`failed loading pages ${this.err}`))
+            return Promise.reject(
+                createError(`failed getting next page: ${this.err}`),
+            );
         }
-        return new Promise(resolve => resolve(this.currentPages))
-
+        return new Promise((resolve) => resolve(this.currentPages));
     }
     /**
      *
      * @returns {promise}
      * @constructor
      */
-    async Next(){
+    async Next() {
         if (this.singlePage) {
-            return null
+            return null;
         }
-        if (this.pagination.TotalItems === 0){
-            let v = await this.getPages()
+        if (this.pagination.TotalItems === 0) {
+            const v = await this.getPages();
             if (!v) {
-                return new Promise((resolve, reject) => reject(`failed loading pages ${this.err}`))
+                return Promise.reject(
+                    createError(`failed getting next page: ${this.err}`),
+                );
             }
-            if (!Array.isArray(this.currentPages)){
-                this.singlePage = true
-                this.current = this.currentPages
-                return new Promise(resolve => resolve(this.current))
+            if (!Array.isArray(this.currentPages)) {
+                this.singlePage = true;
+                this.current = this.currentPages;
+                return new Promise((resolve) => resolve(this.current));
             }
-            //todo check if it an array
-            if (this.currentPages.length === 0){
-                return null
+            // todo check if it an array
+            if (this.currentPages.length === 0) {
+                return null;
             }
-            this.current = this.currentPages[this.currentItem - this.offset]
-            return new Promise(resolve => resolve(this.current))
+            this.current = this.currentPages[this.currentItem - this.offset];
+            return new Promise((resolve) => resolve(this.current));
         }
         if (this.currentItem < this.pagination.TotalItems) {
-            this.currentItem += 1
-            if (this.currentItem-this.offset >= this.currentPages.length){
-                let v = await this.getPages()
+            this.currentItem += 1;
+            if (this.currentItem - this.offset >= this.currentPages.length) {
+                const v = await this.getPages();
                 if (!v) {
-                    return new Promise((resolve, reject) => reject(`failed loading pages ${this.err}`))
+                    return Promise.reject(
+                        createError(`failed loading pages ${this.err}`),
+                    );
                 }
             }
-            if (this.currentItem-this.offset >= this.currentPages.length){
-                return null
+            if (this.currentItem - this.offset >= this.currentPages.length) {
+                return null;
             }
-            this.current = this.currentPages[this.currentItem - this.offset]
-            return new Promise(resolve => resolve(this.current))
+            this.current = this.currentPages[this.currentItem - this.offset];
+            return new Promise((resolve) => resolve(this.current));
         }
-        return null
+        return null;
     }
 
     Err(){
@@ -195,21 +208,22 @@ export class Iterator {
      * @returns {promise<string>}
      * @constructor
      */
-    async Message(){
-        await this.responseData.LoadData()
-        if (this.message === null || this.message === ""){
-            if (this.responseData !== null){
-                return new Promise(resolve => resolve(this.responseData.Message))
-            }else{
-                let v = await this.getPages()
+    async Message() {
+        await this.responseData.LoadData();
+        if (this.message === null || this.message === "") {
+            if (this.responseData !== null) {
+                return new Promise((resolve) => resolve(this.responseData.Message));
+            } else {
+                const v = await this.getPages();
                 if (!v) {
-                    return new Promise((resolve, reject) => reject(`failed loading pages ${this.err}`))
+                    return Promise.reject(
+                        createError(`failed loading pages ${this.err}`),
+                    );
                 }
-                return this.responseData.Message
+                return this.responseData.Message;
             }
-
         }
-        return new Promise(resolve => resolve(this.message))
+        return new Promise((resolve) => resolve(this.message));
     }
 
     /**
