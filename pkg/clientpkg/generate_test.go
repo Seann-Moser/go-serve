@@ -23,7 +23,7 @@ func GetEndpoints() []*endpoints.Endpoint {
 			SubDomain:   "test",
 			URLPath:     "/account/{account_id}/user/{user_id}",
 			Methods:     []string{http.MethodPost},
-			HandlerFunc: HandlerFunc,
+			HandlerFunc: HandlerFuncs,
 			ResponseTypeMap: map[string]interface{}{
 				"POST": RequestData{},
 			},
@@ -32,14 +32,14 @@ func GetEndpoints() []*endpoints.Endpoint {
 			SubDomain:   "test",
 			URLPath:     "/account/{account_id}/user/{user_id}",
 			Methods:     []string{http.MethodGet},
-			HandlerFunc: HandlerFunc,
+			HandlerFunc: HandlerFuncs,
 		},
 		{
 			SubDomain:   "test",
 			URLPath:     "/account/{account_id}/user/{user_id}/settings",
 			Methods:     []string{http.MethodGet},
 			Headers:     []string{"header", "test"},
-			HandlerFunc: HandlerFunc,
+			HandlerFunc: HandlerFuncs,
 		},
 		{
 			SubDomain:   "test",
