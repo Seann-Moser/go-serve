@@ -255,7 +255,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 	name := SwagEndpoint{
 		FuncName:  tmpPkg[len(tmpPkg)-1],
 		Summary:   "todo",
-		Tags:      path.Base(endpoint.URLPath),
+		Tags:      path.Clean(strings.Split(endpoint.URLPath, "/")[0]),
 		ID:        ToSnakeCase(UrlToName(endpoint.URLPath)) + "-" + strings.Join(endpoint.Methods, "-"),
 		Produce:   "json", //todo or image
 		Path:      endpoint.URLPath,
