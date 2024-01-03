@@ -78,6 +78,22 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 		CookieJar:    client.Jar,
 		UseCookieJar: useCookieJar,
 	}, nil
+//  godoc
+// @Summary todo
+// @Tags query,GET
+// @ID account_user_settings_query-GET
+// @Produce json 
+// @Param account_id path string true "todo" 
+// @Param user_id path string true "todo" 
+// @Param q query string false "todo" 
+// @Param query query string false "todo" 
+// @Param token_id query string false "todo" 
+// @Param stringMap body map[string]string false "todo" 
+// @Success 200 {object} response.BaseResponse{data=response.BaseResponse} "todo"  
+// @Failure 400 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+// @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+// @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+// @Router /account/{account_id}/user/{user_id}/settings/query [GET]
 }
 func (c *Client) Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData) {
 	if retry {

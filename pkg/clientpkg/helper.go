@@ -11,6 +11,7 @@ import (
 	"path"
 	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
 	"text/template"
 
@@ -548,7 +549,9 @@ func templateReplace(rawTmpl string, data interface{}) (string, error) {
 	}
 	return buff.String(), nil
 }
-
+func GetFunctionName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+}
 func getTypePkg(myVar interface{}) string {
 	t := reflect.TypeOf(myVar)
 	if t == nil {
@@ -659,8 +662,7 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 	return
 
 }
-
-// HandlerFunc godoc
+// HandlerFuncs godoc
 // @Summary todo
 // @Tags {user_id},POST
 // @ID account_user-POST
@@ -672,6 +674,7 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 // @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
 // @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
 // @Router /account/{account_id}/user/{user_id} [POST]
-func HandlerFunc(w http.ResponseWriter, r *http.Request) {
+
+func HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }

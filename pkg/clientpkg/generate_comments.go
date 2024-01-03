@@ -65,7 +65,13 @@ func GenerateComments(doc *ApiDoc, endpoints ...*endpoints.Endpoint) {
 	goFiles := GetGoFiles(projectPath)
 	functions := map[string]Func{}
 	for _, e := range endpoints {
-		pkg := getType(e.HandlerFunc)
+		fullName := GetFunctionName(e.HandlerFunc)
+		if fullName == "" {
+			continue
+		}
+		_, pkg := path.Split(fullName)
+		pkg = strings.Split(pkg, ".")[1]
+
 		tmp := FindFunction(pkg, goFiles)
 		for _, t := range tmp {
 			t.FormatComment(e)
@@ -317,6 +323,7 @@ func FindString(file string, find *regexp.Regexp) (*Comment, int, error) {
 	startComment := false
 	doubleSlash := false
 	commentRegex := regexp.MustCompile(`//|/\*|\*/`)
+	funcRegex := regexp.MustCompile(`func[\(\)\s\*a-zA-Z\[\]]\s{0,1}`)
 	for scanner.Scan() {
 		text := scanner.Text()
 		if (strings.Contains(text, "/*") || strings.HasPrefix(text, "//")) && !startComment {
@@ -342,7 +349,12 @@ func FindString(file string, find *regexp.Regexp) (*Comment, int, error) {
 			comment.End = line - 1
 			return comment, line, nil
 		}
-
+		if funcRegex.MatchString(text) || strings.HasPrefix(text, "import") {
+			startComment = false
+			comment.Start = 0
+			comment.End = 0
+			doubleSlash = false
+		}
 		line++
 	}
 
