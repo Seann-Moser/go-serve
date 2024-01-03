@@ -13,24 +13,33 @@ func TestGenerate(t *testing.T) {
 		t.Error(err)
 	}
 }
+func TestGenerateComments(t *testing.T) {
+	GenerateComments(&ApiDoc{}, GetEndpoints()...)
+}
 
 func GetEndpoints() []*endpoints.Endpoint {
 	e := []*endpoints.Endpoint{
 		{
-			SubDomain: "test",
-			URLPath:   "/account/{account_id}/user/{user_id}",
-			Methods:   []string{http.MethodPost},
+			SubDomain:   "test",
+			URLPath:     "/account/{account_id}/user/{user_id}",
+			Methods:     []string{http.MethodPost},
+			HandlerFunc: HandlerFunc,
+			ResponseTypeMap: map[string]interface{}{
+				"POST": RequestData{},
+			},
 		},
 		{
-			SubDomain: "test",
-			URLPath:   "/account/{account_id}/user/{user_id}",
-			Methods:   []string{http.MethodGet},
+			SubDomain:   "test",
+			URLPath:     "/account/{account_id}/user/{user_id}",
+			Methods:     []string{http.MethodGet},
+			HandlerFunc: HandlerFunc,
 		},
 		{
-			SubDomain: "test",
-			URLPath:   "/account/{account_id}/user/{user_id}/settings",
-			Methods:   []string{http.MethodGet},
-			Headers:   []string{"header", "test"},
+			SubDomain:   "test",
+			URLPath:     "/account/{account_id}/user/{user_id}/settings",
+			Methods:     []string{http.MethodGet},
+			Headers:     []string{"header", "test"},
+			HandlerFunc: HandlerFunc,
 		},
 		{
 			SubDomain:   "test",

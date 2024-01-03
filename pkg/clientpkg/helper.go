@@ -65,6 +65,30 @@ func MergeMap[T any](m1, m2 map[string]T) map[string]T {
 	}
 	return m1
 }
+func GetProjectDir() (string, string, error) {
+	currentPath, err := os.Getwd()
+	if err != nil {
+		return "", "", err
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", "", err
+	}
+	homeDir = path.Join(homeDir, "go", "src") + "/"
+
+	rootDir := ""
+	count := 0
+
+	for _, i := range strings.Split(strings.ReplaceAll(currentPath, homeDir, ""), "/") {
+		rootDir = path.Join(rootDir, i)
+		if count > 1 {
+
+			break
+		}
+		count++
+	}
+	return path.Join(homeDir, rootDir), rootDir, nil
+}
 
 func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.Endpoint) (string, error) {
 	currentPath, err := os.Getwd()
@@ -512,14 +536,36 @@ func templateReplaceData(rawTmpl string, data *ClientFunc) (string, error) {
 	return buff.String(), nil
 }
 
+func templateReplace(rawTmpl string, data interface{}) (string, error) {
+	tmpl, err := template.New("general").Parse(rawTmpl)
+	if err != nil {
+		return "", err
+	}
+	buff := bytes.NewBufferString("")
+	err = tmpl.Execute(buff, data)
+	if err != nil {
+		panic(err)
+	}
+	return buff.String(), nil
+}
+
 func getTypePkg(myVar interface{}) string {
 	t := reflect.TypeOf(myVar)
+	if t == nil {
+		return ""
+	}
 	if isArray(myVar) {
+		return t.Elem().PkgPath()
+	}
+	if t.Kind() == reflect.Ptr {
 		return t.Elem().PkgPath()
 	}
 	return t.PkgPath()
 }
 func isArray(myVar interface{}) bool {
+	if myVar == nil {
+		return false
+	}
 	t := reflect.TypeOf(myVar)
 	if t.Kind() == reflect.Ptr {
 		return isArray(t.Elem())
@@ -611,5 +657,21 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 		}
 	}
 	return
+
+}
+
+// HandlerFunc godoc
+// @Summary todo
+// @Tags {user_id},POST
+// @ID account_user-POST
+// @Produce json 
+// @Param account_id path string true "todo" 
+// @Param user_id path string true "todo" 
+// @Success 200 {array} response.BaseResponse{data=clientpkg.RequestData} "todo"  
+// @Failure 400 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+// @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+// @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+// @Router /account/{account_id}/user/{user_id} [POST]
+func HandlerFunc(w http.ResponseWriter, r *http.Request) {
 
 }

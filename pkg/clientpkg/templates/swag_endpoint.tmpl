@@ -1,0 +1,9 @@
+// {{.FuncName}} godoc
+// @Summary {{.Summary}}
+// @Tags {{.Tags}}
+// @ID {{.ID}}
+// @Produce {{.Produce}} {{range .Params}}
+// @Param {{.Name}} {{.Location}} {{.Type}} {{.Required}} "{{.Description}}" {{end}}{{range .Successes}}
+// @Success {{.Status}} {{"{"}}{{.ParamType}}{{"}"}} {{.DataType}} "{{.Message}}" {{end}} {{range .Failures}}
+// @Failure {{.Status}} {{"{"}}{{.ParamType}}{{"}"}} {{.DataType}} "{{.Message}}"{{end}}
+// @Router {{.Path}} [{{.Methods}}]

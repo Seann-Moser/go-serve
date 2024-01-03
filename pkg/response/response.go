@@ -19,6 +19,13 @@ import (
 type Response struct {
 	showError bool
 }
+
+type BaseResponseGeneric[T any] struct {
+	Message string                 `json:"message"`
+	Data    T                      `json:"data,omitempty"`
+	Page    *pagination.Pagination `json:"page,omitempty"`
+}
+
 type BaseResponse struct {
 	Message string                 `json:"message"`
 	Data    interface{}            `json:"data,omitempty"`
