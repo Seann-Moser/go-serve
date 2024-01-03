@@ -63,18 +63,22 @@ func GenerateComments(doc *ApiDoc, endpoints ...*endpoints.Endpoint) {
 		return
 	}
 	goFiles := GetGoFiles(projectPath)
-	functions := map[string]Func{}
+	functions := map[string]Func{} //todo fix to allow for multiple funcs in same file
 	for _, e := range endpoints {
 		fullName := GetFunctionName(e.HandlerFunc)
 		if fullName == "" {
 			continue
 		}
+		fullName = strings.TrimSuffix(fullName, "-fm")
 		_, pkg := path.Split(fullName)
-		pkg = strings.Split(pkg, ".")[1]
-
+		tmpPkg := strings.Split(pkg, ".")
+		pkg = strings.Join(tmpPkg[1:], " ")
+		pkg = strings.TrimPrefix(pkg, "(*")
+		pkg = strings.ReplaceAll(pkg, ")", `\)`)
 		tmp := FindFunction(pkg, goFiles)
 		for _, t := range tmp {
 			t.FormatComment(e)
+			_ = t.UpdateComment()
 		}
 		functions = MergeMap[Func](functions, tmp)
 	}
@@ -91,10 +95,6 @@ func GenerateComments(doc *ApiDoc, endpoints ...*endpoints.Endpoint) {
 		v.Comment.Set(api)
 		_ = v.UpdateComment()
 		break
-	}
-
-	for _, function := range functions {
-		function.UpdateComment()
 	}
 
 }
@@ -114,7 +114,7 @@ func GetFullName(i interface{}) string {
 func FindFunction(fName string, goFiles []string) map[string]Func {
 	found := map[string]Func{}
 	for _, files := range goFiles {
-		if cmt, ln, err := FindString(files, regexp.MustCompile(`func[\(\)\s\*a-zA-Z\[\]]\s{0,1}`+fName+`\s{0,1}\(`)); err == nil && ln > 0 {
+		if cmt, ln, err := FindString(files, regexp.MustCompile(`func[\(\s\*a-z]*`+fName+`\s{0,1}\(`)); err == nil && ln > 0 {
 			found[files] = Func{
 				File:    files,
 				Name:    fName,
@@ -122,6 +122,14 @@ func FindFunction(fName string, goFiles []string) map[string]Func {
 				Comment: cmt,
 			}
 		}
+		//} else if cmt, ln, err := FindString(files, regexp.MustCompile(`func[\(\)\s\*a-zA-Z\[\]]*`+fName+`\s{0,1}\(`)); err == nil && ln > 0 {
+		//	found[files] = Func{
+		//		File:    files,
+		//		Name:    fName,
+		//		Ln:      ln,
+		//		Comment: cmt,
+		//	}
+		//}
 
 	}
 	return found

@@ -18,12 +18,13 @@ func TestGenerateComments(t *testing.T) {
 }
 
 func GetEndpoints() []*endpoints.Endpoint {
+	c := Client{}
 	e := []*endpoints.Endpoint{
 		{
 			SubDomain:   "test",
 			URLPath:     "/account/{account_id}/user/{user_id}",
 			Methods:     []string{http.MethodPost},
-			HandlerFunc: HandlerFuncs,
+			HandlerFunc: c.HandlerFuncs,
 			ResponseTypeMap: map[string]interface{}{
 				"POST": RequestData{},
 			},
@@ -39,7 +40,7 @@ func GetEndpoints() []*endpoints.Endpoint {
 			URLPath:     "/account/{account_id}/user/{user_id}/settings",
 			Methods:     []string{http.MethodGet},
 			Headers:     []string{"header", "test"},
-			HandlerFunc: HandlerFuncs,
+			HandlerFunc: c.HandlerFuncs,
 		},
 		{
 			SubDomain:   "test",
