@@ -197,10 +197,14 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 		fullPkg := getTypePkg(v)
 		_, pkg := path.Split(fullPkg)
 		n = strings.ToLower(n[:1]) + n[1:]
+		t := fmt.Sprintf("%s.%s", pkg, getType(v))
+		if pkg == "" {
+			pkg = t
+		}
 		params = append(params, SwagParams{
 			Name:        n,
 			Location:    "body",
-			Type:        fmt.Sprintf("%s.%s", pkg, getType(v)),
+			Type:        t,
 			Required:    false,
 			Description: "todo",
 		})
