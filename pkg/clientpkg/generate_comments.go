@@ -199,7 +199,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 		n = strings.ToLower(n[:1]) + n[1:]
 		t := fmt.Sprintf("%s.%s", pkg, getType(v))
 		if pkg == "" {
-			pkg = t
+			t = getType(v)
 		}
 		params = append(params, SwagParams{
 			Name:        n,
@@ -255,7 +255,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 	name := SwagEndpoint{
 		FuncName:  tmpPkg[len(tmpPkg)-1],
 		Summary:   "todo",
-		Tags:      path.Clean(strings.Split(endpoint.URLPath, "/")[0]),
+		Tags:      strings.Split(endpoint.URLPath, "/")[1],
 		ID:        ToSnakeCase(UrlToName(endpoint.URLPath)) + "-" + strings.Join(endpoint.Methods, "-"),
 		Produce:   "json", //todo or image
 		Path:      endpoint.URLPath,

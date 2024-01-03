@@ -663,9 +663,9 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 
 }
 
-// HandlerFuncs clientpkg.(*Client).HandlerFuncs godoc
+// HandlerFuncs godoc
 // @Summary todo
-// @Tags settings,GET-DELETE
+// @Tags 
 // @ID account_user_settings-GET-DELETE
 // @Produce json 
 // @Param account_id path string true "todo" 
@@ -673,27 +673,27 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 // @Param header header string false "todo" 
 // @Param test header string false "todo" 
 // @Param responseData body clientpkg.ResponseData false "todo" 
-// @Success 200 {object} response.BaseResponse{data=response.BaseResponse} "todo"  
-// @Failure 400 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-// @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-// @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+// @Success 200 {object} response.BaseResponse "todo"  
+// @Failure 400 {object} response.BaseResponse "todo"
+// @Failure 500 {object} response.BaseResponse "todo"
+// @Failure 401 {object} response.BaseResponse "todo"
 // @Router /account/{account_id}/user/{user_id}/settings [GET] 
 // @Router /account/{account_id}/user/{user_id}/settings [DELETE] 
 func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// HandlerFuncs clientpkg.HandlerFuncs godoc
+// HandlerFuncs godoc
 // @Summary todo
-// @Tags {user_id},GET
+// @Tags 
 // @ID account_user-GET
 // @Produce json 
 // @Param account_id path string true "todo" 
 // @Param user_id path string true "todo" 
-// @Success 200 {array} response.BaseResponse{data=clientpkg.RequestData} "todo"  
-// @Failure 400 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-// @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-// @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "todo"  
+// @Failure 400 {object} response.BaseResponse "todo"
+// @Failure 500 {object} response.BaseResponse "todo"
+// @Failure 401 {object} response.BaseResponse "todo"
 // @Router /account/{account_id}/user/{user_id} [GET] 
 func HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
