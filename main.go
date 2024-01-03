@@ -29,7 +29,6 @@ import (
 // @query.collection.format multi
 
 
-
 func main() {
 	s := server.NewServer(context.Background(), "8888", "/test", 0, false)
 	if err := s.AddEndpoints(context.Background(), handlers.HealthCheck); err != nil {

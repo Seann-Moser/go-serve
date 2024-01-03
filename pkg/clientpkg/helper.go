@@ -662,10 +662,11 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 	return
 
 }
-// Client\) HandlerFuncs godoc
+
+// HandlerFuncs clientpkg.(*Client).HandlerFuncs godoc
 // @Summary todo
-// @Tags settings,GET
-// @ID account_user_settings-GET
+// @Tags settings,GET-DELETE
+// @ID account_user_settings-GET-DELETE
 // @Produce json 
 // @Param account_id path string true "todo" 
 // @Param user_id path string true "todo" 
@@ -676,12 +677,13 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 // @Failure 400 {object} response.BaseResponse{data=response.BaseResponse} "todo"
 // @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
 // @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-// @Router /account/{account_id}/user/{user_id}/settings [GET]
-
+// @Router /account/{account_id}/user/{user_id}/settings [GET] 
+// @Router /account/{account_id}/user/{user_id}/settings [DELETE] 
 func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
-// HandlerFuncs godoc
+
+// HandlerFuncs clientpkg.HandlerFuncs godoc
 // @Summary todo
 // @Tags {user_id},GET
 // @ID account_user-GET
@@ -692,8 +694,7 @@ func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} response.BaseResponse{data=response.BaseResponse} "todo"
 // @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
 // @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-// @Router /account/{account_id}/user/{user_id} [GET]
-
+// @Router /account/{account_id}/user/{user_id} [GET] 
 func HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }

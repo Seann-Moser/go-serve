@@ -38,7 +38,7 @@ func GetEndpoints() []*endpoints.Endpoint {
 		{
 			SubDomain:   "test",
 			URLPath:     "/account/{account_id}/user/{user_id}/settings",
-			Methods:     []string{http.MethodGet},
+			Methods:     []string{http.MethodGet, http.MethodDelete},
 			Headers:     []string{"header", "test"},
 			HandlerFunc: c.HandlerFuncs,
 		},

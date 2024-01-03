@@ -30,7 +30,7 @@ type SwagEndpoint struct {
 	ID       string
 	Produce  string // mime types https://github.com/swaggo/swag#mime-types
 	Path     string
-	Methods  string
+	Methods  []string
 
 	Params    []SwagParams
 	Successes []ReturnStatus
@@ -237,14 +237,19 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 		DataType:  GetFullName(response.BaseResponse{}),
 		Message:   "todo",
 	})
+	fullName := GetFunctionName(endpoint.HandlerFunc)
+	fullName = strings.TrimSuffix(fullName, "-fm")
+	_, pkg := path.Split(fullName)
+	tmpPkg := strings.Split(pkg, ".")
+
 	name := SwagEndpoint{
-		FuncName:  fc.Name,
+		FuncName:  tmpPkg[len(tmpPkg)-1],
 		Summary:   "todo",
 		Tags:      path.Base(endpoint.URLPath) + "," + strings.Join(endpoint.Methods, "-"),
 		ID:        ToSnakeCase(UrlToName(endpoint.URLPath)) + "-" + strings.Join(endpoint.Methods, "-"),
 		Produce:   "json", //todo or image
 		Path:      endpoint.URLPath,
-		Methods:   strings.Join(endpoint.Methods, ","),
+		Methods:   endpoint.Methods,
 		Params:    params,
 		Successes: successes,
 		Failures:  failures,
@@ -280,7 +285,8 @@ func (fc *Func) UpdateComment() error {
 					l = `/*` + l
 					dontSkipped = true
 				}
-				if i == len(fc.Comment.Lines) && dontSkipped {
+
+				if i >= len(fc.Comment.Lines)-1 && dontSkipped {
 					l += "*/"
 				}
 				lines = append(lines, l)
@@ -292,7 +298,7 @@ func (fc *Func) UpdateComment() error {
 		} else {
 			lines = append(lines, text)
 		}
-		if line == fc.Comment.End && !commentRegex.MatchString(text) {
+		if line == fc.Comment.End && !commentRegex.MatchString(text) && text != "" {
 			lines = append(lines, text)
 		}
 		line++
