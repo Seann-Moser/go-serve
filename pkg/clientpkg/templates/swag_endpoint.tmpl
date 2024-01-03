@@ -5,5 +5,5 @@
 // @Produce {{.Produce}} {{range .Params}}
 // @Param {{.Name}} {{.Location}} {{.Type}} {{.Required}} "{{.Description}}" {{end}}{{range .Successes}}
 // @Success {{.Status}} {{"{"}}{{.ParamType}}{{"}"}} {{.DataType}} "{{.Message}}" {{end}} {{range .Failures}}
-// @Failure {{.Status}} {{"{"}}{{.ParamType}}{{"}"}} {{.DataType}} "{{.Message}}"{{end}}
-// @Router {{.Path}} [{{.Methods}}]
+// @Failure {{.Status}} {{"{"}}{{.ParamType}}{{"}"}} {{.DataType}} "{{.Message}}"{{end}}{{range $v := .Methods}}
+// @Router {{$.Path}} [{{$v}}] {{end}}
