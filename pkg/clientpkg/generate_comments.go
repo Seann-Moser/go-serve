@@ -105,8 +105,15 @@ func GetFullName(i interface{}) string {
 	if isMap(i) {
 		return fmt.Sprintf("map[%s]%s", getType(i), getType(i))
 	} else if isArray(i) {
-		return fmt.Sprintf("%s.%s", pkg, getType(i))
+		if getType(i) == "BaseResponse" {
+			return fmt.Sprintf("response.BaseResponse")
+		}
+		return fmt.Sprintf("response.BaseResponse{data=[]%s.%s}", pkg, getType(i))
 	} else {
+		if getType(i) == "BaseResponse" {
+			return fmt.Sprintf("response.BaseResponse")
+		}
+
 		return fmt.Sprintf("response.BaseResponse{data=%s.%s}", pkg, getType(i))
 	}
 }
@@ -187,11 +194,13 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 		if isMap(v) {
 			n += "Map"
 		}
+		fullPkg := getTypePkg(v)
+		_, pkg := path.Split(fullPkg)
 		n = strings.ToLower(n[:1]) + n[1:]
 		params = append(params, SwagParams{
 			Name:        n,
 			Location:    "body",
-			Type:        GetFullName(v),
+			Type:        fmt.Sprintf("%s.%s", pkg, getType(v)),
 			Required:    false,
 			Description: "todo",
 		})
@@ -199,9 +208,6 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 
 	for _, v := range endpoint.ResponseTypeMap {
 		paramType := "object"
-		if isArray(endpoint.ResponseTypeMap) {
-			paramType = "array"
-		}
 		successes = append(successes, ReturnStatus{
 			Status:    http.StatusOK,
 			ParamType: paramType,
@@ -245,7 +251,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 	name := SwagEndpoint{
 		FuncName:  tmpPkg[len(tmpPkg)-1],
 		Summary:   "todo",
-		Tags:      path.Base(endpoint.URLPath) + "," + strings.Join(endpoint.Methods, "-"),
+		Tags:      path.Base(endpoint.URLPath),
 		ID:        ToSnakeCase(UrlToName(endpoint.URLPath)) + "-" + strings.Join(endpoint.Methods, "-"),
 		Produce:   "json", //todo or image
 		Path:      endpoint.URLPath,
