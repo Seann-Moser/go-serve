@@ -24,13 +24,14 @@ type ApiDoc struct {
 }
 
 type SwagEndpoint struct {
-	FuncName string
-	Summary  string
-	Tags     string
-	ID       string
-	Produce  string // mime types https://github.com/swaggo/swag#mime-types
-	Path     string
-	Methods  []string
+	FuncName    string
+	Summary     string
+	Description string
+	Tags        string
+	ID          string
+	Produce     string // mime types https://github.com/swaggo/swag#mime-types
+	Path        string
+	Methods     []string
 
 	Params    []SwagParams
 	Successes []ReturnStatus
@@ -99,7 +100,7 @@ func GenerateComments(doc *ApiDoc, endpoints ...*endpoints.Endpoint) {
 
 }
 
-func GetFullName(i interface{}) string {
+func GetFullName(i interface{}, array bool) string {
 	fullPkg := getTypePkg(i)
 	_, pkg := path.Split(fullPkg)
 	if isMap(i) {
@@ -113,8 +114,11 @@ func GetFullName(i interface{}) string {
 		if getType(i) == "BaseResponse" {
 			return fmt.Sprintf("response.BaseResponse")
 		}
-
-		return fmt.Sprintf("response.BaseResponse{data=%s.%s}", pkg, getType(i))
+		prefix := ""
+		if array {
+			prefix = "[]"
+		}
+		return fmt.Sprintf("response.BaseResponse{data=%s%s.%s}", prefix, pkg, getType(i))
 	}
 }
 
@@ -212,10 +216,11 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 
 	for _, v := range endpoint.ResponseTypeMap {
 		paramType := "object"
+
 		successes = append(successes, ReturnStatus{
 			Status:    http.StatusOK,
 			ParamType: paramType,
-			DataType:  GetFullName(v),
+			DataType:  GetFullName(v, strings.HasSuffix(endpoint.URLPath, "s")),
 			Message:   "todo",
 		})
 
@@ -224,7 +229,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 		successes = append(successes, ReturnStatus{
 			Status:    http.StatusOK,
 			ParamType: "object",
-			DataType:  GetFullName(response.BaseResponse{}),
+			DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
 			Message:   "todo",
 		})
 	}
@@ -232,19 +237,19 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 	failures = append(failures, ReturnStatus{
 		Status:    http.StatusBadRequest,
 		ParamType: "object",
-		DataType:  GetFullName(response.BaseResponse{}),
+		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
 		Message:   "todo",
 	})
 	failures = append(failures, ReturnStatus{
 		Status:    http.StatusInternalServerError,
 		ParamType: "object",
-		DataType:  GetFullName(response.BaseResponse{}),
+		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
 		Message:   "todo",
 	})
 	failures = append(failures, ReturnStatus{
 		Status:    http.StatusUnauthorized,
 		ParamType: "object",
-		DataType:  GetFullName(response.BaseResponse{}),
+		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
 		Message:   "todo",
 	})
 	fullName := GetFunctionName(endpoint.HandlerFunc)
@@ -253,16 +258,17 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 	tmpPkg := strings.Split(pkg, ".")
 
 	name := SwagEndpoint{
-		FuncName:  tmpPkg[len(tmpPkg)-1],
-		Summary:   "todo",
-		Tags:      strings.Split(endpoint.URLPath, "/")[1],
-		ID:        ToSnakeCase(UrlToName(endpoint.URLPath)) + "-" + strings.Join(endpoint.Methods, "-"),
-		Produce:   "json", //todo or image
-		Path:      endpoint.URLPath,
-		Methods:   endpoint.Methods,
-		Params:    params,
-		Successes: successes,
-		Failures:  failures,
+		FuncName:    tmpPkg[len(tmpPkg)-1],
+		Summary:     "todo",
+		Description: "todo",
+		Tags:        strings.Split(endpoint.URLPath, "/")[1] + "," + strings.Join(endpoint.Methods, ","),
+		ID:          ToSnakeCase(UrlToName(endpoint.URLPath)) + "-" + endpoint.UniqueID(),
+		Produce:     "json", //todo or image
+		Path:        endpoint.URLPath,
+		Methods:     endpoint.Methods,
+		Params:      params,
+		Successes:   successes,
+		Failures:    failures,
 	}
 	cmt, err := templateReplace(SwagApiEndpointTempl, name)
 	if err == nil {

@@ -665,8 +665,9 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 
 // HandlerFuncs godoc
 // @Summary todo
-// @Tags 
-// @ID account_user_settings-GET-DELETE
+// @Tags account,GET,DELETE
+// @ID account_user_settings-c0affc3d8eefc506bb3142325d940283a274ee0d
+// @Description todo
 // @Produce json 
 // @Param account_id path string true "todo" 
 // @Param user_id path string true "todo" 
@@ -685,8 +686,9 @@ func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 // HandlerFuncs godoc
 // @Summary todo
-// @Tags 
-// @ID account_user-GET
+// @Tags account,GET
+// @ID account_user-9df6dae28a065c2087fbd4eac002c2cd9de221e7
+// @Description todo
 // @Produce json 
 // @Param account_id path string true "todo" 
 // @Param user_id path string true "todo" 
