@@ -26,7 +26,7 @@
                 params: params,
                 baseURL: nuxtApp.$config.public.{{.UrlEnvVarName}},
              }
-            {{if .RequestType}}config.data = {{.RequestTypeName}}.serialize() {{end}}{{if .Async}}
+            {{if .RequestType}}config.body = {{.RequestTypeName}}.serialize() {{end}}{{if .Async}}
             const data = await $fetch({{.Path}}, config){{else}}
             const data = $fetch({{.Path}}, config){{end}}{{if .Async}}{{if .UseIterator}}
             return new Iterator(JSON.parse(data),{{.Path}},config,pagination){{else}}
