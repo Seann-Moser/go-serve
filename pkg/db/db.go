@@ -2,10 +2,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/opencensus-integrations/ocsql"
 	"go.uber.org/multierr"
 	"net/http"
 	"reflect"
@@ -207,29 +205,34 @@ func connectToDB(ctx context.Context, user, password, host, instanceName string,
 	}
 	//dns := fmt.Sprintf("%s:%s@tcp(%s:%d)/", user, password, host, port)
 	ctxLogger.Info(ctx, "connecting to db", zap.String("dsn", dbConf.FormatDSN()))
-	driverName, err := ocsql.Register("mysql", ocsql.WithAllTraceOptions(), ocsql.WithInstanceName(instanceName))
+	//driverName, err := ocsql.Register("mysql", ocsql.WithAllTraceOptions(), ocsql.WithInstanceName(instanceName))
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	//sqlDb, err := sql.Open("mysql", dbConf.FormatDSN())
+	//if err != nil {
+	//	return nil, err
+	//}
+	//sqlDb.SetMaxOpenConns(maxConnections)
+	//sqlDb.SetConnMaxLifetime(lifeTime)
+	//sqlDb.SetMaxIdleConns(idleConn)
+
+	db, err := sqlx.Open("mysql", dbConf.FormatDSN())
 	if err != nil {
 		return nil, err
 	}
-	sqlDb, err := sql.Open(driverName, dbConf.FormatDSN())
-	if err != nil {
-		return nil, err
-	}
-	sqlDb.SetMaxOpenConns(maxConnections)
-	sqlDb.SetConnMaxLifetime(lifeTime)
-	sqlDb.SetMaxIdleConns(idleConn)
-
-	sqlx.NewDb(sqlDb, "mysql")
-	db := sqlx.NewDb(sqlDb, "mysql")
-
+	db.SetMaxOpenConns(maxConnections)
+	db.SetConnMaxLifetime(lifeTime)
+	db.SetMaxIdleConns(idleConn)
 	if err = db.Ping(); err == nil {
 		return db, nil
 	}
 	var retries int
 	ticker := time.NewTicker(5 * time.Second)
-	if writeStatDuration != 0 {
-		defer ocsql.RecordStats(sqlDb, writeStatDuration)()
-	}
+	//if writeStatDuration != 0 {
+	//	defer ocsql.RecordStats(sqlDb, writeStatDuration)()
+	//}
 
 	for {
 		select {
