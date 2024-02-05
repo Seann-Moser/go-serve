@@ -40,6 +40,8 @@ const (
 	DBMaxConnectionRetryFlag = "db-max-connection-retry"
 	DBInstanceName           = "db-instance-name"
 	DBWriteStatDuration      = "db-write-stat-interval"
+	DBMaxIdleConnectionsFlag = "db-max-idle-connections-flag"
+	DBMaxConnectionLifetime  = "db-max-connection-lifetime"
 )
 
 func GetDaoFlags() *pflag.FlagSet {
@@ -51,9 +53,11 @@ func GetDaoFlags() *pflag.FlagSet {
 
 	fs.Int(DBPortFlag, 3306, "")
 	fs.Int(DBMaxConnectionsFlag, 10, "")
+	fs.Int(DBMaxIdleConnectionsFlag, 10, "")
 	fs.Int(DBMaxConnectionRetryFlag, 10, "")
 	fs.Bool(DBUpdateTablesFlag, false, "")
-	fs.Duration(DBWriteStatDuration, 30*time.Second, "")
+	fs.Duration(DBMaxConnectionLifetime, 1*time.Minute, "")
+	fs.Duration(DBWriteStatDuration, 10*time.Second, "")
 
 	return fs
 }
@@ -69,6 +73,11 @@ func (d *DAO) Middleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (d *DAO) Close() {
+	d.db.Close()
+
 }
 
 func (d *DAO) GetContext() context.Context {
@@ -140,6 +149,8 @@ func NewSQLDao(ctx context.Context) (*DAO, error) {
 		viper.GetString(DBInstanceName),
 		viper.GetInt(DBPortFlag),
 		viper.GetInt(DBMaxConnectionsFlag),
+		viper.GetInt(DBMaxIdleConnectionsFlag),
+		viper.GetDuration(DBMaxConnectionLifetime),
 		viper.GetDuration(DBWriteStatDuration),
 	)
 	if err != nil {
@@ -183,7 +194,7 @@ func getType(myVar interface{}) string {
 	}
 }
 
-func connectToDB(ctx context.Context, user, password, host, instanceName string, port, maxConnections int, writeStatDuration time.Duration) (*sqlx.DB, error) {
+func connectToDB(ctx context.Context, user, password, host, instanceName string, port, maxConnections, idleConn int, lifeTime, writeStatDuration time.Duration) (*sqlx.DB, error) {
 	dbConf := mysql.Config{
 		AllowNativePasswords:    true,
 		User:                    user,
@@ -205,6 +216,8 @@ func connectToDB(ctx context.Context, user, password, host, instanceName string,
 		return nil, err
 	}
 	sqlDb.SetMaxOpenConns(maxConnections)
+	sqlDb.SetConnMaxLifetime(lifeTime)
+	sqlDb.SetMaxIdleConns(idleConn)
 
 	sqlx.NewDb(sqlDb, "mysql")
 	db := sqlx.NewDb(sqlDb, "mysql")
