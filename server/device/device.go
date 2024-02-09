@@ -6,13 +6,10 @@ import (
 	"net"
 	"net/http"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type Device struct {
 	ID          string `db:"id" json:"id" qc:"primary;join,where::="`
-	Name        string `db:"name" json:"name" qc:"primary;update"`
 	IPv4        string `db:"ip_v4" json:"ip_v4" qc:"primary"`
 	IPv6        string `db:"ip_v6" json:"ip_v6" qc:"primary"`
 	UserAgent   string `db:"user_agent" json:"user_agent" qc:"data_type::text;primary"`
@@ -23,10 +20,8 @@ type Device struct {
 
 func GetDeviceFromRequest(r *http.Request) *Device {
 	device := &Device{}
-	device.Name = strings.ToUpper(uuid.New().String())
 	device.loadIP(r)
 	device.UserAgent = r.UserAgent()
-	device.Name = r.UserAgent()
 	return device
 }
 
