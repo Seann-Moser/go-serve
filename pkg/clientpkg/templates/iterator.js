@@ -268,6 +268,9 @@ class IteratorResponseData {
         if (rawResponse === undefined){
             return
         }
+        if (typeof rawResponse !== 'object'){
+            return
+        }
         if ("data" in rawResponse) {
             this.Data = rawResponse.data
         }else{
@@ -291,6 +294,9 @@ class IteratorResponseData {
         this.parse()
     }
     parse(){
+        if (typeof this.decoded !== 'object'){
+            return
+        }
         if ("data" in this.decoded) {
             this.Data = this.decoded.data
         }
