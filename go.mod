@@ -4,7 +4,7 @@ go 1.21.4
 
 require (
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
-	github.com/Seann-Moser/QueryHelper v1.13.3
+	github.com/Seann-Moser/QueryHelper v1.13.6
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/uuid v1.4.0

@@ -25,7 +25,7 @@ type DAO struct {
 	updateColumns bool
 	ctx           context.Context
 	tablesNames   []string
-	tableColumns  map[string]map[string]*QueryHelper.Column
+	tableColumns  map[string]map[string]QueryHelper.Column
 }
 
 const (
@@ -159,7 +159,7 @@ func NewSQLDao(ctx context.Context) (*DAO, error) {
 		db:            QueryHelper.NewSql(db),
 		updateColumns: viper.GetBool(DBUpdateTablesFlag),
 		tablesNames:   make([]string, 0),
-		tableColumns:  map[string]map[string]*QueryHelper.Column{},
+		tableColumns:  map[string]map[string]QueryHelper.Column{},
 	}, nil
 }
 
