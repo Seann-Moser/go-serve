@@ -107,12 +107,12 @@ func GetFullName(i interface{}, array bool) string {
 		return fmt.Sprintf("map[%s]%s", getType(i), getType(i))
 	} else if isArray(i) {
 		if getType(i) == "BaseResponse" {
-			return fmt.Sprintf("response.BaseResponse")
+			return "response.BaseResponse"
 		}
 		return fmt.Sprintf("response.BaseResponse{data=[]%s.%s}", pkg, getType(i))
 	} else {
 		if getType(i) == "BaseResponse" {
-			return fmt.Sprintf("response.BaseResponse")
+			return "response.BaseResponse"
 		}
 		prefix := ""
 		if array {
@@ -389,17 +389,17 @@ func FindString(file string, find *regexp.Regexp) (*Comment, int, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		// Handle the error
+		return nil, 0, err
 	}
 	return nil, 0, err
 }
 func GetGoFiles(path string) []string {
-	libRegEx, e := regexp.Compile("^.+\\.(go)$")
+	libRegEx, e := regexp.Compile(`^.+\\.(go)$`)
 	if e != nil {
 		log.Fatal(e)
 	}
 	var files []string
-	e = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if strings.Contains(path, "vendor") {
 			return nil
 		}
