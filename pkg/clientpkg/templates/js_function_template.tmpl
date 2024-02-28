@@ -5,10 +5,8 @@
          * @param {boolean} lazy
          * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
          * {{end}}  {{range .MuxVars}}
-         * @param {string} {{.}}{{end}}
-         * {{if .UsesQueryParams }}{{range .QueryParams}}
-         * @param {string} {{.}}
-         * {{end}}{{end}}
+         * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
+         * @param {string} {{.}}{{end}}{{end}}
          */
         {{if .Async}}async {{end}}{{.Name}}(lazy,{{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}pagination){
             if (pagination === null){
@@ -33,4 +31,44 @@
             return JSON.parse(data){{end}}{{else}}
             {{if .UseIterator}}return new Iterator(data,{{.Path}},config,pagination){{else}}
             return data{{end}}{{end}}
+        },
+
+        /**
+         * {{.Name}}Config auto generated
+         * @param {Pagination} pagination
+         * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
+         * {{end}}  {{range .MuxVars}}
+         * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
+         * @param {string} {{.}}{{end}}
+         * {{end}}
+         */
+        {{.Name}}Config({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}pagination){
+            if (pagination === null){
+                pagination = new Pagination(null)
+            }
+             let params = {}
+             params["items_per_page"] = pagination.ItemsPerPage
+             params["page"] = pagination.ItemsPerPage{{range $k,$v := .QueryParams}}
+             params["{{$k}}"] = {{$v}}{{end}}
+             const config = {
+                server: false,
+                method: "{{.MethodType}}",
+                credentials: "include",
+                params: params,
+                baseURL: nuxtApp.$config.public.{{.UrlEnvVarName}},
+                path: {{.Path}}
+             }
+             return config
+        },
+
+        /**
+         * {{.Name}}URL auto generated
+         * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
+         * {{end}}  {{range .MuxVars}}
+         * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
+         * @param {string} {{.}}{{end}}
+         * {{end}}
+         */
+        {{.Name}}URL({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}){
+             return nuxtApp.$config.public.{{.UrlEnvVarName}}+{{.Path}}
         }

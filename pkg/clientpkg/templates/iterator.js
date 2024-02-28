@@ -323,3 +323,22 @@ class Pagination {
         this.ItemsPerPage = pageJson["items_per_page"]
     }
 }
+
+/**
+    @param {array<File>} files
+    @param {object} config
+    @param {array<ResponseData>} responseData
+    @return {promise}
+ */
+function UploadImage(files,config) {
+    if (files === null || files.length === 0) {
+        return Promise.reject(
+            createError(`failed uploading image:no files present`),
+        );
+    }
+    const formData = new FormData();
+    formData.append("image", files[0]);
+    config.body = formData
+
+    return $fetch(config.path, config)
+}
