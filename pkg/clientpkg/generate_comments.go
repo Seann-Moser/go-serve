@@ -81,6 +81,7 @@ func GenerateComments(doc *ApiDoc, endpoints ...*endpoints.Endpoint) {
 			t.FormatComment(e)
 			_ = t.UpdateComment()
 		}
+
 		functions = MergeMap[Func](functions, tmp)
 	}
 	api, err := templateReplace(SwagApiGeneralTempl, doc)
@@ -154,9 +155,9 @@ type Func struct {
 }
 
 func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
-	params := []SwagParams{}
-	successes := []ReturnStatus{}
-	failures := []ReturnStatus{}
+	var params []SwagParams
+	var successes []ReturnStatus
+	var failures []ReturnStatus
 	re := regexp.MustCompile(`\{(.*?)\}`)
 	muxVars := re.FindAllString(endpoint.URLPath, -1)
 	for i := range muxVars {
@@ -167,7 +168,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Location:    "path",
 			Type:        "string",
 			Required:    true,
-			Description: "todo",
+			Description: endpoint.ParamDescriptions[n],
 		})
 	}
 	for _, p := range endpoint.QueryParams {
@@ -176,7 +177,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Location:    "query",
 			Type:        "string",
 			Required:    false,
-			Description: "todo",
+			Description: endpoint.ParamDescriptions[p],
 		})
 	}
 
@@ -186,7 +187,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Location:    "header",
 			Type:        "string",
 			Required:    false,
-			Description: "todo",
+			Description: endpoint.ParamDescriptions[p],
 		})
 	}
 
@@ -210,7 +211,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Location:    "body",
 			Type:        t,
 			Required:    false,
-			Description: "todo",
+			Description: endpoint.ParamDescriptions[n],
 		})
 	}
 
@@ -221,7 +222,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Status:    http.StatusOK,
 			ParamType: paramType,
 			DataType:  GetFullName(v, strings.HasSuffix(endpoint.URLPath, "s")),
-			Message:   "todo",
+			Message:   "returning object",
 		})
 
 	}
@@ -230,7 +231,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Status:    http.StatusOK,
 			ParamType: "object",
 			DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
-			Message:   "todo",
+			Message:   "return message object",
 		})
 	}
 
@@ -238,19 +239,19 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 		Status:    http.StatusBadRequest,
 		ParamType: "object",
 		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
-		Message:   "todo",
+		Message:   "invalid request to endpoint",
 	})
 	failures = append(failures, ReturnStatus{
 		Status:    http.StatusInternalServerError,
 		ParamType: "object",
 		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
-		Message:   "todo",
+		Message:   "failed",
 	})
 	failures = append(failures, ReturnStatus{
 		Status:    http.StatusUnauthorized,
 		ParamType: "object",
 		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
-		Message:   "todo",
+		Message:   "unauthorized request to endpoint",
 	})
 	fullName := GetFunctionName(endpoint.HandlerFunc)
 	fullName = strings.TrimSuffix(fullName, "-fm")
@@ -259,8 +260,8 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 
 	name := SwagEndpoint{
 		FuncName:    tmpPkg[len(tmpPkg)-1],
-		Summary:     "todo",
-		Description: "todo",
+		Summary:     endpoint.Description,
+		Description: endpoint.Description,
 		Tags:        strings.Split(endpoint.URLPath, "/")[1] + "," + strings.Join(endpoint.Methods, ","),
 		ID:          ToSnakeCase(UrlToName(endpoint.URLPath)) + "-" + endpoint.UniqueID(),
 		Produce:     "json", //todo or image

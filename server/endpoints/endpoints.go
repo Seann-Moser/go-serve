@@ -33,12 +33,22 @@ type Endpoint struct {
 	Handler         http.Handler     `db:"-" json:"-"`
 	Timeout         int              `json:"timeout" db:"timeout" qc:"update;default::10"`
 
+	Description          string                     `json:"description" db:"-"`
+	ParamDescriptions    map[string]string          `json:"param_descriptions" db:"-"`
+	ResponseDescriptions map[string]HTTPDescription `json:"response_descriptions" db:"-"`
+
+	ResponseFailures map[string]HTTPDescription `json:"response_failures" db:"-"`
+
 	Async           bool                   `json:"-" db:"-"`
 	RequestTypeMap  map[string]interface{} `json:"-" db:"-"`
 	ResponseTypeMap map[string]interface{} `json:"-" db:"-"`
 	Headers         []string               `json:"-" db:"-"`
 	QueryParams     []string               `json:"-" db:"-"`
 	SkipGenerate    bool                   `json:"-" db:"-"`
+}
+type HTTPDescription struct {
+	Description string
+	StatusCode  int
 }
 
 func (e *Endpoint) SetResponseType(i interface{}, methods ...string) *Endpoint {

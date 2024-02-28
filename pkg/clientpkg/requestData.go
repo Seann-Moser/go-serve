@@ -33,7 +33,7 @@ type ResponseData struct {
 	Message string
 	Err     error
 	Data    []byte
-	Cookies []*http.Cookie
+	Cookies []*http.Cookie `json:"-"`
 }
 
 func NewResponseData(resp *http.Response, err error) *ResponseData {

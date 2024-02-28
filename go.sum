@@ -46,8 +46,8 @@ github.com/PuerkitoBio/purell v1.1.1 h1:WEQqlqaGbrPkxLJWfBwQmfEAE1Z7ONdDLqrN38tN
 github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 h1:d+Bc7a5rLufV/sSk/8dngufqelfh6jnri85riMAaF/M=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
-github.com/Seann-Moser/QueryHelper v1.13.6 h1:Om5GGt0Shn7zXKDCZSw+hCSnbuebbJUCZheimdEOK+Y=
-github.com/Seann-Moser/QueryHelper v1.13.6/go.mod h1:THtCcUmkCbXgHe1egGehMBe6xHcOe8IO9v7rRBRYiBw=
+github.com/Seann-Moser/QueryHelper v1.13.7 h1:SGgbEh80lWa8KLg/5vmR9dr5lb9U1+8ojjGW2RxYfk4=
+github.com/Seann-Moser/QueryHelper v1.13.7/go.mod h1:THtCcUmkCbXgHe1egGehMBe6xHcOe8IO9v7rRBRYiBw=
 github.com/Seann-Moser/ctx_cache v1.0.5 h1:Qt4DsOGWq3M7nu4xAuo2vs5ed+cWMbuZ9lQqqlHGzvc=
 github.com/Seann-Moser/ctx_cache v1.0.5/go.mod h1:N/SAziJfzFZ+c/MdyoJyXGW0Iop3Wy/XyF4EqqNx+8s=
 github.com/Seann-Moser/ociredis v1.0.0 h1:ROjrpav9LP/lIuoRTE8QtexWX0FW6okyDhRb+mAb8nk=
