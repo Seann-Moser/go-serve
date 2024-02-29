@@ -395,7 +395,7 @@ func FindString(file string, find *regexp.Regexp) (*Comment, int, error) {
 	return nil, 0, err
 }
 func GetGoFiles(path string) []string {
-	libRegEx, e := regexp.Compile(`^.+\\.(go)$`)
+	libRegEx, e := regexp.Compile(`^.+\.(go)$`)
 	if e != nil {
 		log.Fatal(e)
 	}
