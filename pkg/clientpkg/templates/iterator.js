@@ -261,7 +261,7 @@ export class Iterator {
 
 }
 
-class IteratorResponseData {
+export class IteratorResponseData {
     constructor(rawResponse) {
         this.rawResponse = rawResponse
         this.decoded = {}
@@ -309,7 +309,7 @@ class IteratorResponseData {
     }
 }
 
-class Pagination {
+export class Pagination {
     constructor(pageJson) {
         if (pageJson === null || pageJson === undefined){
             this.CurrentPage = 1
@@ -330,7 +330,7 @@ class Pagination {
     @param {array<ResponseData>} responseData
     @return {promise}
  */
-function UploadImage(files,config) {
+export function UploadImage(files,config) {
     if (files === null || files.length === 0) {
         return Promise.reject(
             createError(`failed uploading image:no files present`),
