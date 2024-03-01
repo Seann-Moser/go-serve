@@ -70,6 +70,9 @@ func GenerateComments(doc *ApiDoc, endpoints ...*endpoints.Endpoint) {
 		if fullName == "" {
 			continue
 		}
+		if e.Description == "" {
+			e.Description = "empty"
+		}
 		fullName = strings.TrimSuffix(fullName, "-fm")
 		_, pkg := path.Split(fullName)
 		tmpPkg := strings.Split(pkg, ".")
@@ -154,6 +157,14 @@ type Func struct {
 	Comment *Comment
 }
 
+func Fallback(data ...string) string {
+	for _, d := range data {
+		if d != "" {
+			return d
+		}
+	}
+	return ""
+}
 func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 	var params []SwagParams
 	var successes []ReturnStatus
@@ -168,7 +179,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Location:    "path",
 			Type:        "string",
 			Required:    true,
-			Description: endpoint.ParamDescriptions[n],
+			Description: Fallback(endpoint.ParamDescriptions[n], "description"),
 		})
 	}
 	for _, p := range endpoint.QueryParams {
@@ -177,7 +188,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Location:    "query",
 			Type:        "string",
 			Required:    false,
-			Description: endpoint.ParamDescriptions[p],
+			Description: Fallback(endpoint.ParamDescriptions[p], "description"),
 		})
 	}
 
@@ -187,7 +198,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Location:    "header",
 			Type:        "string",
 			Required:    false,
-			Description: endpoint.ParamDescriptions[p],
+			Description: Fallback(endpoint.ParamDescriptions[p], "description"),
 		})
 	}
 
@@ -211,7 +222,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 			Location:    "body",
 			Type:        t,
 			Required:    false,
-			Description: endpoint.ParamDescriptions[n],
+			Description: Fallback(endpoint.ParamDescriptions[n], "description"),
 		})
 	}
 
