@@ -100,12 +100,12 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 	if err != nil {
 		return "", err
 	}
-	homeDir = path.Join(homeDir, "go", "src") + "/"
+
+	homeDir = path.Join(homeDir, "go", "src", "") + "/"
 
 	rootDir := ""
 	count := 0
-
-	for _, i := range strings.Split(strings.ReplaceAll(currentPath, homeDir, ""), "/") {
+	for _, i := range regexp.MustCompile(`[/\\]`).Split(strings.ReplaceAll(currentPath, homeDir, ""), -1) {
 		rootDir = path.Join(rootDir, i)
 		if count > 1 {
 
@@ -162,7 +162,8 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 	imports = RemoveDuplicateValues[string](imports)
 
 	pkgName := fmt.Sprintf("%s_client", ToSnakeCase(projectName))
-	clientDir := fmt.Sprintf("pkg/%s", pkgName)
+
+	clientDir := path.Join("pkg", pkgName)
 	clientDir = path.Join(homeDir, rootDir, clientDir)
 	//importPath := strings.ReplaceAll(currentPath, homeDir, "")
 	err = createDir(clientDir)
@@ -185,7 +186,9 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 	}
 	functions = append([]string{starting}, functions...)
 	jsFunctions =
-		[]string{jsIterator, class, fmt.Sprintf(`
+		[]string{class, fmt.Sprintf(`
+import {Iterator,IteratorResponseData,Pagination} from "iterator.js"
+
 export default defineNuxtPlugin((nuxtApp) => {
 	const api = {
 	%s
@@ -200,6 +203,11 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 	if write {
 		err = os.WriteFile(path.Join(clientDir, fmt.Sprintf("generated_%s.go", ToSnakeCase(projectName))), []byte(strings.Join(functions, "")), os.ModePerm)
+		if err != nil {
+			return "", err
+		}
+
+		err = os.WriteFile(path.Join(clientDir, "iterator.js"), []byte(jsIterator), os.ModePerm)
 		if err != nil {
 			return "", err
 		}
@@ -668,18 +676,18 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 // @Tags account,GET,DELETE
 // @ID account_user_settings-c0affc3d8eefc506bb3142325d940283a274ee0d
 // @Description todo
-// @Produce json 
-// @Param account_id path string true "todo" 
-// @Param user_id path string true "todo" 
-// @Param header header string false "todo" 
-// @Param test header string false "todo" 
-// @Param responseData body clientpkg.ResponseData false "todo" 
-// @Success 200 {object} response.BaseResponse "todo"  
+// @Produce json
+// @Param account_id path string true "todo"
+// @Param user_id path string true "todo"
+// @Param header header string false "todo"
+// @Param test header string false "todo"
+// @Param responseData body clientpkg.ResponseData false "todo"
+// @Success 200 {object} response.BaseResponse "todo"
 // @Failure 400 {object} response.BaseResponse "todo"
 // @Failure 500 {object} response.BaseResponse "todo"
 // @Failure 401 {object} response.BaseResponse "todo"
-// @Router /account/{account_id}/user/{user_id}/settings [GET] 
-// @Router /account/{account_id}/user/{user_id}/settings [DELETE] 
+// @Router /account/{account_id}/user/{user_id}/settings [GET]
+// @Router /account/{account_id}/user/{user_id}/settings [DELETE]
 func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
@@ -689,14 +697,14 @@ func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 // @Tags account,GET
 // @ID account_user-9df6dae28a065c2087fbd4eac002c2cd9de221e7
 // @Description todo
-// @Produce json 
-// @Param account_id path string true "todo" 
-// @Param user_id path string true "todo" 
-// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "todo"  
+// @Produce json
+// @Param account_id path string true "todo"
+// @Param user_id path string true "todo"
+// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "todo"
 // @Failure 400 {object} response.BaseResponse "todo"
 // @Failure 500 {object} response.BaseResponse "todo"
 // @Failure 401 {object} response.BaseResponse "todo"
-// @Router /account/{account_id}/user/{user_id} [GET] 
+// @Router /account/{account_id}/user/{user_id} [GET]
 func HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
