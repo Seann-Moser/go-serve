@@ -2,13 +2,12 @@
         /**
          * {{.Name}} auto generated
          * @param {Pagination} pagination
-         * @param {boolean} lazy
          * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
          * {{end}}  {{range .MuxVars}}
          * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
          * @param {string} {{.}}{{end}}{{end}}
          */
-        {{if .Async}}async {{end}}{{.Name}}(lazy,{{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}pagination){
+        {{if .Async}}async {{end}}{{.Name}}({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}pagination){
             const config = this.{{.Name}}Config({{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}pagination)
 
             {{if .RequestType}}config.body = JSON.stringify({{.RequestTypeName}});{{end}}{{if .Async}}
