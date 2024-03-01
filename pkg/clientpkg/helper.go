@@ -187,7 +187,7 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 	functions = append([]string{starting}, functions...)
 	jsFunctions =
 		[]string{class, fmt.Sprintf(`
-import {Iterator,IteratorResponseData,Pagination} from "iterator.js"
+import {Iterator,Pagination} from "iterator.js"
 
 export default defineNuxtPlugin((nuxtApp) => {
 	const api = {
@@ -672,39 +672,39 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 }
 
 // HandlerFuncs godoc
-// @Summary todo
+// @Summary empty
 // @Tags account,GET,DELETE
 // @ID account_user_settings-c0affc3d8eefc506bb3142325d940283a274ee0d
-// @Description todo
-// @Produce json
-// @Param account_id path string true "todo"
-// @Param user_id path string true "todo"
-// @Param header header string false "todo"
-// @Param test header string false "todo"
-// @Param responseData body clientpkg.ResponseData false "todo"
-// @Success 200 {object} response.BaseResponse "todo"
-// @Failure 400 {object} response.BaseResponse "todo"
-// @Failure 500 {object} response.BaseResponse "todo"
-// @Failure 401 {object} response.BaseResponse "todo"
-// @Router /account/{account_id}/user/{user_id}/settings [GET]
-// @Router /account/{account_id}/user/{user_id}/settings [DELETE]
+// @Description empty
+// @Produce json 
+// @Param account_id path string true "description" 
+// @Param user_id path string true "description" 
+// @Param header header string false "description" 
+// @Param test header string false "description" 
+// @Param responseData body clientpkg.ResponseData false "description" 
+// @Success 200 {object} response.BaseResponse "return message object"  
+// @Failure 400 {object} response.BaseResponse "invalid request to endpoint"
+// @Failure 500 {object} response.BaseResponse "failed"
+// @Failure 401 {object} response.BaseResponse "unauthorized request to endpoint"
+// @Router /account/{account_id}/user/{user_id}/settings [GET] 
+// @Router /account/{account_id}/user/{user_id}/settings [DELETE] 
 func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
 
 // HandlerFuncs godoc
-// @Summary todo
+// @Summary empty
 // @Tags account,GET
 // @ID account_user-9df6dae28a065c2087fbd4eac002c2cd9de221e7
-// @Description todo
-// @Produce json
-// @Param account_id path string true "todo"
-// @Param user_id path string true "todo"
-// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "todo"
-// @Failure 400 {object} response.BaseResponse "todo"
-// @Failure 500 {object} response.BaseResponse "todo"
-// @Failure 401 {object} response.BaseResponse "todo"
-// @Router /account/{account_id}/user/{user_id} [GET]
+// @Description empty
+// @Produce json 
+// @Param account_id path string true "description" 
+// @Param user_id path string true "description" 
+// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "returning object"  
+// @Failure 400 {object} response.BaseResponse "invalid request to endpoint"
+// @Failure 500 {object} response.BaseResponse "failed"
+// @Failure 401 {object} response.BaseResponse "unauthorized request to endpoint"
+// @Router /account/{account_id}/user/{user_id} [GET] 
 func HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
