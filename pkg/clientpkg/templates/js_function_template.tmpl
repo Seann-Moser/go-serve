@@ -10,7 +10,7 @@
          */
         {{if .Async}}async {{end}}{{.Name}}(lazy,{{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}pagination){
             if (pagination === null){
-                pagination = new Pagination(null)
+                pagination = new Pagination({})
             }
              let params = {}
              params["items_per_page"] = pagination.ItemsPerPage
@@ -36,15 +36,14 @@
         /**
          * {{.Name}}Config auto generated
          * @param {Pagination} pagination
-         * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
          * {{end}}  {{range .MuxVars}}
          * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
          * @param {string} {{.}}{{end}}
          * {{end}}
          */
-        {{.Name}}Config({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}pagination){
+        {{.Name}}Config({{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}pagination){
             if (pagination === null){
-                pagination = new Pagination(null)
+                pagination = new Pagination({})
             }
              let params = {}
              params["items_per_page"] = pagination.ItemsPerPage
@@ -59,16 +58,4 @@
                 path: {{.Path}}
              }
              return config
-        },
-
-        /**
-         * {{.Name}}URL auto generated
-         * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
-         * {{end}}  {{range .MuxVars}}
-         * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
-         * @param {string} {{.}}{{end}}
-         * {{end}}
-         */
-        {{.Name}}URL({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}},{{end}}){
-             return nuxtApp.$config.public.{{.UrlEnvVarName}}+{{.Path}}
         }
