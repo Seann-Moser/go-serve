@@ -223,6 +223,14 @@ export class Iterator {
         }
         return new Promise((resolve) => resolve(this.message));
     }
+    /**
+     *
+     * @returns {Pagination}
+     *
+     */
+    GetPagination() {
+        return this.pagination;
+    }
 
     /**
      *
