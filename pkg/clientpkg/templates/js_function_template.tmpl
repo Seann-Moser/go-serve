@@ -10,7 +10,7 @@
         {{if .Async}}async {{end}}{{.Name}}({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}pagination){
             const config = this.{{.Name}}Config({{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}pagination)
             {{if .RequestType}}
-            if ({{.RequestTypeName}}) !== null) {
+            if ({{.RequestTypeName}} !== null) {
                 config.body = JSON.stringify({{.RequestTypeName}});{{end}}
             }{{if .Async}}
             const data = await $fetch({{.Path}}, config){{else}}
