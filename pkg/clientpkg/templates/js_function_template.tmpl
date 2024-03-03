@@ -33,7 +33,7 @@
             }
              let params = {}
              params["items_per_page"] = pagination.ItemsPerPage
-             params["page"] = pagination.ItemsPerPage{{range $k,$v := .QueryParams}}
+             params["page"] = pagination.CurrentPage{{range $k,$v := .QueryParams}}
              params["{{$k}}"] = {{$v}}{{end}}
              const config = {
                 server: false,
