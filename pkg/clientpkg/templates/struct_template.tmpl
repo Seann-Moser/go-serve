@@ -9,7 +9,7 @@ import (
 const prefix = "{{.Name}}"
 
 type Client struct {
-	base       *clientpkg.Client
+	base        clientpkg.HttpClient
 	rm          *response.Response
 	headers     map[string]string
 }

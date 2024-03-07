@@ -30,7 +30,7 @@ func TestIterator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	it := NewIterator[Book](context.Background(), *c, RequestData{
+	it := NewIterator[Book](context.Background(), c, RequestData{
 		Path:   "/book/list",
 		Method: http.MethodGet,
 	})

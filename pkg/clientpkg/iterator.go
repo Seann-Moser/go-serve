@@ -10,7 +10,7 @@ import (
 type Iterator[T any] struct {
 	ctx         context.Context
 	err         error
-	client      Client
+	client      HttpClient
 	current     *T
 	currentItem int
 	currentPage uint
@@ -24,7 +24,7 @@ type Iterator[T any] struct {
 	message      string
 }
 
-func NewIterator[T any](ctx context.Context, client Client, data RequestData) *Iterator[T] {
+func NewIterator[T any](ctx context.Context, client HttpClient, data RequestData) *Iterator[T] {
 	it := &Iterator[T]{
 		ctx:          ctx,
 		client:       client,
