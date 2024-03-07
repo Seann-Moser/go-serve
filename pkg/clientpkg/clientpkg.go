@@ -18,6 +18,54 @@ import (
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
 )
 
+var _ HttpClient = &Client{}
+var _ HttpClient = &MockClient{}
+
+type HttpClient interface {
+	Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData)
+	RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData)
+	SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData
+}
+
+type MockClient struct {
+}
+
+func NewMockClient() *MockClient {
+	return &MockClient{}
+}
+
+func (m MockClient) Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData) {
+	resp.Message = ""
+	resp.Err = nil
+	resp.Data = nil
+	resp.Status = http.StatusOK
+	return
+}
+
+func (m MockClient) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData) {
+	resp.Message = ""
+	resp.Err = nil
+	resp.Data = nil
+	resp.Status = http.StatusOK
+	return
+}
+
+func (m MockClient) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
+	return &ResponseData{
+		Status: http.StatusOK,
+		Page: &pagination.Pagination{
+			CurrentPage:  1,
+			NextPage:     0,
+			TotalItems:   0,
+			TotalPages:   0,
+			ItemsPerPage: 0,
+		},
+		Message: "",
+		Err:     nil,
+		Data:    []byte{},
+	}
+}
+
 type Client struct {
 	endpoint     *url.URL
 	client       *http.Client
@@ -78,22 +126,22 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 		CookieJar:    client.Jar,
 		UseCookieJar: useCookieJar,
 	}, nil
-//  godoc
-// @Summary todo
-// @Tags query,GET
-// @ID account_user_settings_query-GET
-// @Produce json 
-// @Param account_id path string true "todo" 
-// @Param user_id path string true "todo" 
-// @Param q query string false "todo" 
-// @Param query query string false "todo" 
-// @Param token_id query string false "todo" 
-// @Param stringMap body map[string]string false "todo" 
-// @Success 200 {object} response.BaseResponse{data=response.BaseResponse} "todo"  
-// @Failure 400 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-// @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-// @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-// @Router /account/{account_id}/user/{user_id}/settings/query [GET]
+	//  godoc
+	// @Summary todo
+	// @Tags query,GET
+	// @ID account_user_settings_query-GET
+	// @Produce json
+	// @Param account_id path string true "todo"
+	// @Param user_id path string true "todo"
+	// @Param q query string false "todo"
+	// @Param query query string false "todo"
+	// @Param token_id query string false "todo"
+	// @Param stringMap body map[string]string false "todo"
+	// @Success 200 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+	// @Failure 400 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+	// @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+	// @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
+	// @Router /account/{account_id}/user/{user_id}/settings/query [GET]
 }
 func (c *Client) Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData) {
 	if retry {

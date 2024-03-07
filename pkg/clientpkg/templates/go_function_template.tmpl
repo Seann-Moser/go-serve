@@ -5,6 +5,6 @@ func (c *Client) {{.Name}}(ctx context.Context{{if .RequestType}}, {{.RequestTyp
 	params := map[string]string{}{{end}}{{range $k, $v := .QueryParams}}
 	params["{{$k}}"] = {{$v}}{{end}}
 	requestDataInternal := clientpkg.NewRequestData(path, http.Method{{.MethodType}}, {{if .RequestType}}{{.RequestTypeName}}{{else}}nil{{end}}, {{if .UsesQueryParams }} params{{else}}nil{{end}}, {{if .UsesHeaderParams }} clientpkg.MergeMap[string](headers,c.headers){{else}}clientpkg.MergeMap[string](nil,c.headers){{end}}){{if .UseIterator}}
-	return clientpkg.NewIterator[{{.DataTypeName}}](ctx, *c.base, requestDataInternal){{ else }}
+	return clientpkg.NewIterator[{{.DataTypeName}}](ctx, c.base, requestDataInternal){{ else }}
 	return c.base.Request(ctx,requestDataInternal,nil,true){{ end }}
 }
