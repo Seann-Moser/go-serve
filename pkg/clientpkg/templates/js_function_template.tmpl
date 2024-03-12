@@ -37,7 +37,7 @@
              params["items_per_page"] = pagination.ItemsPerPage
              params["page"] = pagination.CurrentPage{{range $k,$v := .QueryParams}}
              params["{{$k}}"] = {{$v}}{{end}}
-             const config = {
+             return {
                 server: false,
                 method: "{{.MethodType}}",
                 credentials: "include",
@@ -45,5 +45,4 @@
                 baseURL: nuxtApp.$config.public.{{.UrlEnvVarName}},
                 path: {{.Path}}
              }
-             return config
         }
