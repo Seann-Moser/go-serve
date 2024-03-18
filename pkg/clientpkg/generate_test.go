@@ -15,7 +15,7 @@ func TestGenerate(t *testing.T) {
 
 }
 func TestGenerateComments(t *testing.T) {
-	GenerateComments(&ApiDoc{}, GetEndpoints()...)
+	GenerateComments(&ApiDoc{}, map[string]string{}, GetEndpoints()...)
 }
 
 func GetEndpoints() []*endpoints.Endpoint {

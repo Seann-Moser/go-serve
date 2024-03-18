@@ -58,7 +58,7 @@ var SwagApiGeneralTempl string
 //go:embed templates/swag_endpoint.tmpl
 var SwagApiEndpointTempl string
 
-func GenerateComments(doc *ApiDoc, endpoints ...*endpoints.Endpoint) {
+func GenerateComments(doc *ApiDoc, pkgOverride map[string]string, endpoints ...*endpoints.Endpoint) {
 	projectPath, _, err := GetProjectDir()
 	if err != nil {
 		return
@@ -81,6 +81,7 @@ func GenerateComments(doc *ApiDoc, endpoints ...*endpoints.Endpoint) {
 		pkg = strings.ReplaceAll(pkg, ")", `\)`)
 		tmp := FindFunction(pkg, goFiles)
 		for _, t := range tmp {
+			t.Override = pkgOverride
 			t.FormatComment(e)
 			_ = t.UpdateComment()
 		}
@@ -104,9 +105,13 @@ func GenerateComments(doc *ApiDoc, endpoints ...*endpoints.Endpoint) {
 
 }
 
-func GetFullName(i interface{}, array bool) string {
+func GetFullName(i interface{}, array bool, override map[string]string) string {
 	fullPkg := getTypePkg(i)
 	_, pkg := path.Split(fullPkg)
+	if v, found := override[pkg]; found {
+		pkg = v
+	}
+
 	if isMap(i) {
 		return fmt.Sprintf("map[%s]%s", getType(i), getType(i))
 	} else if isArray(i) {
@@ -151,10 +156,11 @@ func FindFunction(fName string, goFiles []string) map[string]Func {
 }
 
 type Func struct {
-	File    string
-	Name    string
-	Ln      int
-	Comment *Comment
+	File     string
+	Name     string
+	Ln       int
+	Comment  *Comment
+	Override map[string]string
 }
 
 func Fallback(data ...string) string {
@@ -232,7 +238,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 		successes = append(successes, ReturnStatus{
 			Status:    http.StatusOK,
 			ParamType: paramType,
-			DataType:  GetFullName(v, strings.HasSuffix(endpoint.URLPath, "s")),
+			DataType:  GetFullName(v, strings.HasSuffix(endpoint.URLPath, "s"), fc.Override),
 			Message:   "returning object",
 		})
 
@@ -241,7 +247,7 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 		successes = append(successes, ReturnStatus{
 			Status:    http.StatusOK,
 			ParamType: "object",
-			DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
+			DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s"), fc.Override),
 			Message:   "return message object",
 		})
 	}
@@ -249,19 +255,19 @@ func (fc *Func) FormatComment(endpoint *endpoints.Endpoint) {
 	failures = append(failures, ReturnStatus{
 		Status:    http.StatusBadRequest,
 		ParamType: "object",
-		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
+		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s"), fc.Override),
 		Message:   "invalid request to endpoint",
 	})
 	failures = append(failures, ReturnStatus{
 		Status:    http.StatusInternalServerError,
 		ParamType: "object",
-		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
+		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s"), fc.Override),
 		Message:   "failed",
 	})
 	failures = append(failures, ReturnStatus{
 		Status:    http.StatusUnauthorized,
 		ParamType: "object",
-		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s")),
+		DataType:  GetFullName(response.BaseResponse{}, strings.HasSuffix(endpoint.URLPath, "s"), fc.Override),
 		Message:   "unauthorized request to endpoint",
 	})
 	fullName := GetFunctionName(endpoint.HandlerFunc)
