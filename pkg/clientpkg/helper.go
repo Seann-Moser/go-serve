@@ -705,7 +705,7 @@ func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 // @Produce json 
 // @Param account_id path string true "description" 
 // @Param user_id path string true "description" 
-// @Success 200 {object} response.BaseResponse{data=test.RequestData} "returning object"  
+// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "returning object"  
 // @Failure 400 {object} response.BaseResponse "invalid request to endpoint"
 // @Failure 500 {object} response.BaseResponse "failed"
 // @Failure 401 {object} response.BaseResponse "unauthorized request to endpoint"
