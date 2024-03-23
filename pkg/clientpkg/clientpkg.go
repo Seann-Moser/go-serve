@@ -69,14 +69,13 @@ func (m MockClient) SendRequest(ctx context.Context, data RequestData, p *pagina
 }
 
 type Client struct {
-	endpoint      *url.URL
-	client        *http.Client
-	serviceName   string
-	BackOff       *BackOff
-	itemsPerPage  uint
-	CookieJar     http.CookieJar
-	UseCookieJar  bool
-	responseCache ctx_cache.Cache
+	endpoint     *url.URL
+	client       *http.Client
+	serviceName  string
+	BackOff      *BackOff
+	itemsPerPage uint
+	CookieJar    http.CookieJar
+	UseCookieJar bool
 }
 
 func Flags(prefix string) *pflag.FlagSet {
@@ -161,7 +160,7 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
 	key := c.CacheKey(data, p)
 	if strings.EqualFold(data.Method, http.MethodGet) {
-		response, _ := ctx_cache.GetFromCache[ResponseData](ctx, c.responseCache, key)
+		response, _ := ctx_cache.Get[ResponseData](ctx, key)
 		if response != nil {
 			ctxLogger.Debug(ctx, "using response cache")
 			return response
@@ -213,7 +212,7 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 		c.CookieJar.SetCookies(c.endpoint, resp.Cookies)
 	}
 	if strings.EqualFold(data.Method, http.MethodGet) {
-		err := ctx_cache.SetFromCache[ResponseData](ctx, c.responseCache, key, *resp)
+		err := ctx_cache.Set[ResponseData](ctx, key, *resp)
 		if err != nil {
 			ctxLogger.Warn(ctx, "failed setting response cache")
 		}
