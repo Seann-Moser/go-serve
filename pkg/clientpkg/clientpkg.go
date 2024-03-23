@@ -39,7 +39,7 @@ func NewMockClient() *MockClient {
 func (m MockClient) Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData) {
 	resp.Message = ""
 	resp.Err = nil
-	resp.Data = nil
+	resp.Data = []byte{}
 	resp.Status = http.StatusOK
 	return
 }
@@ -47,7 +47,7 @@ func (m MockClient) Request(ctx context.Context, data RequestData, p *pagination
 func (m MockClient) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData) {
 	resp.Message = ""
 	resp.Err = nil
-	resp.Data = nil
+	resp.Data = []byte{}
 	resp.Status = http.StatusOK
 	return
 }
