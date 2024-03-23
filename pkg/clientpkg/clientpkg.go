@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Seann-Moser/ctx_cache"
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"go.opencensus.io/plugin/ochttp"
 	"net/http"
 	"net/http/cookiejar"
@@ -37,7 +39,7 @@ func NewMockClient() *MockClient {
 func (m MockClient) Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData) {
 	resp.Message = ""
 	resp.Err = nil
-	resp.Data = nil
+	resp.Data = []byte{}
 	resp.Status = http.StatusOK
 	return
 }
@@ -45,7 +47,7 @@ func (m MockClient) Request(ctx context.Context, data RequestData, p *pagination
 func (m MockClient) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData) {
 	resp.Message = ""
 	resp.Err = nil
-	resp.Data = nil
+	resp.Data = []byte{}
 	resp.Status = http.StatusOK
 	return
 }
@@ -67,13 +69,14 @@ func (m MockClient) SendRequest(ctx context.Context, data RequestData, p *pagina
 }
 
 type Client struct {
-	endpoint     *url.URL
-	client       *http.Client
-	serviceName  string
-	BackOff      *BackOff
-	itemsPerPage uint
-	CookieJar    http.CookieJar
-	UseCookieJar bool
+	endpoint      *url.URL
+	client        *http.Client
+	serviceName   string
+	BackOff       *BackOff
+	itemsPerPage  uint
+	CookieJar     http.CookieJar
+	UseCookieJar  bool
+	responseCache ctx_cache.Cache
 }
 
 func Flags(prefix string) *pflag.FlagSet {
@@ -126,23 +129,17 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 		CookieJar:    client.Jar,
 		UseCookieJar: useCookieJar,
 	}, nil
-	//  godoc
-	// @Summary todo
-	// @Tags query,GET
-	// @ID account_user_settings_query-GET
-	// @Produce json
-	// @Param account_id path string true "todo"
-	// @Param user_id path string true "todo"
-	// @Param q query string false "todo"
-	// @Param query query string false "todo"
-	// @Param token_id query string false "todo"
-	// @Param stringMap body map[string]string false "todo"
-	// @Success 200 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-	// @Failure 400 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-	// @Failure 500 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-	// @Failure 401 {object} response.BaseResponse{data=response.BaseResponse} "todo"
-	// @Router /account/{account_id}/user/{user_id}/settings/query [GET]
 }
+
+func (c *Client) CacheKey(data RequestData, p *pagination.Pagination) string {
+	var key string
+	key = fmt.Sprintf("%s%s%s%s%s", key, c.endpoint, data.Path, data.Method, MapToString(data.Params))
+	if p != nil {
+		key = fmt.Sprintf("%s%d%d", key, p.CurrentPage, p.ItemsPerPage)
+	}
+	return key
+}
+
 func (c *Client) Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData) {
 	if retry {
 		return c.RequestWithRetry(ctx, data, p)
@@ -162,6 +159,15 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 }
 
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
+	key := c.CacheKey(data, p)
+	if strings.EqualFold(data.Method, http.MethodGet) {
+		response, _ := ctx_cache.GetFromCache[ResponseData](ctx, c.responseCache, key)
+		if response != nil {
+			ctxLogger.Debug(ctx, "using response cache")
+			return response
+		}
+	}
+
 	u, err := url.JoinPath(c.endpoint.String(), data.Path)
 	if err != nil {
 		return &ResponseData{Err: err}
@@ -206,5 +212,20 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 	if len(resp.Cookies) > 0 && c.UseCookieJar {
 		c.CookieJar.SetCookies(c.endpoint, resp.Cookies)
 	}
+	if strings.EqualFold(data.Method, http.MethodGet) {
+		err := ctx_cache.SetFromCache[ResponseData](ctx, c.responseCache, key, *resp)
+		if err != nil {
+			ctxLogger.Warn(ctx, "failed setting response cache")
+		}
+	}
+
 	return resp
+}
+
+func MapToString(m map[string]string) string {
+	var output []string
+	for k, v := range m {
+		output = append(output, fmt.Sprintf("%s-%s", k, v))
+	}
+	return strings.Join(output, "-")
 }

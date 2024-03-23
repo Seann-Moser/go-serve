@@ -3,7 +3,6 @@ package clientpkg
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
 )
 
@@ -34,6 +33,7 @@ func NewIterator[T any](ctx context.Context, client HttpClient, data RequestData
 	it.getPages()
 	return it
 }
+
 func (i *Iterator[T]) WithRetry() *Iterator[T] {
 	i.retry = true
 	return i
