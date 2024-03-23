@@ -8,6 +8,7 @@ import (
 	"github.com/Seann-Moser/ctx_cache"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"go.opencensus.io/plugin/ochttp"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -22,6 +23,8 @@ import (
 
 var _ HttpClient = &Client{}
 var _ HttpClient = &MockClient{}
+
+var UseResponseCache = false
 
 type HttpClient interface {
 	Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData)
@@ -159,7 +162,7 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
 	key := c.CacheKey(data, p)
-	if strings.EqualFold(data.Method, http.MethodGet) {
+	if strings.EqualFold(data.Method, http.MethodGet) && UseResponseCache {
 		response, _ := ctx_cache.Get[ResponseData](ctx, key)
 		if response != nil {
 			ctxLogger.Debug(ctx, "using response cache")
@@ -211,10 +214,10 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 	if len(resp.Cookies) > 0 && c.UseCookieJar {
 		c.CookieJar.SetCookies(c.endpoint, resp.Cookies)
 	}
-	if strings.EqualFold(data.Method, http.MethodGet) {
+	if strings.EqualFold(data.Method, http.MethodGet) && UseResponseCache {
 		err := ctx_cache.Set[ResponseData](ctx, key, *resp)
 		if err != nil {
-			ctxLogger.Warn(ctx, "failed setting response cache")
+			ctxLogger.Info(ctx, "failed setting response cache", zap.Error(err))
 		}
 	}
 
