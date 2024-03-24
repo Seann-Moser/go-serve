@@ -163,7 +163,10 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
 	key := c.CacheKey(data, p)
 	if strings.EqualFold(data.Method, http.MethodGet) && UseResponseCache {
-		response, _ := ctx_cache.Get[ResponseData](ctx, key)
+		response, err := ctx_cache.Get[ResponseData](ctx, key)
+		if err != nil {
+			ctxLogger.Info(ctx, "failed getting response cache", zap.String("key", key), zap.Error(err))
+		}
 		if response != nil {
 			ctxLogger.Debug(ctx, "using response cache")
 			return response
@@ -217,7 +220,7 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 	if strings.EqualFold(data.Method, http.MethodGet) && UseResponseCache {
 		err := ctx_cache.Set[ResponseData](ctx, key, *resp)
 		if err != nil {
-			ctxLogger.Info(ctx, "failed setting response cache", zap.Error(err))
+			ctxLogger.Info(ctx, "failed setting response cache", zap.String("key", key), zap.Error(err))
 		}
 	}
 
