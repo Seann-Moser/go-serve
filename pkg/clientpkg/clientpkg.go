@@ -79,6 +79,7 @@ type Client struct {
 	itemsPerPage uint
 	CookieJar    http.CookieJar
 	UseCookieJar bool
+	skipCache    bool
 }
 
 func Flags(prefix string) *pflag.FlagSet {
@@ -86,6 +87,7 @@ func Flags(prefix string) *pflag.FlagSet {
 	fs.String(GetFlagWithPrefix(prefix, "endpoint"), "http://127.0.0.1:8080", fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "endpoint")))))
 	fs.String(GetFlagWithPrefix(prefix, "service-name"), "default", fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "service-name")))))
 	fs.Bool(GetFlagWithPrefix(prefix, "use-cookie-jar"), false, fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "use-cookie-jar")))))
+	fs.Bool(GetFlagWithPrefix(prefix, "skip-cache"), false, fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "use-cookie-jar")))))
 	fs.Uint(GetFlagWithPrefix(prefix, "items-per-page"), 100, fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "items-per-page")))))
 	fs.AddFlagSet(BackOffFlags(prefix))
 	return fs
@@ -132,7 +134,9 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 		UseCookieJar: useCookieJar,
 	}, nil
 }
-
+func (c *Client) SkipCache(skip bool) {
+	c.skipCache = skip
+}
 func (c *Client) CacheKey(data RequestData, p *pagination.Pagination) string {
 	var key string
 	key = fmt.Sprintf("%s%s%s%s%s", key, c.endpoint, data.Path, data.Method, MapToString(data.Params))
@@ -162,7 +166,7 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
 	key := c.CacheKey(data, p)
-	if strings.EqualFold(data.Method, http.MethodGet) && UseResponseCache {
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache {
 		response, err := ctx_cache.Get[ResponseData](ctx, key)
 		if err != nil {
 			ctxLogger.Info(ctx, "failed getting response cache", zap.String("key", key), zap.Error(err))
@@ -217,11 +221,8 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 	if len(resp.Cookies) > 0 && c.UseCookieJar {
 		c.CookieJar.SetCookies(c.endpoint, resp.Cookies)
 	}
-	if strings.EqualFold(data.Method, http.MethodGet) && UseResponseCache {
-		err := ctx_cache.Set[ResponseData](ctx, key, *resp)
-		if err != nil {
-			ctxLogger.Info(ctx, "failed setting response cache", zap.String("key", key), zap.Error(err))
-		}
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache {
+		_ = ctx_cache.Set[ResponseData](ctx, key, *resp)
 	}
 
 	return resp
