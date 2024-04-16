@@ -31,7 +31,8 @@ type ResponseData struct {
 	Status  int
 	Page    *pagination.Pagination
 	Message string
-	Err     error
+	Err     error `json:"-"`
+	ErrStr  string
 	Data    []byte
 	Cookies []*http.Cookie `json:"-"`
 }
@@ -60,6 +61,7 @@ func NewResponseData(resp *http.Response, err error) *ResponseData {
 	}
 	if !(resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusFound) {
 		rd.Err = fmt.Errorf("invalid Status code: %d", resp.StatusCode)
+		rd.ErrStr = rd.Err.Error()
 		return rd
 	}
 
@@ -68,6 +70,7 @@ func NewResponseData(resp *http.Response, err error) *ResponseData {
 		err = json.Unmarshal([]byte(data), &rd.Page)
 		if err != nil {
 			rd.Err = err
+			rd.ErrStr = rd.Err.Error()
 			return rd
 		}
 	}
