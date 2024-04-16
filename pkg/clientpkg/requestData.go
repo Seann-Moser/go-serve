@@ -10,20 +10,22 @@ import (
 )
 
 type RequestData struct {
-	Path    string
-	Method  string
-	Body    interface{}
-	Params  map[string]string
-	Headers map[string]string
+	Path      string
+	Method    string
+	Body      interface{}
+	Params    map[string]string
+	Headers   map[string]string
+	SkipCache bool
 }
 
-func NewRequestData(path, method string, body interface{}, params, headers map[string]string) RequestData {
+func NewRequestData(path, method string, body interface{}, params, headers map[string]string, SkipCache bool) RequestData {
 	return RequestData{
-		Path:    path,
-		Method:  method,
-		Body:    body,
-		Params:  params,
-		Headers: headers,
+		Path:      path,
+		Method:    method,
+		Body:      body,
+		Params:    params,
+		Headers:   headers,
+		SkipCache: SkipCache,
 	}
 }
 

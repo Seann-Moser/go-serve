@@ -41,8 +41,27 @@ func New(httpClient *http.Client,rm *response.Response) (*Client, error) {
 
 // Ping auto generated
 func (c *Client) Ping(ctx context.Context) bool {
-	requestDataInternal := clientpkg.NewRequestData("/healthcheck", http.MethodGet, nil, nil, clientpkg.MergeMap[string](nil, c.headers))
+	requestDataInternal := clientpkg.NewRequestData("/healthcheck", http.MethodGet, nil, nil, clientpkg.MergeMap[string](nil, c.headers),false)
 	resp := c.base.Request(ctx, requestDataInternal, nil,true)
 	return resp.Status == http.StatusOK
 }
 
+func (c *Client) PingCheck(ctx context.Context) error {
+	var valid bool
+	tick := time.NewTicker(1 * time.Second)
+	for i := 0; i < 30; i++ {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-tick.C:
+			valid = c.Ping(ctx)
+		}
+		if valid {
+			break
+		}
+	}
+	if !valid {
+		return fmt.Errorf("unable to reach endpoint")
+	}
+	return nil
+}
