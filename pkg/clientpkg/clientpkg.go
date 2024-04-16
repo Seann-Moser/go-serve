@@ -166,7 +166,7 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
 	key := c.CacheKey(data, p)
-	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") {
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
 		response, err := ctx_cache.Get[ResponseData](ctx, key)
 		if err != nil {
 			ctxLogger.Debug(ctx, "failed getting response cache", zap.String("key", key), zap.Error(err))
@@ -224,7 +224,7 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 	if len(resp.Cookies) > 0 && c.UseCookieJar {
 		c.CookieJar.SetCookies(c.endpoint, resp.Cookies)
 	}
-	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") {
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
 		_ = ctx_cache.Set[ResponseData](ctx, key, *resp)
 	}
 
