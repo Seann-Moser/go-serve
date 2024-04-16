@@ -166,13 +166,16 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
 	key := c.CacheKey(data, p)
-	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache {
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") {
 		response, err := ctx_cache.Get[ResponseData](ctx, key)
 		if err != nil {
-			ctxLogger.Info(ctx, "failed getting response cache", zap.String("key", key), zap.Error(err))
+			ctxLogger.Debug(ctx, "failed getting response cache", zap.String("key", key), zap.Error(err))
 		}
 		if response != nil {
 			ctxLogger.Debug(ctx, "using response cache")
+			if response.ErrStr != "" {
+				response.Err = fmt.Errorf(response.ErrStr)
+			}
 			return response
 		}
 	}
@@ -203,7 +206,7 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 
 	req, err := http.NewRequestWithContext(ctx, data.Method, u, bytes.NewReader(rawBody))
 	if err != nil {
-		return &ResponseData{Err: err}
+		return &ResponseData{Err: err, ErrStr: err.Error()}
 	}
 	for k, v := range data.Headers {
 		req.Header.Set(snakeCaseToHeader(ToSnakeCase(k)), v)
@@ -221,7 +224,7 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 	if len(resp.Cookies) > 0 && c.UseCookieJar {
 		c.CookieJar.SetCookies(c.endpoint, resp.Cookies)
 	}
-	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache {
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") {
 		_ = ctx_cache.Set[ResponseData](ctx, key, *resp)
 	}
 
