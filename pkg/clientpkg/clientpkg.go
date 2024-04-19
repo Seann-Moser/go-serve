@@ -6,9 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Seann-Moser/ctx_cache"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"go.opencensus.io/plugin/ochttp"
-	"go.uber.org/zap"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -39,23 +37,7 @@ func NewMockClient() *MockClient {
 	return &MockClient{}
 }
 
-func (m MockClient) Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData) {
-	resp.Message = ""
-	resp.Err = nil
-	resp.Data = []byte{}
-	resp.Status = http.StatusOK
-	return
-}
-
-func (m MockClient) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData) {
-	resp.Message = ""
-	resp.Err = nil
-	resp.Data = []byte{}
-	resp.Status = http.StatusOK
-	return
-}
-
-func (m MockClient) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
+func (m MockClient) defaultResponse() *ResponseData {
 	return &ResponseData{
 		Status: http.StatusOK,
 		Page: &pagination.Pagination{
@@ -69,6 +51,18 @@ func (m MockClient) SendRequest(ctx context.Context, data RequestData, p *pagina
 		Err:     nil,
 		Data:    []byte{},
 	}
+}
+
+func (m MockClient) Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) *ResponseData {
+	return m.defaultResponse()
+}
+
+func (m MockClient) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
+	return m.defaultResponse()
+}
+
+func (m MockClient) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
+	return m.defaultResponse()
 }
 
 type Client struct {
@@ -167,12 +161,8 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
 	key := c.CacheKey(data, p)
 	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
-		response, err := ctx_cache.Get[ResponseData](ctx, key)
-		if err != nil {
-			ctxLogger.Debug(ctx, "failed getting response cache", zap.String("key", key), zap.Error(err))
-		}
+		response, _ := ctx_cache.Get[ResponseData](ctx, key)
 		if response != nil {
-			ctxLogger.Debug(ctx, "using response cache")
 			if response.ErrStr != "" {
 				response.Err = fmt.Errorf(response.ErrStr)
 			}
