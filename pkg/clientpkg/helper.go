@@ -402,7 +402,7 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 			fullPkg := getTypePkg(requestType)
 			_, pkg := path.Split(fullPkg)
 			if isMap(requestType) {
-				cf.RequestType = fmt.Sprintf("map[%s]%s", getType(requestType), getType(requestType))
+				cf.RequestType = fmt.Sprintf("map[%s]%s", reflect.TypeOf(requestType).Key(), reflect.TypeOf(requestType).Elem())
 			} else if isArray(requestType) {
 				cf.RequestType = fmt.Sprintf("[]*%s.%s", pkg, getType(requestType))
 			} else {
@@ -427,9 +427,17 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 		if responseType, found := endpoint.ResponseTypeMap[strings.ToUpper(m)]; found {
 			fullPkg := getTypePkg(responseType)
 			_, pkg := path.Split(fullPkg)
-			cf.DataTypeName = fmt.Sprintf("%s.%s", pkg, getType(responseType))
-			cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+			if isMap(responseType) {
+				cf.DataTypeName = fmt.Sprintf("map[%s]%s", reflect.TypeOf(responseType).Key(), reflect.TypeOf(responseType).Elem())
+			} else if isArray(responseType) {
+				cf.DataTypeName = fmt.Sprintf("[]*%s.%s", pkg, getType(responseType))
+				cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
 
+			} else {
+				cf.DataTypeName = fmt.Sprintf("%s.%s", pkg, getType(responseType))
+				cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+
+			}
 			cf.Return = strings.Join([]string{fmt.Sprintf("*clientpkg.Iterator[%s]", cf.DataTypeName)}, ",")
 			cf.UseIterator = true
 		} else {

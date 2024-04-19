@@ -1,6 +1,7 @@
 package request
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
@@ -117,4 +118,13 @@ func round(val float64, roundOn float64, places int) (newVal float64) {
 	}
 	newVal = round / pow
 	return
+}
+
+func GetBody[T interface{}](r *http.Request) (*T, error) {
+	var d T
+	err := json.NewDecoder(r.Body).Decode(&d)
+	if err != nil {
+		return nil, fmt.Errorf("failed decoding body: %s", err)
+	}
+	return &d, nil
 }
