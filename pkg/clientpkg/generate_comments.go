@@ -66,6 +66,9 @@ func GenerateComments(doc *ApiDoc, pkgOverride map[string]string, endpoints ...*
 	goFiles := GetGoFiles(projectPath)
 	functions := map[string]Func{} //todo fix to allow for multiple funcs in same file
 	for _, e := range endpoints {
+		if e == nil {
+			continue
+		}
 		fullName := GetFunctionName(e.HandlerFunc)
 		if fullName == "" {
 			continue
