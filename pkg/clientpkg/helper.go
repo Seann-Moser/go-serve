@@ -134,6 +134,9 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 	}...)
 
 	for _, e := range endpoints {
+		if e == nil {
+			continue
+		}
 		cfList := GoNewClientFunc(e)
 		for _, cf := range cfList {
 			output, err := templateReplaceData(functionTemplate, cf)
@@ -430,7 +433,7 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 			if isMap(responseType) {
 				cf.DataTypeName = fmt.Sprintf("map[%s]%s", reflect.TypeOf(responseType).Key(), reflect.TypeOf(responseType).Elem())
 			} else if isArray(responseType) {
-				cf.DataTypeName = fmt.Sprintf("[]*%s.%s", pkg, getType(responseType))
+				cf.DataTypeName = fmt.Sprintf("%s.%s", pkg, getType(responseType))
 				cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
 
 			} else {
