@@ -26,7 +26,7 @@
          * @param {Pagination} pagination
          * {{range .MuxVars}}
          * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
-         * @param {string} {{.}}{{end}}
+         * @param {string} {{.}}{{end}}js_function_template.tmpl
          * {{end}}
          */
         {{.Name}}Config({{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}pagination){

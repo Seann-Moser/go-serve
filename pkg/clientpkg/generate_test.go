@@ -12,6 +12,10 @@ func TestGenerate(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	_, err = GenerateBaseJSClient(true, []string{"Api-Key"}, GetEndpoints()...)
+	if err != nil {
+		t.Error(err)
+	}
 
 }
 func TestGenerateComments(t *testing.T) {
