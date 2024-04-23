@@ -161,7 +161,7 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
 	key := c.CacheKey(data, p)
 	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
-		response, _ := ctx_cache.Get[ResponseData](ctx, key)
+		response, _ := ctx_cache.Get[ResponseData](ctx, c.serviceName+"_pkg", key)
 		if response != nil {
 			if response.ErrStr != "" {
 				response.Err = fmt.Errorf(response.ErrStr)
@@ -215,7 +215,7 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 		c.CookieJar.SetCookies(c.endpoint, resp.Cookies)
 	}
 	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
-		_ = ctx_cache.Set[ResponseData](ctx, key, *resp)
+		_ = ctx_cache.Set[ResponseData](ctx, c.serviceName+"_pkg", key, *resp)
 	}
 
 	return resp
