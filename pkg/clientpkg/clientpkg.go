@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Seann-Moser/ctx_cache"
-	"go.opencensus.io/plugin/ochttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -106,10 +106,9 @@ func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, cli
 	if itemsPerPage == 0 || itemsPerPage > 1000 {
 		itemsPerPage = 100
 	}
+
 	if client == nil {
-		client = &http.Client{Transport: &ochttp.Transport{
-			Base: http.DefaultTransport,
-		}}
+		client = &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	}
 	if client.Jar == nil {
 		jar, err := cookiejar.New(nil)

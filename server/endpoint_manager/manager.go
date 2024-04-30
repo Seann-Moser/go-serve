@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type AddEndpoints func(manager Manager) error
@@ -72,6 +73,16 @@ func (m *Manager) AddEndpoint(ctx context.Context, endpoint *endpoints.Endpoint)
 	if !hasOption {
 		endpoint.Methods = append(endpoint.Methods, http.MethodOptions)
 	}
+	handleFunc := func(pattern string, handlerFunc func(http.ResponseWriter, *http.Request)) *mux.Route {
+		// Configure the "http.route" for the HTTP instrumentation.
+		handler := otelhttp.WithRouteTag(pattern, otelhttp.NewHandler(http.HandlerFunc(handlerFunc), pattern))
+		return m.Router.Handle(pattern, handler)
+	}
+	handle := func(pattern string, handlerFunc http.Handler) *mux.Route {
+		// Configure the "http.route" for the HTTP instrumentation.\
+		handler := otelhttp.WithRouteTag(pattern, otelhttp.NewHandler(handlerFunc, pattern))
+		return m.Router.Handle(pattern, handler)
+	}
 
 	if len(endpoint.Redirect) > 0 && endpoint.HandlerFunc == nil && endpoint.Handler == nil {
 		ep, err := handlers.NewProxy(ctx, endpoint, "")
@@ -84,12 +95,12 @@ func (m *Manager) AddEndpoint(ctx context.Context, endpoint *endpoints.Endpoint)
 		ctxLogger.Debug(ctx, "adding handler func",
 			zap.String("path", endpoint.URLPath),
 			zap.Strings("methods", endpoint.Methods))
-		m.Router.HandleFunc(endpoint.URLPath, endpoint.HandlerFunc).Methods(endpoint.Methods...)
+		handleFunc(endpoint.URLPath, endpoint.HandlerFunc).Methods(endpoint.Methods...)
 	} else if endpoint.Handler != nil {
 		ctxLogger.Debug(ctx, "adding handler",
 			zap.String("path", endpoint.URLPath),
 			zap.Strings("methods", endpoint.Methods))
-		m.Router.Handle(endpoint.URLPath, endpoint.Handler).Methods(endpoint.Methods...)
+		handle(endpoint.URLPath, endpoint.Handler).Methods(endpoint.Methods...)
 	} else {
 		ctxLogger.Error(ctx, "failed to add handler for", zap.String("path", endpoint.URLPath), zap.Strings("methods", endpoint.Methods))
 	}
