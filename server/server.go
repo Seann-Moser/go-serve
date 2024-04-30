@@ -100,6 +100,9 @@ func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb in
 			handler.ServeHTTP(w, r)
 		})
 	})
+	if m.Enabled {
+		router.Use(m.Middleware())
+	}
 	return &Server{
 		ServingPort:     servingPort,
 		ctx:             notifyContext,

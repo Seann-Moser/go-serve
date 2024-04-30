@@ -184,6 +184,9 @@ func newMeterProvider(res *resource.Resource) (*metric.MeterProvider, error) {
 	if err != nil {
 		return nil, err
 	}
-	provider := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(exporter))
+	view := metric.NewView(metric.Instrument{
+		Name: "latency",
+	}, metric.Stream{Name: "server.latency"})
+	provider := metric.NewMeterProvider(metric.WithResource(res), metric.WithReader(exporter), metric.WithView(view))
 	return provider, nil
 }
