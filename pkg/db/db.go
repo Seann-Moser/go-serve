@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.uber.org/multierr"
 	"net/http"
 	"reflect"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Seann-Moser/QueryHelper"
+	"github.com/XSAM/otelsql"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/pflag"
@@ -203,25 +205,15 @@ func connectToDB(ctx context.Context, user, password, host, instanceName string,
 		AllowCleartextPasswords: true,
 		MaxAllowedPacket:        4 << 20,
 	}
-	//dns := fmt.Sprintf("%s:%s@tcp(%s:%d)/", user, password, host, port)
 	ctxLogger.Info(ctx, "connecting to db", zap.String("dsn", dbConf.FormatDSN()))
-	//driverName, err := ocsql.Register("mysql", ocsql.WithAllTraceOptions(), ocsql.WithInstanceName(instanceName))
-	//if err != nil {
-	//	return nil, err
-	//}
 
-	//sqlDb, err := sql.Open("mysql", dbConf.FormatDSN())
-	//if err != nil {
-	//	return nil, err
-	//}
-	//sqlDb.SetMaxOpenConns(maxConnections)
-	//sqlDb.SetConnMaxLifetime(lifeTime)
-	//sqlDb.SetMaxIdleConns(idleConn)
-
-	db, err := sqlx.Open("mysql", dbConf.FormatDSN())
+	otelSql, err := otelsql.Open("mysql", dbConf.FormatDSN(), otelsql.WithAttributes(
+		semconv.DBSystemMySQL))
 	if err != nil {
 		return nil, err
 	}
+
+	db := sqlx.NewDb(otelSql, "mysql")
 	db.SetMaxOpenConns(maxConnections)
 	db.SetConnMaxLifetime(lifeTime)
 	db.SetMaxIdleConns(idleConn)
@@ -230,10 +222,9 @@ func connectToDB(ctx context.Context, user, password, host, instanceName string,
 	}
 	var retries int
 	ticker := time.NewTicker(5 * time.Second)
-	//if writeStatDuration != 0 {
-	//	defer ocsql.RecordStats(sqlDb, writeStatDuration)()
-	//}
-
+	err = otelsql.RegisterDBStatsMetrics(otelSql, otelsql.WithAttributes(
+		semconv.DBSystemMySQL,
+	))
 	for {
 		select {
 		case <-ctx.Done():

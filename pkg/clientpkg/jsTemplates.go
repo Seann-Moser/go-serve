@@ -48,7 +48,7 @@ func GenerateBaseJSClient(write bool, headers []string, endpoints ...*endpoints.
 	envVarName := snakeCaseToCamelCase(ToSnakeCase(GetFlagWithPrefix("base-url", projectName)))
 	envVarName = strings.ToLower(envVarName[:1]) + envVarName[1:]
 
-	var jsFunctions []string
+	//var jsFunctions []string
 	var objects map[string][]string
 	groupings := map[string][]string{}
 
@@ -71,7 +71,7 @@ func GenerateBaseJSClient(write bool, headers []string, endpoints ...*endpoints.
 			if _, found := groupings[group]; !found {
 				groupings[group] = []string{}
 			}
-			jsFunctions = append(jsFunctions, output)
+			//jsFunctions = append(jsFunctions, output)
 			objects = MergeMap[[]string](cf.Objects, objects)
 			groupings[group] = append(groupings[group], output)
 		}
