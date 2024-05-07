@@ -69,10 +69,10 @@ export class Iterator {
      * @return {promise<array>|promise<null>}
      */
     async GetPage() {
-        if (this.currentPages === null || this.currentPages.length === 0) {
+        if (this.currentPages === null || this.currentPages.length === 0 || this.currentPages === undefined) {
             const v = await this.getPages();
             if (!v) {
-                return Promise.reject(createError(`failed loading pages ${this.err}`));
+                return new Promise((resolve) => resolve(null));
             }
         }
         if (!Array.isArray(this.currentPages)) {
