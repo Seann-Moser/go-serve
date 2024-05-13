@@ -27,6 +27,7 @@ type Endpoint struct {
 	URLPath         string           `json:"url_path" yaml:"url_path" db:"url_path" qc:"primary;data_type::varchar(512);delete;join;update;where::="`
 	PermissionLevel Permission       `json:"permission_level" yaml:"permission_level" db:"permission_level" qc:"join;update;where::<="`
 	Role            string           `json:"role" db:"role" qc:"primary;join;update;default::default"`
+	Roles           []string         `json:"roles" db:"-"`
 	Method          string           `json:"-" db:"method" qc:"primary;update"`
 	Methods         []string         `json:"methods" yaml:"methods" db:"-"`
 	HandlerFunc     http.HandlerFunc `db:"-" json:"-"`
