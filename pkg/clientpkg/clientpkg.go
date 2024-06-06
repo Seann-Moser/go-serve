@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -143,10 +144,36 @@ func (c *Client) Request(ctx context.Context, data RequestData, p *pagination.Pa
 	if retry {
 		return c.RequestWithRetry(ctx, data, p)
 	}
+	key := c.CacheKey(data, p)
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
+		resp, err := ctx_cache.GetSetP[ResponseData](ctx, 15*time.Second, c.serviceName, key, func(ctx context.Context) (*ResponseData, error) {
+			resp = c.SendRequest(ctx, data, p)
+			if resp.Status == http.StatusTooManyRequests {
+				return nil, resp.Err
+			}
+			return resp, nil
+		})
+		if resp != nil && err == nil {
+			return resp
+		}
+	}
 	return c.SendRequest(ctx, data, p)
 }
 
 func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData) {
+	key := c.CacheKey(data, p)
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
+		resp, err := ctx_cache.GetSetP[ResponseData](ctx, 15*time.Second, c.serviceName, key, func(ctx context.Context) (*ResponseData, error) {
+			resp = c.SendRequest(ctx, data, p)
+			if resp.Status == http.StatusTooManyRequests {
+				return nil, resp.Err
+			}
+			return resp, nil
+		})
+		if resp != nil && err == nil {
+			return resp
+		}
+	}
 	_ = c.BackOff.Retry(ctx, func() error {
 		resp = c.SendRequest(ctx, data, p)
 		if resp.Status == http.StatusTooManyRequests {
@@ -158,17 +185,6 @@ func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagi
 }
 
 func (c *Client) SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData {
-	key := c.CacheKey(data, p)
-	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
-		response, _ := ctx_cache.Get[ResponseData](ctx, c.serviceName+"_pkg", key)
-		if response != nil {
-			if response.ErrStr != "" {
-				response.Err = fmt.Errorf(response.ErrStr)
-			}
-			return response
-		}
-	}
-
 	u, err := url.JoinPath(c.endpoint.String(), data.Path)
 	if err != nil {
 		return &ResponseData{Err: err}
@@ -213,10 +229,6 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 	if len(resp.Cookies) > 0 && c.UseCookieJar {
 		c.CookieJar.SetCookies(c.endpoint, resp.Cookies)
 	}
-	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
-		_ = ctx_cache.Set[ResponseData](ctx, c.serviceName+"_pkg", key, *resp)
-	}
-
 	return resp
 }
 
