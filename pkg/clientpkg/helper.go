@@ -83,7 +83,7 @@ func GetProjectDir() (string, string, error) {
 }
 
 func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.Endpoint) (string, error) {
-	_, _ = GenerateBaseJSClient(write, headers, endpoints...)
+	//_, _ = GenerateBaseJSClient(write, headers, endpoints...)
 	currentPath, err := os.Getwd()
 	if err != nil {
 		return "", err
