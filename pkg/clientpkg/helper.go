@@ -348,6 +348,14 @@ func GetObject(i interface{}) []string {
 		structType = structType.Elem()
 	}
 	switch i.(type) {
+	case string:
+		return []string{"string"}
+	case []string:
+		return []string{"arr_string"}
+	case int:
+		return []string{"int"}
+	case []int:
+		return []string{"arr_int"}
 	case map[string]string:
 		return []string{"string_map"}
 	case map[string]interface{}:
@@ -378,6 +386,13 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 	if endpoint.SkipGenerate {
 		return output
 	}
+	skipPkg := map[string]bool{
+		"string":   true,
+		"int":      true,
+		"int64":    true,
+		"[]string": true,
+	}
+
 	for _, m := range endpoint.Methods {
 		re := regexp.MustCompile(`\{(.*?)\}`)
 		cf := &ClientFunc{
@@ -412,7 +427,7 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 				n += "Map"
 			}
 			n = strings.ToLower(n[:1]) + n[1:]
-			if fullPkg != "" {
+			if _, found := skipPkg[pkg]; !found && fullPkg != "" {
 				cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
 			}
 
@@ -424,13 +439,16 @@ func GoNewClientFunc(endpoint *endpoints.Endpoint) []*ClientFunc {
 			_, pkg := path.Split(fullPkg)
 			if isMap(responseType) {
 				cf.DataTypeName = fmt.Sprintf("map[%s]%s", reflect.TypeOf(responseType).Key(), reflect.TypeOf(responseType).Elem())
+			} else if _, found := skipPkg[pkg]; found {
+				cf.DataTypeName = fmt.Sprintf("%s", pkg)
 			} else if isArray(responseType) {
 				cf.DataTypeName = fmt.Sprintf("%s.%s", pkg, getType(responseType))
 				cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
-
 			} else {
 				cf.DataTypeName = fmt.Sprintf("%s.%s", pkg, getType(responseType))
-				cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+				if _, found := skipPkg[pkg]; !found && fullPkg != "" {
+					cf.Imports = append(cf.Imports, fmt.Sprintf(`%s "%s"`, pkg, fullPkg))
+				}
 
 			}
 			cf.Return = strings.Join([]string{fmt.Sprintf("*clientpkg.Iterator[%s]", cf.DataTypeName)}, ",")
@@ -570,6 +588,14 @@ func GetFunctionName(i interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }
 func getTypePkg(myVar interface{}) string {
+	switch myVar.(type) {
+	case string:
+		return "string"
+	case int64:
+		return "int64"
+	case []string:
+		return "[]string"
+	}
 	t := reflect.TypeOf(myVar)
 	if t == nil {
 		return ""
@@ -601,6 +627,15 @@ func isMap(i interface{}) bool {
 	return false
 }
 func getType(myVar interface{}) string {
+	switch myVar.(type) {
+	case string:
+		return "string"
+	case int64:
+		return "int64"
+	case []string:
+		return "string"
+	}
+
 	t := reflect.TypeOf(myVar)
 	if t.Kind() == reflect.Ptr {
 		return t.Elem().Name()
@@ -685,18 +720,18 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 // @Tags account,GET,DELETE
 // @ID account_user_settings-c0affc3d8eefc506bb3142325d940283a274ee0d
 // @Description empty
-// @Produce json 
-// @Param account_id path string true "description" 
-// @Param user_id path string true "description" 
-// @Param header header string false "description" 
-// @Param test header string false "description" 
-// @Param responseData body clientpkg.ResponseData false "description" 
-// @Success 200 {object} response.BaseResponse "return message object"  
+// @Produce json
+// @Param account_id path string true "description"
+// @Param user_id path string true "description"
+// @Param header header string false "description"
+// @Param test header string false "description"
+// @Param responseData body clientpkg.ResponseData false "description"
+// @Success 200 {object} response.BaseResponse "return message object"
 // @Failure 400 {object} response.BaseResponse "invalid request to endpoint"
 // @Failure 500 {object} response.BaseResponse "failed"
 // @Failure 401 {object} response.BaseResponse "unauthorized request to endpoint"
-// @Router /account/{account_id}/user/{user_id}/settings [GET] 
-// @Router /account/{account_id}/user/{user_id}/settings [DELETE] 
+// @Router /account/{account_id}/user/{user_id}/settings [GET]
+// @Router /account/{account_id}/user/{user_id}/settings [DELETE]
 func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
@@ -706,14 +741,14 @@ func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 // @Tags account,GET
 // @ID account_user-9df6dae28a065c2087fbd4eac002c2cd9de221e7
 // @Description empty
-// @Produce json 
-// @Param account_id path string true "description" 
-// @Param user_id path string true "description" 
-// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "returning object"  
+// @Produce json
+// @Param account_id path string true "description"
+// @Param user_id path string true "description"
+// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "returning object"
 // @Failure 400 {object} response.BaseResponse "invalid request to endpoint"
 // @Failure 500 {object} response.BaseResponse "failed"
 // @Failure 401 {object} response.BaseResponse "unauthorized request to endpoint"
-// @Router /account/{account_id}/user/{user_id} [GET] 
+// @Router /account/{account_id}/user/{user_id} [GET]
 func HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
