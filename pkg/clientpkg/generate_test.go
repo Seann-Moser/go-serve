@@ -66,7 +66,7 @@ func GetEndpoints() []*endpoints.Endpoint {
 	e[2] = e[2].SetRequestType([]ResponseData{}, http.MethodGet)
 	e[3] = e[3].SetRequestType(map[string]string{}, http.MethodGet)
 	e[3] = e[3].SetResponseType(map[string]interface{}{}, http.MethodGet)
-	e[3] = e[3].SetResponseType([]string{}, http.MethodGet)
+	e[3] = e[3].SetResponseType("", http.MethodGet)
 
 	return e
 }
