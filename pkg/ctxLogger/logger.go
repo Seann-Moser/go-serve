@@ -2,6 +2,7 @@ package ctxLogger
 
 import (
 	"context"
+	"errors"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/spf13/pflag"
@@ -15,6 +16,8 @@ const (
 	CTX_LOGGER = "logger"
 )
 
+var ignoreContextCanceled = false
+
 var globalLogger *zap.Logger
 var skip = []zap.Option{zap.AddCallerSkip(1)}
 
@@ -22,6 +25,7 @@ func Flags() *pflag.FlagSet {
 	fs := pflag.NewFlagSet("ctx_logger", pflag.ExitOnError)
 	fs.String("log-level", "debug", "")
 	fs.BoolP("is-prod", "p", false, "")
+	fs.BoolP("ignore-context-canceled", "c", false, "")
 	return fs
 }
 
@@ -54,7 +58,7 @@ func GetLogger(ctx context.Context) *zap.Logger {
 }
 
 func NewLoggerFromFlags() (*zap.Logger, error) {
-	logger, err := NewLogger(viper.GetBool("is-prod"), viper.GetString("log-level"))
+	logger, err := NewLogger(viper.GetBool("is-prod"), viper.GetString("log-level"), viper.GetBool("ignore-context-canceled"))
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +66,7 @@ func NewLoggerFromFlags() (*zap.Logger, error) {
 	return logger, nil
 }
 
-func NewLogger(production bool, level string) (*zap.Logger, error) {
+func NewLogger(production bool, level string, icc bool) (*zap.Logger, error) {
 	var conf zap.Config
 	if production {
 		conf = zap.NewProductionConfig()
@@ -73,7 +77,7 @@ func NewLogger(production bool, level string) (*zap.Logger, error) {
 	if err := conf.Level.UnmarshalText([]byte(level)); err != nil {
 		return nil, err
 	}
-
+	ignoreContextCanceled = icc
 	return conf.Build()
 }
 
@@ -82,18 +86,30 @@ func Check(ctx context.Context, lvl zapcore.Level, msg string) *zapcore.CheckedE
 }
 
 func Debug(ctx context.Context, message string, fields ...zap.Field) {
+	if ignoreContextCanceled && ContextCanceled(fields...) {
+		return
+	}
 	GetLogger(ctx).WithOptions(skip...).Debug(message, fields...)
 }
 
 func Info(ctx context.Context, message string, fields ...zap.Field) {
+	if ignoreContextCanceled && ContextCanceled(fields...) {
+		return
+	}
 	GetLogger(ctx).WithOptions(skip...).Info(message, fields...)
 }
 
 func Warn(ctx context.Context, message string, fields ...zap.Field) {
+	if ignoreContextCanceled && ContextCanceled(fields...) {
+		return
+	}
 	GetLogger(ctx).WithOptions(skip...).Warn(message, fields...)
 }
 
 func Error(ctx context.Context, message string, fields ...zap.Field) {
+	if ignoreContextCanceled && ContextCanceled(fields...) {
+		return
+	}
 	GetLogger(ctx).WithOptions(skip...).Error(message, fields...)
 }
 
@@ -106,4 +122,20 @@ func Panic(ctx context.Context, msg string, fields ...zapcore.Field) {
 }
 func WithOptions(ctx context.Context, opts ...zap.Option) context.Context {
 	return ConfigureCtx(GetLogger(ctx).WithOptions(opts...), ctx)
+}
+
+func ContextCanceled(fields ...zap.Field) bool {
+	for _, field := range fields {
+		if field.Type != zapcore.ErrorType {
+			continue
+		}
+		if field.Interface == nil {
+			continue
+		}
+		err := field.Interface.(error)
+		if errors.Is(err, context.Canceled) {
+			return true
+		}
+	}
+	return false
 }
