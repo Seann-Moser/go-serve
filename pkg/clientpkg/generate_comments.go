@@ -114,14 +114,22 @@ func GetFullName(i interface{}, array bool, override map[string]string) string {
 	if v, found := override[pkg]; found {
 		pkg = v
 	}
-
+	skipPkg := map[string]bool{
+		"string":   true,
+		"int":      true,
+		"int64":    true,
+		"[]string": true,
+	}
 	if isMap(i) {
 		return fmt.Sprintf("map[%s]%s", getType(i), getType(i))
 	} else if isArray(i) {
 		if getType(i) == "BaseResponse" {
 			return "response.BaseResponse"
 		}
-		return fmt.Sprintf("response.BaseResponse{data=[]%s.%s}", pkg, getType(i))
+		if _, found := skipPkg[pkg]; !found && fullPkg != "" {
+			return fmt.Sprintf("response.BaseResponse{data=[]%s.%s}", pkg, getType(i))
+		}
+		return fmt.Sprintf("response.BaseResponse{data=[]%s}", pkg)
 	} else {
 		if getType(i) == "BaseResponse" {
 			return "response.BaseResponse"
@@ -130,7 +138,11 @@ func GetFullName(i interface{}, array bool, override map[string]string) string {
 		if array {
 			prefix = "[]"
 		}
-		return fmt.Sprintf("response.BaseResponse{data=%s%s.%s}", prefix, pkg, getType(i))
+
+		if _, found := skipPkg[pkg]; !found && fullPkg != "" {
+			return fmt.Sprintf("response.BaseResponse{data=%s%s.%s}", prefix, pkg, getType(i))
+		}
+		return fmt.Sprintf("response.BaseResponse{data=%s%s}", prefix, pkg)
 	}
 }
 
