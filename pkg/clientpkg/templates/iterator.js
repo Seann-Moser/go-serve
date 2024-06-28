@@ -1,28 +1,27 @@
 export class Iterator {
-    //todo look up better way of doing an async iterator in js
-    constructor(data,path,config,page){
-        this.config = config
-        this.path = path
-        if (data !== null){
-            this.responseData = new IteratorResponseData(data)
-        }else{
-            this.responseData = null
+    // todo look up better way of doing an async iterator in js
+    constructor(data, path, config, page) {
+        this.config = config;
+        this.path = path;
+        if (data !== null) {
+            this.responseData = new IteratorResponseData(data);
+        } else {
+            this.responseData = null;
         }
 
-        this.currentPages = []
-        this.current=null
-        this.err = null
-        this.message = ""
+        this.currentPages = [];
+        this.current = null;
+        this.err = null;
+        this.message = "";
 
-        this.offset = 0
-        this.singlePage=false
-        this.currentItem = 0
-        if (page !== null){
-            this.pagination = page
-        }else{
-            this.pagination = new Pagination(null)
+        this.offset = 0;
+        this.singlePage = false;
+        this.currentItem = 0;
+        if (page !== null) {
+            this.pagination = page;
+        } else {
+            this.pagination = new Pagination(null);
         }
-
     }
 
     /**
@@ -43,7 +42,9 @@ export class Iterator {
             if (this.currentPages === null || this.currentPages.length === 0) {
                 const v = await this.getPages();
                 if (!v) {
-                    return Promise.reject(createError(`failed loading pages ${this.err}`));
+                    return Promise.reject(
+                        createError(`failed loading pages ${this.err}`),
+                    );
                 }
                 if (!Array.isArray(this.currentPages)) {
                     this.singlePage = true;
@@ -69,11 +70,18 @@ export class Iterator {
      * @return {promise<array>|promise<null>}
      */
     async GetPage() {
-        if (this.currentPages === null || this.currentPages.length === 0 || this.currentPages === undefined) {
+        if (
+            this.currentPages === null ||
+            this.currentPages.length === 0 ||
+            this.currentPages === undefined
+        ) {
             const v = await this.getPages();
             if (!v) {
                 return new Promise((resolve) => resolve(null));
             }
+        }
+        if (this.currentPages === undefined) {
+            return new Promise((resolve) => resolve(null));
         }
         if (!Array.isArray(this.currentPages)) {
             this.singlePage = true;
@@ -111,19 +119,19 @@ export class Iterator {
      * @return {promise<array>}
      * @constructor
      */
-    async PreviousPage(){
+    async PreviousPage() {
         if (this.singlePage) {
-            return null
+            return null;
         }
-        this.pagination.CurrentPage -= 1
-        if (this.pagination.CurrentPage < 1){
-            this.pagination.CurrentPage = 1
+        this.pagination.CurrentPage -= 1;
+        if (this.pagination.CurrentPage < 1) {
+            this.pagination.CurrentPage = 1;
         }
-        let v = await this.getPages()
+        const v = await this.getPages();
         if (!v) {
             return Promise.reject(createError(`failed loading pages ${this.err}`));
         }
-        return new Promise(resolve => resolve(this.currentPages))
+        return new Promise((resolve) => resolve(this.currentPages));
     }
 
     /**
@@ -150,10 +158,14 @@ export class Iterator {
         }
         return new Promise((resolve) => resolve(this.currentPages));
     }
+
+    GetPagination() {
+        return this.pagination;
+    }
+
     /**
      *
      * @returns {promise}
-     * @constructor
      */
     async Next() {
         if (this.singlePage) {
@@ -178,7 +190,7 @@ export class Iterator {
             this.current = this.currentPages[this.currentItem - this.offset];
             return new Promise((resolve) => resolve(this.current));
         }
-        if (this.currentItem < this.pagination.TotalItems) {
+        if (this.currentItem < this.pagination.TotalItems -1) {
             this.currentItem += 1;
             if (this.currentItem - this.offset >= this.currentPages.length) {
                 const v = await this.getPages();
@@ -197,8 +209,54 @@ export class Iterator {
         return null;
     }
 
-    Err(){
-        return this.err
+    /**
+     *
+     * @returns {promise}
+     */
+    async Previous() {
+        if (this.singlePage) {
+            return null;
+        }
+        if (this.pagination.TotalItems === 0) {
+            const v = await this.getPages();
+            if (!v) {
+                return Promise.reject(
+                    createError(`failed getting next page: ${this.err}`),
+                );
+            }
+            if (!Array.isArray(this.currentPages)) {
+                this.singlePage = true;
+                this.current = this.currentPages;
+                return new Promise((resolve) => resolve(this.current));
+            }
+            // todo check if it an array
+            if (this.currentPages.length === 0) {
+                return null;
+            }
+            this.current = this.currentPages[this.currentItem - this.offset];
+            return new Promise((resolve) => resolve(this.current));
+        }
+        if (this.currentItem > 0) {
+            this.currentItem -= 1;
+            if (this.currentItem - this.offset >= this.currentPages.length) {
+                const v = await this.getPages();
+                if (!v) {
+                    return Promise.reject(
+                        createError(`failed loading pages ${this.err}`),
+                    );
+                }
+            }
+            if (this.currentItem - this.offset >= this.currentPages.length) {
+                return null;
+            }
+            this.current = this.currentPages[this.currentItem - this.offset];
+            return new Promise((resolve) => resolve(this.current));
+        }
+        return null;
+    }
+
+    Err() {
+        return this.err;
     }
 
     /**
@@ -223,122 +281,129 @@ export class Iterator {
         }
         return new Promise((resolve) => resolve(this.message));
     }
-    /**
-     *
-     * @returns {Pagination}
-     *
-     */
-    GetPagination() {
-        return this.pagination;
-    }
 
     /**
      *
      * @returns {promise<boolean>}
      */
-    async getPages(){
-        await this.responseData.LoadData()
-        //todo or current page is greater than what we have
-        if (this.responseData.Data === undefined || this.responseData.Data === null){
-            this.config.params["items_per_page"] = this.pagination.ItemsPerPage
-            this.config.params["page"] = this.pagination.CurrentPage
+    async getPages() {
+        await this.responseData.LoadData();
+        // todo or current page is greater than what we have
+        if (
+            this.responseData.Data === undefined ||
+            this.responseData.Data === null
+        ) {
+            this.config.params.items_per_page = this.pagination.ItemsPerPage;
+            this.config.params.page = this.pagination.CurrentPage;
             try {
-                const data = await $fetch(this.path, this.config)
-                this.responseData = new IteratorResponseData(data)
-                await this.responseData.LoadData()
-            }catch (error){
-                this.err = error
-                this.message = error.Message
-                return new Promise(resolve => resolve(false),reject=>reject(error))
+                const data = await $fetch(this.path, this.config);
+                this.responseData = new IteratorResponseData(data);
+                await this.responseData.LoadData();
+            } catch (error) {
+                this.err = error;
+                this.message = error.Message;
+                let message = "";
+                try {
+                    message = JSON.parse(error.data).message;
+                } catch (_) {
+                    message = error;
+                }
+                return new Promise(
+                    (resolve) => resolve(false),
+                    (reject) => reject(message),
+                );
             }
         }
-        if (!(this.responseData.Page === undefined || this.responseData.Page === null)){
-            this.pagination = this.responseData.Page
+        if (
+            !(this.responseData.Page === undefined || this.responseData.Page === null)
+        ) {
+            this.pagination = this.responseData.Page;
         }
-        this.message = this.responseData.Message
-        this.currentPages = this.responseData.Data
+        this.message = this.responseData.Message;
+        this.currentPages = this.responseData.Data;
 
-        if (!Array.isArray(this.currentPages)){
-            this.singlePage = true
-            this.current = this.currentPages
-            return new Promise(resolve => resolve(true))
+        if (!Array.isArray(this.currentPages)) {
+            this.singlePage = true;
+            this.current = this.currentPages;
+            return new Promise((resolve) => resolve(true));
         }
-        this.offset = (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage
-        return new Promise(resolve => resolve(true))
+        this.offset =
+            (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage;
+        return new Promise((resolve) => resolve(true));
     }
-
 }
 
 export class IteratorResponseData {
     constructor(rawResponse) {
-        this.rawResponse = rawResponse
-        this.decoded = {}
-        if (rawResponse === undefined){
-            return
+        this.rawResponse = rawResponse;
+        this.decoded = {};
+        if (rawResponse === undefined) {
+            return;
         }
-        if (typeof rawResponse !== 'object'){
-            return
+        if (typeof rawResponse !== "object") {
+            return;
         }
         if ("data" in rawResponse) {
-            this.Data = rawResponse.data
-        }else{
-            this.Data = []
+            this.Data = rawResponse.data;
+        } else {
+            this.Data = [];
         }
         if ("page" in rawResponse) {
-            this.Page = new Pagination(rawResponse["page"])
+            this.Page = new Pagination(rawResponse.page);
         }
 
         if ("message" in rawResponse) {
-            this.Message = rawResponse.message
+            this.Message = rawResponse.message;
         }
     }
+
     async LoadData() {
-        if (this.rawResponse === undefined){
-            return
+        if (this.rawResponse === undefined) {
+            return;
         }
 
-        const rawData = await this.rawResponse
-        this.decoded = JSON.parse(rawData)
-        this.parse()
+        const rawData = await this.rawResponse;
+        this.decoded = JSON.parse(rawData);
+        this.parse();
     }
-    parse(){
-        if (typeof this.decoded !== 'object'){
-            return
+
+    parse() {
+        if (typeof this.decoded !== "object") {
+            return;
         }
         if ("data" in this.decoded) {
-            this.Data = this.decoded.data
+            this.Data = this.decoded.data;
         }
         if ("page" in this.decoded) {
-            this.Page = new Pagination(this.decoded["page"])
+            this.Page = new Pagination(this.decoded.page);
         }
         if ("message" in this.decoded) {
-            this.Message = this.decoded.message
+            this.Message = this.decoded.message;
         }
     }
 }
 
 export class Pagination {
     constructor(pageJson) {
-        if (pageJson === null || pageJson === undefined){
-            this.CurrentPage = 1
-            this.ItemsPerPage = 24
-            return
+        if (pageJson === null || pageJson === undefined) {
+            this.CurrentPage = 1;
+            this.ItemsPerPage = 24;
+            return;
         }
-        this.CurrentPage = pageJson["current_page"]
-        this.NextPage = pageJson["next_page"]
-        this.TotalItems = pageJson["total_items"]
-        this.TotalPages = pageJson["total_pages"]
-        this.ItemsPerPage = pageJson["items_per_page"]
+        this.CurrentPage = pageJson.current_page;
+        this.NextPage = pageJson.next_page;
+        this.TotalItems = pageJson.total_items;
+        this.TotalPages = pageJson.total_pages;
+        this.ItemsPerPage = pageJson.items_per_page;
     }
 }
 
 /**
-    @param {array<File>} files
-    @param {object} config
-    @param {array<ResponseData>} responseData
-    @return {promise}
+ @param {array<File>} files
+ @param {object} config
+ @return {promise}
  */
-export function UploadImage(files,config) {
+export function UploadImage(files, config) {
     if (files === null || files.length === 0) {
         return Promise.reject(
             createError(`failed uploading image:no files present`),
@@ -346,7 +411,7 @@ export function UploadImage(files,config) {
     }
     const formData = new FormData();
     formData.append("image", files[0]);
-    config.body = formData
+    config.body = formData;
 
-    return $fetch(config.path, config)
+    return $fetch(config.path, config);
 }
