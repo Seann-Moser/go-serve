@@ -3,6 +3,7 @@ export class Iterator {
     constructor(data, path, config, page) {
         this.config = config;
         this.path = path;
+        this.loading = false;
         if (data !== null) {
             this.responseData = new IteratorResponseData(data);
         } else {
@@ -190,9 +191,10 @@ export class Iterator {
             this.current = this.currentPages[this.currentItem - this.offset];
             return new Promise((resolve) => resolve(this.current));
         }
-        if (this.currentItem < this.pagination.TotalItems -1) {
+        if (this.currentItem < this.pagination.TotalItems - 1) {
             this.currentItem += 1;
             if (this.currentItem - this.offset >= this.currentPages.length) {
+                this.pagination.CurrentPage += 1; // todo fix
                 const v = await this.getPages();
                 if (!v) {
                     return Promise.reject(
@@ -238,7 +240,8 @@ export class Iterator {
         }
         if (this.currentItem > 0) {
             this.currentItem -= 1;
-            if (this.currentItem - this.offset >= this.currentPages.length) {
+            if (this.currentItem - this.offset < 0) {
+                this.pagination.CurrentPage -= 1; // todo fix
                 const v = await this.getPages();
                 if (!v) {
                     return Promise.reject(
@@ -246,7 +249,7 @@ export class Iterator {
                     );
                 }
             }
-            if (this.currentItem - this.offset >= this.currentPages.length) {
+            if (this.currentItem - this.offset < 0) {
                 return null;
             }
             this.current = this.currentPages[this.currentItem - this.offset];
@@ -287,22 +290,30 @@ export class Iterator {
      * @returns {promise<boolean>}
      */
     async getPages() {
-        await this.responseData.LoadData();
+        if (!this.responseData.Data || this.responseData.Data.length === 0) {
+            await this.responseData.LoadData();
+        }
+
         // todo or current page is greater than what we have
         if (
             this.responseData.Data === undefined ||
-            this.responseData.Data === null
+            this.responseData.Data === null ||
+            this.currentItem - this.offset >= this.currentPages.length ||
+            this.currentItem - this.offset < 0
         ) {
             this.config.params.items_per_page = this.pagination.ItemsPerPage;
             this.config.params.page = this.pagination.CurrentPage;
             try {
+                this.loading = true;
                 const data = await $fetch(this.path, this.config);
                 this.responseData = new IteratorResponseData(data);
                 await this.responseData.LoadData();
             } catch (error) {
+                this.loading = false;
                 this.err = error;
                 this.message = error.Message;
                 let message = "";
+                console.error(error);
                 try {
                     message = JSON.parse(error.data).message;
                 } catch (_) {
@@ -313,6 +324,7 @@ export class Iterator {
                     (reject) => reject(message),
                 );
             }
+            this.loading = false;
         }
         if (
             !(this.responseData.Page === undefined || this.responseData.Page === null)
@@ -329,6 +341,7 @@ export class Iterator {
         }
         this.offset =
             (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage;
+
         return new Promise((resolve) => resolve(true));
     }
 }
