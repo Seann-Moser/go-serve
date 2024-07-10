@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/multierr"
 	"net/http"
 	"reflect"
@@ -46,6 +46,7 @@ const (
 
 func GetDaoFlags() *pflag.FlagSet {
 	fs := pflag.NewFlagSet("db-dao", pflag.ExitOnError)
+	fs.AddFlagSet(QueryHelper.Flags())
 	fs.String(DBUserNameFlag, "", "")
 	fs.String(DBPasswordFlag, "", "")
 	fs.String(DBHostFlag, "mysql", "")

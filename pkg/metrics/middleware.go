@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"net/http"
 	"strings"
 	"time"
@@ -56,17 +56,15 @@ func (m *Metrics) write(ctx context.Context, entry *AuditLog, status, bytes int,
 	entry.Latency = elapsed.Milliseconds()
 	httpTotalRequests.Add(ctx, 1,
 		metric.WithAttributes(
-			semconv.HTTPStatusCode(status),
-			semconv.HTTPMethod(entry.Method),
+			semconv.HTTPResponseStatusCode(status),
+			semconv.HTTPRequestMethodOriginal(entry.Method),
 			semconv.HTTPRoute(entry.Path),
-			semconv.HTTPResponseContentLength(bytes),
 		),
 	)
 	httpLatency.Record(ctx, float64(entry.Latency), metric.WithAttributes(
-		semconv.HTTPStatusCode(status),
-		semconv.HTTPMethod(entry.Method),
+		semconv.HTTPResponseStatusCode(status),
+		semconv.HTTPRequestMethodOriginal(entry.Method),
 		semconv.HTTPRoute(entry.Path),
-		semconv.HTTPResponseContentLength(bytes),
 	))
 }
 
