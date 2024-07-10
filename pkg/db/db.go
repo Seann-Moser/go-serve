@@ -213,7 +213,6 @@ func connectToDB(ctx context.Context, user, password, host, instanceName string,
 	if err != nil {
 		return nil, err
 	}
-
 	db := sqlx.NewDb(otelSql, "mysql")
 	db.SetMaxOpenConns(maxConnections)
 	db.SetConnMaxLifetime(lifeTime)
