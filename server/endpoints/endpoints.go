@@ -47,6 +47,7 @@ type Endpoint struct {
 	QueryParams     []string               `json:"-" db:"-"`
 	SkipGenerate    bool                   `json:"-" db:"-"`
 }
+
 type HTTPDescription struct {
 	Description string
 	StatusCode  int

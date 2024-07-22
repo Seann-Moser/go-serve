@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/Seann-Moser/go-serve/server/middle"
+	json "github.com/goccy/go-json"
 	"log"
 	"net/http"
 

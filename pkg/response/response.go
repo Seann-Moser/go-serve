@@ -2,8 +2,8 @@ package response
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	json "github.com/goccy/go-json"
 	"io"
 	"math"
 	"net/http"

@@ -1,10 +1,10 @@
 package request
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	json "github.com/goccy/go-json"
 	"io"
 	"math"
 	"mime"

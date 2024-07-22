@@ -95,6 +95,7 @@ func (d *DAO) AddTablesToCtx(ctx context.Context) context.Context {
 	}
 	return d.ctx
 }
+
 func GetDao(ctx context.Context) (*DAO, error) {
 	value := ctx.Value("go-serve-dao")
 	if value == nil {

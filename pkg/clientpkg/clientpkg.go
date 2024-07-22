@@ -3,9 +3,9 @@ package clientpkg
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/Seann-Moser/ctx_cache"
+	json "github.com/goccy/go-json"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"net/http"
 	"net/http/cookiejar"
@@ -162,6 +162,7 @@ func (c *Client) Request(ctx context.Context, data RequestData, p *pagination.Pa
 
 func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData) {
 	key := c.CacheKey(data, p)
+
 	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
 		resp, err := ctx_cache.GetSetP[ResponseData](ctx, 15*time.Second, c.serviceName, key, func(ctx context.Context) (*ResponseData, error) {
 			resp = c.SendRequest(ctx, data, p)
