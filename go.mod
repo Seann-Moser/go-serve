@@ -3,11 +3,12 @@ module github.com/Seann-Moser/go-serve
 go 1.21.4
 
 require (
-	github.com/Seann-Moser/QueryHelper v1.15.10
-	github.com/Seann-Moser/ctx_cache v1.0.21
+	github.com/Seann-Moser/QueryHelper v1.15.12
+	github.com/Seann-Moser/ctx_cache v1.0.23
 	github.com/XSAM/otelsql v0.30.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/go-sql-driver/mysql v1.8.1
+	github.com/goccy/go-json v0.10.3
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
@@ -75,7 +76,7 @@ require (
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/exp v0.0.0-20240707233637-46b078467d37 // indirect
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/net v0.27.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
