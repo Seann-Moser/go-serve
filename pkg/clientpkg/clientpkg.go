@@ -133,7 +133,7 @@ func (c *Client) SkipCache(skip bool) {
 }
 func (c *Client) CacheKey(data RequestData, p *pagination.Pagination) string {
 	var key string
-	key = fmt.Sprintf("%s%s%s%s%s", key, c.endpoint, data.Path, data.Method, MapToString(data.Params))
+	key = c.endpoint.String() + data.Path + data.Method + MapToString(data.Params)
 	if p != nil {
 		key = fmt.Sprintf("%s%d%d", key, p.CurrentPage, p.ItemsPerPage)
 	}
