@@ -133,7 +133,7 @@ func (c *Client) SkipCache(skip bool) {
 }
 func (c *Client) CacheKey(data RequestData, p *pagination.Pagination) string {
 	var key string
-	key = fmt.Sprintf("%s%s%s%s%s", key, c.endpoint, data.Path, data.Method, MapToString(data.Params))
+	key = c.endpoint.String() + data.Path + data.Method + MapToString(data.Params)
 	if p != nil {
 		key = fmt.Sprintf("%s%d%d", key, p.CurrentPage, p.ItemsPerPage)
 	}
@@ -146,7 +146,7 @@ func (c *Client) Request(ctx context.Context, data RequestData, p *pagination.Pa
 	}
 	key := c.CacheKey(data, p)
 	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
-		resp, err := ctx_cache.GetSetP[ResponseData](ctx, 15*time.Second, c.serviceName, key, func(ctx context.Context) (*ResponseData, error) {
+		resp, err := ctx_cache.GetSetP[ResponseData](ctx, time.Minute, "", key, func(ctx context.Context) (*ResponseData, error) {
 			resp = c.SendRequest(ctx, data, p)
 			if resp.Status == http.StatusTooManyRequests {
 				return nil, resp.Err
@@ -234,9 +234,9 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 }
 
 func MapToString(m map[string]string) string {
-	var output []string
+	var output = ""
 	for k, v := range m {
-		output = append(output, fmt.Sprintf("%s-%s", k, v))
+		output += k + v
 	}
-	return strings.Join(output, "-")
+	return output
 }

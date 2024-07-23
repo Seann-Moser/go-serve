@@ -3,8 +3,8 @@ module github.com/Seann-Moser/go-serve
 go 1.21.4
 
 require (
-	github.com/Seann-Moser/QueryHelper v1.15.12
-	github.com/Seann-Moser/ctx_cache v1.0.23
+	github.com/Seann-Moser/QueryHelper v1.15.13
+	github.com/Seann-Moser/ctx_cache v1.0.26
 	github.com/XSAM/otelsql v0.30.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/go-sql-driver/mysql v1.8.1
