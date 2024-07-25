@@ -68,7 +68,7 @@ func (resp *Response) PaginationResponse(ctx context.Context, w http.ResponseWri
 	}
 	w.WriteHeader(http.StatusOK)
 	bytes, err := json.MarshalIndent(BaseResponse{
-		Data: getRange(pageData, page),
+		Data: getRange(pageData, page, false),
 		Page: page,
 	}, "", "    ")
 	if err != nil {
@@ -79,7 +79,60 @@ func (resp *Response) PaginationResponse(ctx context.Context, w http.ResponseWri
 		ctxLogger.Warn(ctx, "failed encoding response", zap.Error(EncodeErr))
 	}
 }
-func getRange(data []interface{}, page *pagination.Pagination) []interface{} {
+
+func (resp *Response) RawPaginationResponse(ctx context.Context, w http.ResponseWriter, data interface{}, page *pagination.Pagination, totalItems uint) {
+	d, err := json.Marshal(data)
+	if err != nil {
+		ctxLogger.Error(ctx, "failed to marshall data", zap.Error(err))
+		return
+	}
+	var pageData []interface{}
+	err = json.Unmarshal(d, &pageData)
+	if err != nil {
+		ctxLogger.Error(ctx, "failed to encode to []interface", zap.Error(err))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	page.TotalItems = uint(totalItems)
+	bytes, err := json.MarshalIndent(BaseResponse{
+		Data: getRange(pageData, page, true),
+		Page: page,
+	}, "", "    ")
+	if err != nil {
+		ctxLogger.Error(ctx, "failed to encode response")
+	}
+	_, EncodeErr := w.Write(bytes)
+	if EncodeErr != nil {
+		ctxLogger.Warn(ctx, "failed encoding response", zap.Error(EncodeErr))
+	}
+}
+
+func getRange(data []interface{}, page *pagination.Pagination, raw bool) []interface{} {
+	if raw {
+		if page.ItemsPerPage == 0 {
+			page.ItemsPerPage = pagination.MaxItemsPerPage
+		}
+		if page.ItemsPerPage <= 0 {
+			page.ItemsPerPage = 1
+		}
+		if page.CurrentPage <= 0 {
+			page.CurrentPage = 1
+		}
+		page.NextPage = page.CurrentPage + 1
+		if page.NextPage > page.TotalPages {
+			page.NextPage = page.TotalPages
+		}
+		if page.CurrentPage > page.TotalPages {
+			page.CurrentPage = page.TotalPages
+		}
+		if page.TotalItems < page.ItemsPerPage {
+			page.TotalPages = 1
+		} else {
+			page.TotalPages = uint(math.Ceil(float64(page.TotalItems) / float64(page.ItemsPerPage)))
+		}
+		return data
+	}
+
 	page.TotalItems = uint(len(data))
 	if page.ItemsPerPage == 0 {
 		page.ItemsPerPage = pagination.MaxItemsPerPage
