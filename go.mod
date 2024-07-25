@@ -3,8 +3,7 @@ module github.com/Seann-Moser/go-serve
 go 1.21.4
 
 require (
-	github.com/Seann-Moser/QueryHelper v1.15.13
-	github.com/Seann-Moser/ctx_cache v1.0.26
+	github.com/Seann-Moser/QueryHelper v1.15.16
 	github.com/XSAM/otelsql v0.30.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/go-sql-driver/mysql v1.8.1
@@ -37,6 +36,7 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
+	github.com/Seann-Moser/ctx_cache v1.0.27 // indirect
 	github.com/Seann-Moser/ociredis v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
