@@ -92,6 +92,7 @@ func (resp *Response) RawPaginationResponse(ctx context.Context, w http.Response
 		ctxLogger.Error(ctx, "failed to encode to []interface", zap.Error(err))
 		return
 	}
+	page.TotalItems = uint(totalItems)
 	if page.CurrentPage <= 0 {
 		page.CurrentPage = 1
 	}
@@ -108,7 +109,6 @@ func (resp *Response) RawPaginationResponse(ctx context.Context, w http.Response
 		page.CurrentPage = page.TotalPages
 	}
 	w.WriteHeader(http.StatusOK)
-	page.TotalItems = uint(totalItems)
 	bytes, err := json.MarshalIndent(BaseResponse{
 		Data: getRange(pageData, page, true),
 		Page: page,
