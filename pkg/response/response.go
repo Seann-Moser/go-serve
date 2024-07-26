@@ -92,6 +92,21 @@ func (resp *Response) RawPaginationResponse(ctx context.Context, w http.Response
 		ctxLogger.Error(ctx, "failed to encode to []interface", zap.Error(err))
 		return
 	}
+	if page.CurrentPage <= 0 {
+		page.CurrentPage = 1
+	}
+
+	if page.ItemsPerPage == 0 {
+		page.ItemsPerPage = pagination.MaxItemsPerPage
+	}
+	if page.TotalItems < page.ItemsPerPage {
+		page.TotalPages = 1
+	} else {
+		page.TotalPages = uint(math.Ceil(float64(page.TotalItems) / float64(page.ItemsPerPage)))
+	}
+	if page.CurrentPage > page.TotalPages {
+		page.CurrentPage = page.TotalPages
+	}
 	w.WriteHeader(http.StatusOK)
 	page.TotalItems = uint(totalItems)
 	bytes, err := json.MarshalIndent(BaseResponse{
@@ -111,9 +126,6 @@ func getRange(data []interface{}, page *pagination.Pagination, raw bool) []inter
 	if raw {
 		if page.ItemsPerPage == 0 {
 			page.ItemsPerPage = pagination.MaxItemsPerPage
-		}
-		if page.ItemsPerPage <= 0 {
-			page.ItemsPerPage = 1
 		}
 		if page.CurrentPage <= 0 {
 			page.CurrentPage = 1
