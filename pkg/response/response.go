@@ -130,6 +130,9 @@ func getRange(data []interface{}, page *pagination.Pagination, raw bool) []inter
 		} else {
 			page.TotalPages = uint(math.Ceil(float64(page.TotalItems) / float64(page.ItemsPerPage)))
 		}
+		if int(page.ItemsPerPage) > len(data) && page.CurrentPage >= page.TotalPages {
+			page.ItemsPerPage = uint(len(data))
+		}
 		return data
 	}
 
