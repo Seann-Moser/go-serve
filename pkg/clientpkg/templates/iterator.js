@@ -47,6 +47,7 @@ export class Iterator {
                         createError(`failed loading pages ${this.err}`),
                     );
                 }
+
                 if (!Array.isArray(this.currentPages)) {
                     this.singlePage = true;
                     this.current = this.currentPages;
@@ -202,6 +203,11 @@ export class Iterator {
                     );
                 }
             }
+            if (!this.currentPages) {
+                return Promise.reject(
+                    createError(`failed loading page, current page is null`),
+                );
+            }
             if (this.currentItem - this.offset >= this.currentPages.length) {
                 return null;
             }
@@ -268,7 +274,6 @@ export class Iterator {
      * @constructor
      */
     async Message() {
-        await this.responseData.LoadData();
         if (this.message === null || this.message === "") {
             if (this.responseData !== null) {
                 return new Promise((resolve) => resolve(this.responseData.Message));
@@ -290,11 +295,31 @@ export class Iterator {
      * @returns {promise<boolean>}
      */
     async getPages() {
-        if (!this.responseData.Data || this.responseData.Data.length === 0) {
+        if (
+            this.responseData &&
+            this.responseData.rawResponse &&
+            !this.responseData.Data
+        ) {
             await this.responseData.LoadData();
-        }
+            if (
+                !(
+                    this.responseData.Page === undefined ||
+                    this.responseData.Page === null
+                )
+            ) {
+                this.pagination = this.responseData.Page;
+            }
+            this.message = this.responseData.Message;
+            this.currentPages = this.responseData.Data;
 
-        // todo or current page is greater than what we have
+            if (!Array.isArray(this.currentPages)) {
+                this.singlePage = true;
+                this.current = this.currentPages;
+                return new Promise((resolve) => resolve(true));
+            }
+            this.offset =
+                (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage;
+        }
         if (
             this.responseData.Data === undefined ||
             this.responseData.Data === null ||
@@ -307,6 +332,7 @@ export class Iterator {
                 this.loading = true;
                 const data = await $fetch(this.path, this.config);
                 this.responseData = new IteratorResponseData(data);
+
                 await this.responseData.LoadData();
             } catch (error) {
                 this.loading = false;
@@ -341,7 +367,6 @@ export class Iterator {
         }
         this.offset =
             (this.pagination.CurrentPage - 1) * this.pagination.ItemsPerPage;
-
         return new Promise((resolve) => resolve(true));
     }
 }
@@ -359,7 +384,7 @@ export class IteratorResponseData {
         if ("data" in rawResponse) {
             this.Data = rawResponse.data;
         } else {
-            this.Data = [];
+            this.Data = null;
         }
         if ("page" in rawResponse) {
             this.Page = new Pagination(rawResponse.page);
@@ -403,11 +428,18 @@ export class Pagination {
             this.ItemsPerPage = 24;
             return;
         }
+
         this.CurrentPage = pageJson.current_page;
         this.NextPage = pageJson.next_page;
         this.TotalItems = pageJson.total_items;
         this.TotalPages = pageJson.total_pages;
         this.ItemsPerPage = pageJson.items_per_page;
+        if (this.CurrentPage <= 0) {
+            this.CurrentPage = 1;
+        }
+        if (this.TotalPages <= 0) {
+            this.TotalPages = 1;
+        }
     }
 }
 
