@@ -30,6 +30,15 @@ type DAO struct {
 	tableColumns  map[string]map[string]QueryHelper.Column
 }
 
+func NewMockDAO() *DAO {
+	return &DAO{
+		db:            QueryHelper.NewMockDB(),
+		updateColumns: false,
+		tablesNames:   make([]string, 0),
+		tableColumns:  map[string]map[string]QueryHelper.Column{},
+	}
+}
+
 const (
 	DBUserNameFlag           = "db-user"
 	DBPasswordFlag           = "db-password"
