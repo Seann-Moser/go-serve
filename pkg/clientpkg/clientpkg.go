@@ -3,9 +3,11 @@ package clientpkg
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Seann-Moser/ctx_cache"
-	json "github.com/goccy/go-json"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"net/http"
 	"net/http/cookiejar"
@@ -13,9 +15,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
 )

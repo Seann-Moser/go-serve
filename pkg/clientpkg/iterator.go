@@ -2,8 +2,8 @@ package clientpkg
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
-	json "github.com/goccy/go-json"
 )
 
 type Iterator[T any] struct {

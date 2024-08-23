@@ -1,7 +1,7 @@
 package pagination
 
 import (
-	json "github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/tidwall/gjson"
 	"net/http"
 	"strconv"
