@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Seann-Moser/ctx_cache"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -13,6 +14,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
 )
@@ -141,37 +143,37 @@ func (c *Client) Request(ctx context.Context, data RequestData, p *pagination.Pa
 	if retry {
 		return c.RequestWithRetry(ctx, data, p)
 	}
-	//key := c.CacheKey(data, p)
-	//if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
-	//	resp, err := ctx_cache.GetSetP[ResponseData](ctx, time.Minute, "", key, func(ctx context.Context) (*ResponseData, error) {
-	//		resp = c.SendRequest(ctx, data, p)
-	//		if resp.Status == http.StatusTooManyRequests {
-	//			return nil, resp.Err
-	//		}
-	//		return resp, nil
-	//	})
-	//	if resp != nil && err == nil {
-	//		return resp
-	//	}
-	//}
+	key := c.CacheKey(data, p)
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
+		resp, err := ctx_cache.GetSetP[ResponseData](ctx, time.Minute, "", key, func(ctx context.Context) (*ResponseData, error) {
+			resp = c.SendRequest(ctx, data, p)
+			if resp.Status == http.StatusTooManyRequests {
+				return nil, resp.Err
+			}
+			return resp, nil
+		})
+		if resp != nil && err == nil {
+			return resp
+		}
+	}
 	return c.SendRequest(ctx, data, p)
 }
 
 func (c *Client) RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData) {
-	//key := c.CacheKey(data, p)
+	key := c.CacheKey(data, p)
 
-	//if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
-	//	resp, err := ctx_cache.GetSetP[ResponseData](ctx, 15*time.Second, c.serviceName, key, func(ctx context.Context) (*ResponseData, error) {
-	//		resp = c.SendRequest(ctx, data, p)
-	//		if resp.Status == http.StatusTooManyRequests {
-	//			return nil, resp.Err
-	//		}
-	//		return resp, nil
-	//	})
-	//	if resp != nil && err == nil {
-	//		return resp
-	//	}
-	//}
+	if strings.EqualFold(data.Method, http.MethodGet) && !c.skipCache && !strings.Contains(data.Path, "healthcheck") && !data.SkipCache {
+		resp, err := ctx_cache.GetSetP[ResponseData](ctx, 15*time.Second, c.serviceName, key, func(ctx context.Context) (*ResponseData, error) {
+			resp = c.SendRequest(ctx, data, p)
+			if resp.Status == http.StatusTooManyRequests {
+				return nil, resp.Err
+			}
+			return resp, nil
+		})
+		if resp != nil && err == nil {
+			return resp
+		}
+	}
 	_ = c.BackOff.Retry(ctx, func() error {
 		resp = c.SendRequest(ctx, data, p)
 		if resp.Status == http.StatusTooManyRequests {
