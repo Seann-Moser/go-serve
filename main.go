@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/Seann-Moser/go-serve/server/middle"
-	json "github.com/goccy/go-json"
 	"log"
 	"net/http"
 
@@ -12,9 +12,9 @@ import (
 	"github.com/Seann-Moser/go-serve/server/handlers"
 )
 
-// @title 
-// @version 
-// @description 
+// @title
+// @version
+// @description
 
 // @contact.name API Support
 // @contact.url http://www.swagger.io/support
@@ -24,10 +24,9 @@ import (
 // @license.url https://opensource.org/licenses/MIT
 
 // @schemes http https
-// @host 
+// @host
 // @BasePath /
 // @query.collection.format multi
-
 
 func main() {
 	s := server.NewServer(context.Background(), "8888", "/test", 0, false)

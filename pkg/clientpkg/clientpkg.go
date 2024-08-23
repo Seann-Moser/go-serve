@@ -3,8 +3,8 @@ package clientpkg
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	json "github.com/goccy/go-json"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
