@@ -61,7 +61,7 @@ func (m *Manager) AddEndpoint(ctx context.Context, endpoint *endpoints.Endpoint)
 	if endpoint == nil {
 		return nil
 	}
-	if endpoint.Methods == nil || len(endpoint.Methods) == 0 {
+	if len(endpoint.Methods) == 0 {
 		endpoint.Methods = []string{http.MethodPost, http.MethodGet, http.MethodPatch, http.MethodPut, http.MethodDelete, http.MethodOptions}
 	}
 	var hasOption bool

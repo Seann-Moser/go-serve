@@ -15,8 +15,6 @@ type Generator interface {
 }
 
 type Client struct {
-	write     bool
-	directory string
 }
 
 func New() *Client {
