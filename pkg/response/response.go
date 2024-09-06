@@ -264,3 +264,15 @@ func (resp *Response) File(w http.ResponseWriter, file string, download bool) (i
 	}
 	return io.Copy(w, f)
 }
+
+func (resp *Response) DataNoWrap(ctx context.Context, w http.ResponseWriter, data interface{}, code int) {
+	w.WriteHeader(code)
+	bytes, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		ctxLogger.Error(ctx, "failed to encode response")
+	}
+	_, EncodeErr := w.Write(bytes)
+	if EncodeErr != nil {
+		ctxLogger.Error(ctx, "failed encoding response", zap.Error(EncodeErr))
+	}
+}
