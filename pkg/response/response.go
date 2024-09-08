@@ -1,6 +1,7 @@
 package response
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
@@ -263,6 +264,26 @@ func (resp *Response) File(w http.ResponseWriter, file string, download bool) (i
 		return 0, err
 	}
 	return io.Copy(w, f)
+}
+
+func (resp *Response) ByteFile(w http.ResponseWriter, filename string, file []byte, download bool) (int64, error) {
+	// Set headers for the file
+	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(file)), 10))
+	w.Header().Set("Content-Type", http.DetectContentType(file))
+
+	if download {
+		w.Header().Set("Content-Description", "File Transfer")
+		w.Header().Set("Content-Transfer-Encoding", "binary")
+		w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filename))
+		// Optionally use application/octet-stream for downloads
+		// w.Header().Set("Content-Type", "application/octet-stream")
+	} else {
+		w.Header().Set("filename", filename)
+	}
+
+	// Write file to response
+	w.WriteHeader(http.StatusOK) // Explicitly send HTTP 200 OK status
+	return io.Copy(w, bytes.NewBuffer(file))
 }
 
 func (resp *Response) DataNoWrap(ctx context.Context, w http.ResponseWriter, data interface{}, code int) {
