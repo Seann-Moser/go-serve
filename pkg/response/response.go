@@ -37,10 +37,14 @@ func NewResponse(showErr bool) *Response {
 	return &Response{showError: showErr}
 }
 
+var skip = []zap.Option{zap.AddCallerSkip(1)}
+
 func (resp *Response) Error(ctx context.Context, w http.ResponseWriter, err error, code int, message string) {
+
 	w.WriteHeader(code)
 	if err != nil {
-		ctxLogger.Error(ctx, message, zap.Error(err), zap.Int("code", code))
+		logger := ctxLogger.GetLogger(ctx)
+		logger.WithOptions(skip...).Error(message, zap.Error(err), zap.Int("code", code))
 	}
 	var dataErr error
 	if err != nil && resp.showError {
@@ -51,7 +55,8 @@ func (resp *Response) Error(ctx context.Context, w http.ResponseWriter, err erro
 		Data:    dataErr,
 	})
 	if EncodeErr != nil {
-		ctxLogger.Warn(ctx, "failed encoding response", zap.Error(EncodeErr))
+		logger := ctxLogger.GetLogger(ctx)
+		logger.WithOptions(skip...).Warn("failed encoding response", zap.Error(EncodeErr))
 	}
 }
 
