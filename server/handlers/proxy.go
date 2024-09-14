@@ -62,7 +62,7 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p.logger.Info("redirecting to proxy endpoint", zap.String("endpoint", u.String()), zap.String("path", r.URL.Path))
 	req, err := http.NewRequestWithContext(ctx, r.Method, u.String(), r.Body)
 	if err != nil {
-		p.respManager.Error(r.Context(), w, err, http.StatusInternalServerError, "failed creating proxy request")
+		p.respManager.Error(r, w, err, http.StatusInternalServerError, "failed creating proxy request")
 		return
 	}
 	for _, c := range r.Cookies() {
@@ -71,10 +71,10 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req.Header = r.Header
 	resp, err := (&http.Client{}).Do(req)
 	if err != nil {
-		p.respManager.Error(r.Context(), w, err, http.StatusInternalServerError, "failed sending proxy request")
+		p.respManager.Error(r, w, err, http.StatusInternalServerError, "failed sending proxy request")
 		return
 	}
-	p.respManager.Raw(r.Context(), w, resp)
+	p.respManager.Raw(r, w, resp)
 }
 
 func NewProxy(ctx context.Context, ep *endpoints.Endpoint, trimPath string) (*endpoints.Endpoint, error) {
@@ -119,7 +119,7 @@ func NewProxy(ctx context.Context, ep *endpoints.Endpoint, trimPath string) (*en
 			ctxLogger.Info(ctx, "redirecting to proxy endpoint", zap.String("endpoint", u.String()), zap.String("path", r.URL.Path))
 			req, err := http.NewRequestWithContext(ctx, r.Method, u.String(), r.Body)
 			if err != nil {
-				respManger.Error(ctx, w, err, http.StatusInternalServerError, "failed creating proxy request")
+				respManger.Error(r, w, err, http.StatusInternalServerError, "failed creating proxy request")
 				return
 			}
 			for _, c := range r.Cookies() {
@@ -128,11 +128,11 @@ func NewProxy(ctx context.Context, ep *endpoints.Endpoint, trimPath string) (*en
 			req.Header = r.Header
 			resp, err := (&http.Client{}).Do(req)
 			if err != nil {
-				respManger.Error(ctx, w, err, http.StatusInternalServerError, "failed sending proxy request")
+				respManger.Error(r, w, err, http.StatusInternalServerError, "failed sending proxy request")
 				return
 			}
 			ctxLogger.Debug(ctx, "finished redirecting data", zap.Int("status_code", resp.StatusCode))
-			respManger.Raw(ctx, w, resp)
+			respManger.Raw(r, w, resp)
 		},
 	}, nil
 
