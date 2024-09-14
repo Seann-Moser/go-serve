@@ -54,5 +54,17 @@ func (b BaseResponse) Encode(r *http.Request, w http.ResponseWriter) error {
 
 // isArray checks if the input is an array.
 func isArray(i interface{}) bool {
-	return reflect.TypeOf(i).Kind() == reflect.Array
+	t := reflect.TypeOf(i)
+	if t == nil {
+		return false
+	}
+	kind := t.Kind()
+	switch kind {
+	case reflect.Slice:
+		return true
+	case reflect.Array:
+		return true
+	default:
+		return false
+	}
 }

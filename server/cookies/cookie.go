@@ -77,7 +77,7 @@ func (c *Cookies) AuthMiddleware(next http.Handler) http.Handler {
 			if auth.Signature != authSignature.Signature {
 				c.RemoveCookies(w, r)
 				ctxLogger.Warn(r.Context(), "invalid signature", zap.String("current", auth.Signature), zap.String("expected", authSignature.Signature))
-				c.Response.Error(r.Context(), w, nil, http.StatusUnauthorized, "invalid signature")
+				c.Response.Error(r, w, nil, http.StatusUnauthorized, "invalid signature")
 				return
 			}
 		}
@@ -87,13 +87,13 @@ func (c *Cookies) AuthMiddleware(next http.Handler) http.Handler {
 		}
 		if access, err := c.authFunctions.HasAccessToEndpoint(auth.ID, auth.Key, path, r); !access || err != nil {
 			c.RemoveCookies(w, r)
-			c.Response.Error(r.Context(), w, nil, http.StatusUnauthorized, "unauthorized access to endpoint")
+			c.Response.Error(r, w, nil, http.StatusUnauthorized, "unauthorized access to endpoint")
 			return
 		}
 
 		if access, err := c.authFunctions.ValidDevice(auth.ID, auth.DeviceID, path, r); !access || err != nil {
 			c.RemoveCookies(w, r)
-			c.Response.Error(r.Context(), w, nil, http.StatusUnauthorized, "invalid device")
+			c.Response.Error(r, w, nil, http.StatusUnauthorized, "invalid device")
 			return
 		}
 
