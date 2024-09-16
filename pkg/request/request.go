@@ -30,6 +30,28 @@ func NewRequest(maxUploadSize int64) *Request {
 	}
 }
 
+func DownloadImageFromResponse(resp *http.Response, filePath string) error {
+	// Ensure the HTTP response status is OK (status code 200)
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download image, status code: %d", resp.StatusCode)
+	}
+
+	// Create the output file
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	defer file.Close()
+
+	// Copy the image data from the HTTP response to the file
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to copy image data: %v", err)
+	}
+
+	return nil
+}
+
 func (req *Request) DownloadFile(headerName string, uploadDir string, r *http.Request) (string, int64, error) {
 	if err := r.ParseMultipartForm(req.maxUploadSize); err != nil {
 		ctxLogger.Error(r.Context(), "could not parse multipart form", zap.Error(err))

@@ -179,15 +179,7 @@ func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.E
 		}
 
 	}
-	/*
-		"context"
-		"fmt"
-		"github.com/Seann-Moser/go-serve/pkg/clientpkg"
-		"github.com/Seann-Moser/go-serve/pkg/response"
-		"github.com/spf13/pflag"
-		"net/http"
-		"time"
-	*/
+ 
 	clientImports := []Imports{
 		{
 			Path: "context",
