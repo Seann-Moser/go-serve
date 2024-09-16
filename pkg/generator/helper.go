@@ -55,29 +55,6 @@ func GetProjectName() (string, error) {
 	return projectName, nil
 }
 
-// Helper for template rendering
-func renderTemplate(templateContent string, data interface{}) (string, error) {
-	tmpl, err := template.New("goFuncTemplate").Parse(templateContent)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %w", err)
-	}
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("failed to execute template: %w", err)
-	}
-	return buf.String(), nil
-}
-
-// Helper for creating directories if they don't exist
-func ensureDirExists(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0755); err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
-		}
-	}
-	return nil
-}
-
 func SnakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 	//snake_case to camelCase
 

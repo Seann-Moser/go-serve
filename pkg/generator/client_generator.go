@@ -83,8 +83,8 @@ func (cf *ClientFunc) GenerateSwaggerDoc() string {
 	sb.WriteString(fmt.Sprintf("// @Summary %s\n", cf.Name))
 	sb.WriteString(fmt.Sprintf("// @Description %s\n", cf.Description))
 	sb.WriteString(fmt.Sprintf("// @Tags %s\n", cf.Name))
-	sb.WriteString(fmt.Sprintf("// @Accept json\n"))
-	sb.WriteString(fmt.Sprintf("// @Produce json\n"))
+	sb.WriteString("// @Accept json\n")
+	sb.WriteString("// @Produce json\n")
 
 	// Generate Swagger for path params (MuxVars)
 	for _, muxVar := range cf.MuxVars {
@@ -216,6 +216,9 @@ func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.E
 		"Name":    data.ProjectName,
 		"Headers": []string{},
 	}, clientTemplates)
+	if err != nil {
+		return err
+	}
 	if err := writeToFile(publicDir, "client", []string{clientTemplates}, true, clientImports...); err != nil {
 		return err
 	}
