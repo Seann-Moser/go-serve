@@ -103,8 +103,10 @@ func NewResponseData(resp *http.Response, err error) *ResponseData {
 		isImage, ext := IsImageFile(resp)
 		if isImage {
 			name := uuid.New().String() + ext
-			p := "/" + path.Join("tmp", "img", name)
-			_ = ensureDir(p)
+			dir := "/" + path.Join("tmp", "img")
+			_ = ensureDir(dir)
+			p := "/" + path.Join(dir, name)
+
 			err = request.DownloadImageFromResponse(resp, p)
 			if err != nil {
 				rd.Err = err
