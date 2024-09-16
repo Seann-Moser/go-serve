@@ -100,13 +100,11 @@ func NewResponseData(resp *http.Response, err error) *ResponseData {
 	var responseData []byte
 	if resp.Body != nil {
 
-		name := resp.Header.Get("filename")
 		isImage, ext := IsImageFile(resp)
-		if name != "" || isImage {
-			if name == "" {
-				name = uuid.New().String() + ext
-			}
-			p := path.Join("tmp", "img", name)
+		if isImage {
+			name := uuid.New().String() + ext
+			p := "/" + path.Join("tmp", "img", name)
+			_ = ensureDir(p)
 			err = request.DownloadImageFromResponse(resp, p)
 			if err != nil {
 				rd.Err = err
