@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/pagination"
+	"github.com/Seann-Moser/go-serve/pkg/request"
+	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
+	"os"
+	"path"
 )
 
 type RequestData struct {
@@ -30,13 +34,54 @@ func NewRequestData(path, method string, body interface{}, params, headers map[s
 }
 
 type ResponseData struct {
-	Status  int
-	Page    *pagination.Pagination
-	Message string
-	Err     error `json:"-"`
-	ErrStr  string
-	Data    []byte
-	Cookies []*http.Cookie `json:"-"`
+	Status   int
+	Page     *pagination.Pagination
+	Message  string
+	Err      error `json:"-"`
+	ErrStr   string
+	Data     []byte
+	Cookies  []*http.Cookie `json:"-"`
+	FilePath string
+}
+
+func (d *ResponseData) Close() {
+	if d.FilePath != "" {
+		if _, err := os.Stat(d.FilePath); os.IsNotExist(err) {
+			return
+		}
+		_ = os.Remove(d.FilePath)
+	}
+
+}
+
+// Helper: Ensure directory exists or create it
+func ensureDir(dir string) error {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return os.MkdirAll(dir, os.ModePerm)
+	}
+	return nil
+}
+func IsImageFile(resp *http.Response) (bool, string) {
+	switch resp.Header.Get("Content-Type") {
+	case "image/jpeg":
+		return true, ".jpg"
+	case "image/png":
+		return true, ".png"
+	case "image/gif":
+		return true, ".gif"
+	case "image/webp":
+		return true, ".webp"
+	case "image/bmp":
+		return true, ".bmp"
+	case "image/tiff":
+		return true, ".tiff"
+	case "image/x-icon":
+		return true, ".ico"
+	case "image/svg+xml":
+		return true, ".svg"
+	default:
+		return false, ""
+	}
 }
 
 func NewResponseData(resp *http.Response, err error) *ResponseData {
@@ -54,6 +99,21 @@ func NewResponseData(resp *http.Response, err error) *ResponseData {
 	}
 	var responseData []byte
 	if resp.Body != nil {
+
+		name := resp.Header.Get("filename")
+		isImage, ext := IsImageFile(resp)
+		if name != "" || isImage {
+			if name == "" {
+				name = uuid.New().String() + ext
+			}
+			p := path.Join("tmp", "img", name)
+			err = request.DownloadImageFromResponse(resp, p)
+			if err != nil {
+				rd.Err = err
+				return rd
+			}
+			rd.FilePath = p
+		}
 		responseData, err = io.ReadAll(resp.Body)
 		if err != nil {
 			rd.Err = err
