@@ -11,7 +11,7 @@ type GeneratorData struct {
 }
 
 type Generator interface {
-	Generate(data GeneratorData, endpoints *endpoints.Endpoint) error
+	Generate(data GeneratorData, endpoints ...*endpoints.Endpoint) error
 }
 
 type Client struct {
@@ -30,16 +30,16 @@ func (c *Client) Generate(generators []Generator, endpoints ...*endpoints.Endpoi
 	if err != nil {
 		return err
 	}
-	for _, e := range endpoints {
-		for _, g := range generators {
-			err = g.Generate(GeneratorData{
-				ProjectName: projectName,
-				RootDir:     rootDir,
-			}, e)
-			if err != nil {
-				return fmt.Errorf("failed generating data (%s): %w", e.URLPath, err)
-			}
+	for _, g := range generators {
+
+		err = g.Generate(GeneratorData{
+			ProjectName: projectName,
+			RootDir:     rootDir,
+		}, endpoints...)
+		if err != nil {
+			return fmt.Errorf("failed generating data: %w", err)
 		}
+
 	}
 
 	return nil

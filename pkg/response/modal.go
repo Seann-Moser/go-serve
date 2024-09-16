@@ -43,11 +43,18 @@ func (b BaseResponse) Encode(r *http.Request, w http.ResponseWriter) error {
 	}
 
 	if b.array {
+		if b.Data == nil {
+			return json.NewEncoder(w).Encode([]interface{}{})
+		}
 		if isArray(b.Data) {
 			return json.NewEncoder(w).Encode(b.Data)
 		} else {
 			return json.NewEncoder(w).Encode([]interface{}{b.Data})
 		}
+	}
+	if b.Data == nil {
+		return json.NewEncoder(w).Encode(struct{}{})
+
 	}
 	return json.NewEncoder(w).Encode(b.Data)
 }
