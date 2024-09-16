@@ -28,9 +28,14 @@ type HttpClient interface {
 	Request(ctx context.Context, data RequestData, p *pagination.Pagination, retry bool) (resp *ResponseData)
 	RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData)
 	SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData
+	AddOauthClient(prefix string)
 }
 
 type MockClient struct {
+}
+
+func (m MockClient) AddOauthClient(prefix string) {
+
 }
 
 func NewMockClient() *MockClient {
@@ -74,6 +79,7 @@ type Client struct {
 	CookieJar    http.CookieJar
 	UseCookieJar bool
 	skipCache    bool
+	OAuthClient  *OAuthClient
 }
 
 func Flags(prefix string) *pflag.FlagSet {
@@ -83,6 +89,7 @@ func Flags(prefix string) *pflag.FlagSet {
 	fs.Bool(GetFlagWithPrefix(prefix, "use-cookie-jar"), false, fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "use-cookie-jar")))))
 	fs.Bool(GetFlagWithPrefix(prefix, "skip-cache"), false, fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "use-cookie-jar")))))
 	fs.Uint(GetFlagWithPrefix(prefix, "items-per-page"), 100, fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "items-per-page")))))
+
 	fs.AddFlagSet(BackOffFlags(prefix))
 	return fs
 }
@@ -96,6 +103,10 @@ func NewWithFlags(prefix string, client *http.Client) (*Client, error) {
 		client,
 		NewBackoffFromFlags(prefix),
 	)
+}
+
+func (c *Client) AddOauthClient(prefix string) {
+	c.OAuthClient = NewOAuthClient(prefix)
 }
 
 func New(endpoint, serviceName string, itemsPerPage uint, useCookieJar bool, client *http.Client, backoff *BackOff) (*Client, error) {
@@ -213,6 +224,7 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 	if err != nil {
 		return &ResponseData{Err: err, ErrStr: err.Error()}
 	}
+
 	for k, v := range data.Headers {
 		req.Header.Set(snakeCaseToHeader(ToSnakeCase(k)), v)
 	}
@@ -225,6 +237,10 @@ func (c *Client) SendRequest(ctx context.Context, data RequestData, p *paginatio
 		queryParams.Add(k, v)
 	}
 	req.URL.RawQuery = queryParams.Encode()
+	if c.OAuthClient != nil {
+		return c.OAuthClient.SendRequest(ctx, req, 0)
+	}
+
 	resp := NewResponseData(c.client.Do(req))
 	if len(resp.Cookies) > 0 && c.UseCookieJar {
 		c.CookieJar.SetCookies(c.endpoint, resp.Cookies)
