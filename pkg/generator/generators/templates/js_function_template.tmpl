@@ -1,0 +1,40 @@
+
+        /**
+         * {{.Name}} auto generated
+         * @param {Pagination} pagination
+         * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
+         * {{end}}  {{range .MuxVars}}
+         * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
+         * @param {string} {{.}}{{end}}{{end}}
+         */
+        {{if .Async}}async {{end}}{{.Name}}({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}pagination=null){
+            const config = this.{{.Name}}Config({{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}pagination)
+            {{if .RequestType}}
+            if ({{.RequestTypeName}} !== null) {
+                config.body = JSON.stringify({{.RequestTypeName}});
+            }{{end}} {{if .Async}}
+            const data = await $fetch(config.path, config){{else}}
+            const data = $fetch(config.path, config){{end}}{{if .Async}}{{if .UseIterator}}
+            return new Iterator(JSON.parse(data),config.path,config,pagination){{else}}
+            return JSON.parse(data){{end}}{{else}}
+            {{if .UseIterator}}return new Iterator(data,config.path,config,pagination){{else}}
+            return data{{end}}{{end}}
+        },
+
+        /**
+         * {{.Name}}Config auto generated
+         * @param {Pagination} pagination
+         * {{range .MuxVars}}
+         * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
+         * @param {string} {{.}}{{end}}
+         * {{end}}
+         */
+        {{.Name}}Config({{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}pagination=null){
+            return GetConfig(url,{
+                method: "{{.MethodType}}",
+                path: {{.Path}},
+                params:{  {{range $k,$v := .QueryParams}}
+                     {{$k}} : {{$v}},{{end}}
+                },
+            },pagination)
+        }

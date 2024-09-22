@@ -56,6 +56,7 @@ func (i *Iterator[T]) Current() *T {
 func (i *Iterator[T]) Message() string {
 	return i.message
 }
+
 func (i *Iterator[T]) Err() error {
 	return i.err
 }
@@ -79,6 +80,7 @@ func (i *Iterator[T]) Next() bool {
 	if i.singlePage {
 		return false
 	}
+	//todo fix
 	if i.totalItems == 0 {
 		if !i.getPages() {
 			return false

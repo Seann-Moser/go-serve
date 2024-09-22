@@ -39,6 +39,7 @@ type Endpoint struct {
 	ResponseDescriptions map[string]HTTPDescription `json:"response_descriptions" db:"-"`
 
 	ResponseFailures map[string]HTTPDescription `json:"response_failures" db:"-"`
+	Hash             string                     `json:"hash" db:"hash" qc:"hash"`
 
 	Async           bool                   `json:"-" db:"-"`
 	RequestTypeMap  map[string]interface{} `json:"-" db:"-"`
