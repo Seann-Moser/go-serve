@@ -2,17 +2,9 @@ package generator
 
 import (
 	"fmt"
+	generators "github.com/Seann-Moser/go-serve/pkg/generator/generators"
 	"github.com/Seann-Moser/go-serve/server/endpoints"
 )
-
-type GeneratorData struct {
-	ProjectName string
-	RootDir     string
-}
-
-type Generator interface {
-	Generate(data GeneratorData, endpoints ...*endpoints.Endpoint) error
-}
 
 type Client struct {
 }
@@ -21,18 +13,17 @@ func New() *Client {
 	return &Client{}
 }
 
-func (c *Client) Generate(generators []Generator, endpoints ...*endpoints.Endpoint) error {
-	rootDir, err := GetRootDir()
+func (c *Client) Generate(genList []generators.Generator, endpoints ...*endpoints.Endpoint) error {
+	rootDir, err := generators.GetRootDir()
 	if err != nil {
 		return err
 	}
-	projectName, err := GetProjectName()
+	projectName, err := generators.GetProjectName()
 	if err != nil {
 		return err
 	}
-	for _, g := range generators {
-
-		err = g.Generate(GeneratorData{
+	for _, g := range genList {
+		err = g.Generate(generators.GeneratorData{
 			ProjectName: projectName,
 			RootDir:     rootDir,
 		}, endpoints...)

@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"github.com/Seann-Moser/go-serve/pkg/generator/generators"
 	"github.com/Seann-Moser/go-serve/server/endpoints"
 	"net/http"
 	"testing"
@@ -12,29 +13,43 @@ import (
 func TestClientGenerate(t *testing.T) {
 	// Setup
 
-	mockGen := GoClientGenerator{}
+	mockGen := generators.GoClientGenerator{}
 	client := New()
 
 	// Expectations
 
 	// Execute
-	err := client.Generate([]Generator{mockGen}, GetEndpoints()...)
+	err := client.Generate([]generators.Generator{mockGen}, GetEndpoints()...)
 
 	// Assert
 	assert.NoError(t, err)
 
 }
 
-// TestClientGenerateError tests the Generate function of the Client when an error occurs
-func TestClientGenerateError(t *testing.T) {
+// TestNuxtClientGenerateError tests the Generate function of the Client when an error occurs
+func TestNuxtClientGenerateError(t *testing.T) {
 	// Setup
-	mockGen := GoClientGenerator{}
+	mockGen := generators.NuxtPluginGenerator{}
 	client := New()
 
 	// Expectations
 
 	// Execute
-	err := client.Generate([]Generator{mockGen}, GetEndpoints()...)
+	err := client.Generate([]generators.Generator{mockGen}, GetEndpoints()...)
+	assert.NoError(t, err)
+	// Assert
+}
+
+// TestClientGenerateError tests the Generate function of the Client when an error occurs
+func TestClientGenerateError(t *testing.T) {
+	// Setup
+	mockGen := generators.GoClientGenerator{}
+	client := New()
+
+	// Expectations
+
+	// Execute
+	err := client.Generate([]generators.Generator{mockGen}, GetEndpoints()...)
 	assert.NoError(t, err)
 	// Assert
 }
@@ -48,7 +63,7 @@ func GetEndpoints() []*endpoints.Endpoint {
 			Methods:   []string{http.MethodPost},
 			//HandlerFunc: c.HandlerFuncs,
 			ResponseTypeMap: map[string]interface{}{
-				"POST": ClientFunc{},
+				"POST": generators.ClientFunc{},
 			},
 		},
 		{
