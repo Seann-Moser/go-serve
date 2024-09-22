@@ -358,6 +358,38 @@ export default defineNuxtPlugin((nuxtApp) => {
 	return err
 }
 
+// writeNuxtFile Helper: Write generated function code to a file
+func writeClassFile(dir string, group string, code string, isPublic bool, imports ...Imports) error {
+	if len(code) == 0 {
+		return nil
+	}
+	filename := fmt.Sprintf("%s_classes.ts", ToSnakeCase(group))
+	fp := filepath.Join(dir, filename)
+
+	f, err := os.Create(fp)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, pkg := path.Split(dir)
+	header := fmt.Sprintf(
+		` // %s
+// AUTO GENERATED
+%s
+
+
+`, ToSnakeCase(pkg), FormatImports(LanguageJS, imports...))
+	// Add package name and imports at the top of the file
+	if isPublic {
+		header += "// Public Endpoint - Auto Generated\n"
+	} else {
+		header += "// Private Endpoint - Auto Generated\n"
+	}
+	_, err = f.WriteString(code)
+	return err
+}
+
 type Imports struct {
 	Name string
 	Path string
@@ -481,9 +513,13 @@ func setRequestType(cf *ClientFunc, requestType interface{}, skipPkg map[string]
 		} else {
 			cf.RequestTypeName = normalName
 		}
-
-		if _, exists := cf.Objects[normalName]; !exists {
-			cf.Objects[normalName] = GetObject(requestType)
+		switch reflect.TypeOf(requestType).Kind() {
+		case reflect.Struct:
+			fallthrough
+		case reflect.Ptr:
+			if _, exists := cf.Objects[normalName]; !exists {
+				cf.Objects[normalName] = GetObject(requestType)
+			}
 		}
 	case LanguageGo:
 		fallthrough
@@ -531,9 +567,13 @@ func setResponseType(cf *ClientFunc, responseType interface{}, skipPkg map[strin
 
 		cf.Return = cf.DataTypeName
 		cf.UseIterator = true
-
-		if _, found := cf.Objects[cf.Return]; !found {
-			cf.Objects[cf.Return] = GetObject(responseType)
+		switch reflect.TypeOf(responseType).Kind() {
+		case reflect.Struct:
+			fallthrough
+		case reflect.Ptr:
+			if _, exists := cf.Objects[cf.Return]; !exists {
+				cf.Objects[cf.Return] = GetObject(responseType)
+			}
 		}
 
 	case LanguageGo:

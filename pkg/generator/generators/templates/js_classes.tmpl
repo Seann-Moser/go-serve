@@ -2,7 +2,10 @@
 export class {{$i}} {
     {{range $j, $v := $k}}private {{$v}}: any;
     {{end}}
-    constructor(json={}){
+    constructor(json={
+        {{range $j, $v := $k}}{{$v}}: undefined,
+        {{end}}
+       }){
         {{range $j, $v := $k}}this.{{$v}} = json.{{$v}}
         {{end}}
     }
