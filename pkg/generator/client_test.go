@@ -43,7 +43,7 @@ func TestNuxtClientGenerateError(t *testing.T) {
 // TestClientGenerateError tests the Generate function of the Client when an error occurs
 func TestClientGenerateError(t *testing.T) {
 	// Setup
-	mockGen := generators.GoClientGenerator{}
+	mockGen := &generators.GoClientGenerator{}
 	client := New()
 
 	// Expectations
@@ -91,6 +91,7 @@ func GetEndpoints() []*endpoints.Endpoint {
 			URLPath:     "/account/{account_id}/user/{user_id}/settings/query/2",
 			Methods:     []string{http.MethodGet},
 			QueryParams: []string{"q", "query", "token_id"},
+			HandlerFunc: generators.HandlerFuncs,
 			Async:       true,
 		},
 	}

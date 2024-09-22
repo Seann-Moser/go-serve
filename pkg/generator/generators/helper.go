@@ -1,11 +1,13 @@
 package generators
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"github.com/Seann-Moser/go-serve/server/endpoints"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	"log"
 	"math/rand/v2"
 	"net/http"
 	"os"
@@ -13,6 +15,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -478,6 +481,7 @@ func createClientFunc(endpoint *endpoints.Endpoint, method string, re *regexp.Re
 		MethodType:  cases.Title(language.AmericanEnglish).String(strings.ToLower(method)),
 		Imports:     make([]Imports, 0),
 		QueryParams: make(map[string]string),
+		Description: endpoint.Description,
 	}
 }
 
@@ -786,4 +790,158 @@ func convertPathToFunctionName(path string) string {
 
 	// Join the segments into a single function name
 	return strings.Join(parts, "")
+}
+
+func GetGoFiles(path string) []string {
+	libRegEx, e := regexp.Compile(`^.+\.(go)$`)
+	if e != nil {
+		log.Fatal(e)
+	}
+	var files []string
+	_ = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if strings.Contains(path, "vendor") {
+			return nil
+		}
+		if err == nil && libRegEx.MatchString(info.Name()) {
+			files = append(files, path)
+		}
+		return nil
+	})
+	return files
+}
+
+type Func struct {
+	File     string
+	Name     string
+	Ln       int
+	Comment  *Comment
+	Data     string
+	Override map[string]string
+}
+type Comment struct {
+	Start int
+	End   int
+	Lines []string
+}
+
+func (c *Comment) Set(cmt string) {
+	c.Lines = strings.Split(cmt, "\n")
+}
+
+func GetFunctionName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+}
+func FindFunction(fName string, goFiles []string) map[string]Func {
+	found := map[string]Func{}
+	for _, files := range goFiles {
+		if cmt, ln, d, err := FindString(files, regexp.MustCompile(`func[\(\s\*a-z]*`+fName+`\s{0,1}\(`)); err == nil && ln > 0 {
+			found[files] = Func{
+				File:    files,
+				Name:    fName,
+				Ln:      ln,
+				Comment: cmt,
+				Data:    d,
+			}
+		}
+		//} else if cmt, ln, err := FindString(files, regexp.MustCompile(`func[\(\)\s\*a-zA-Z\[\]]*`+fName+`\s{0,1}\(`)); err == nil && ln > 0 {
+		//	found[files] = Func{
+		//		File:    files,
+		//		Name:    fName,
+		//		Ln:      ln,
+		//		Comment: cmt,
+		//	}
+		//}
+
+	}
+	return found
+}
+
+func FindString(file string, find *regexp.Regexp) (*Comment, int, string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, 0, "", err
+	}
+	defer f.Close()
+
+	// Splits on newlines by default.
+	scanner := bufio.NewScanner(f)
+
+	line := 1
+	// https://golang.org/pkg/bufio/#Scanner.Scan
+	comment := &Comment{
+		Lines: []string{},
+	}
+	startComment := false
+	doubleSlash := false
+	commentRegex := regexp.MustCompile(`//|/\*|\*/`)
+	funcRegex := regexp.MustCompile(`func[\(\)\s\*a-zA-Z\[\]]\s{0,1}`)
+	var functionCode []string
+	inFunction := false
+	foundFunc := false
+	//funcStartLine := 0
+	//functionBreaks :=0
+
+	for scanner.Scan() {
+		text := scanner.Text()
+
+		// Detect the start of a function
+		if funcRegex.MatchString(text) {
+			if inFunction {
+				// Handle nested functions or situations where multiple functions are present
+				functionCode = append(functionCode, text)
+			} else {
+				inFunction = true
+				//funcStartLine = line
+				functionCode = []string{text}
+
+			}
+		} else if inFunction {
+			// Append lines while inside a function
+			functionCode = append(functionCode, text)
+			if strings.Contains(text, "}") {
+				inFunction = false
+				if foundFunc {
+					return comment, line, strings.Join(functionCode, "\n"), nil
+				}
+			}
+		}
+
+		if (strings.Contains(text, "/*") || strings.HasPrefix(text, "//")) && !startComment {
+			startComment = true
+			comment.Start = line
+			comment.Lines = []string{}
+			doubleSlash = strings.Contains(text, "//")
+		}
+		if doubleSlash && startComment && !strings.HasPrefix(text, "//") && !(strings.TrimSpace(text) == "" || text == "\n") {
+			startComment = false
+		}
+		if startComment {
+			comment.Lines = append(comment.Lines, strings.TrimSpace(commentRegex.ReplaceAllString(text, "")))
+		}
+
+		if strings.Contains(text, "*/") {
+			startComment = false
+			comment.End = line
+		}
+
+		if find.MatchString(text) {
+			comment.End = line - 1
+			foundFunc = true
+			continue
+			//return comment, line, strings.Join(functionCode, "\n"), nil
+			//return comment, line, strings.Join(functionCode, "\n"), nil
+		}
+		if funcRegex.MatchString(text) || strings.HasPrefix(text, "import") {
+			startComment = false
+			comment.Start = 0
+			comment.End = 0
+			doubleSlash = false
+		}
+		line++
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, 0, "", err
+	}
+	return nil, 0, "", nil
 }
