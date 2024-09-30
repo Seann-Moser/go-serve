@@ -90,6 +90,9 @@ func (d *DAO) Close() {
 
 }
 
+func (d *DAO) Ping(ctx context.Context) bool {
+	return d.db.Ping(ctx) == nil
+}
 func (d *DAO) GetContext() context.Context {
 	return d.ctx
 }
@@ -227,6 +230,7 @@ func connectToDB(ctx context.Context, user, password, host, instanceName string,
 	db.SetMaxOpenConns(maxConnections)
 	db.SetConnMaxLifetime(lifeTime)
 	db.SetMaxIdleConns(idleConn)
+	db.SetConnMaxIdleTime(10 * time.Minute)
 	if err = db.Ping(); err == nil {
 		return db, nil
 	}
