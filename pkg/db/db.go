@@ -170,22 +170,28 @@ func NewSQLDao(ctx context.Context) (*DAO, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	d := QueryHelper.NewSql(db)
+	QueryHelper.AddDBContext(ctx, "", d)
 	return &DAO{
-		db:            QueryHelper.NewSql(db),
+		db:            d,
 		updateColumns: viper.GetBool(DBUpdateTablesFlag),
 		tablesNames:   make([]string, 0),
 		tableColumns:  map[string]map[string]QueryHelper.Column{},
+		ctx:           QueryHelper.AddDBContext(ctx, "", d),
 	}, nil
 }
 
 func AddTable[T any](ctx context.Context, dao *DAO, datasetName string, queryType QueryHelper.QueryType) (context.Context, error) {
+	if dao.ctx != nil {
+		ctx = dao.ctx
+	}
 	tmpCtx, err := QueryHelper.AddTableCtx[T](ctx, dao.db, datasetName, queryType)
 	if err != nil {
 		var t T
 		ctxLogger.Error(ctx, "failed creating table", zap.String("table", getType(t)))
 		return ctx, err
 	}
+
 	table, err := QueryHelper.GetTableCtx[T](tmpCtx)
 	if err != nil {
 		return nil, err
