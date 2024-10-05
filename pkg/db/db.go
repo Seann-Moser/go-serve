@@ -225,7 +225,7 @@ func connectToDB(ctx context.Context, user, password, host, instanceName string,
 		AllowCleartextPasswords: true,
 		MaxAllowedPacket:        4 << 20,
 	}
-	ctxLogger.Info(ctx, "connecting to db", zap.String("dsn", dbConf.FormatDSN()))
+	ctxLogger.Debug(ctx, "connecting to db", zap.String("dsn", dbConf.FormatDSN()))
 
 	otelSql, err := otelsql.Open("mysql", dbConf.FormatDSN(), otelsql.WithAttributes(
 		semconv.DBSystemMySQL))
