@@ -55,3 +55,23 @@ func NewAdvancedHealthCheck(timeout time.Duration, pings map[string]Ping) *endpo
 		Handler: nil,
 	}
 }
+
+// RobotTxt defines the robots.txt endpoint
+var RobotTxt = &endpoints.Endpoint{
+	URLPath:         "/robots.txt", // Corrected the path to "robots.txt"
+	PermissionLevel: endpoints.All,
+	HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		// Set content type to text/plain
+		w.Header().Set("Content-Type", "text/plain")
+
+		// Serve the robots.txt content
+		// This example disallows all robots from all paths
+		robotsTxtContent := `
+User-agent: *
+Disallow: /
+`
+		_, _ = w.Write([]byte(robotsTxtContent))
+	},
+	Handler: nil,
+}
