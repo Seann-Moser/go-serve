@@ -588,7 +588,12 @@ func setResponseType(cf *ClientFunc, responseType interface{}, skipPkg map[strin
 			cf.Return = "*clientpkg.ResponseData"
 			return
 		}
-
+		if strings.Contains(cf.Path, "{") {
+			cf.Imports = append(cf.Imports, Imports{
+				Name: "fmt",
+				Path: "fmt",
+			})
+		}
 		fullPkg, pkg := path.Split(getTypePkg(responseType))
 		cf.DataTypeName = getDataTypeName(responseType, pkg, skipPkg)
 
