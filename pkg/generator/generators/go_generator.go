@@ -20,7 +20,8 @@ import (
 var _ Generator = GoClientGenerator{}
 
 type GoClientGenerator struct {
-	client *openai.Client
+	client  *openai.Client
+	headers []string
 }
 
 func NewGoClientGenerator(client *openai.Client) *GoClientGenerator {
@@ -39,10 +40,6 @@ var defaultImports = []Imports{
 	{
 		Name: "clientpkg",
 		Path: "github.com/Seann-Moser/go-serve/pkg/clientpkg",
-	},
-	{
-		Name: "",
-		Path: "fmt",
 	},
 }
 var defaultImportsJS = []Imports{
@@ -92,6 +89,12 @@ func (c *Client) {{.Name}}(ctx context.Context{{if .RequestType}}, {{.RequestTyp
 //go:embed templates/struct_template.tmpl
 var clientTemplates string
 
+func (g GoClientGenerator) AddHeader(key, value string) {
+	if g.headers == nil {
+		g.headers = make([]string, 0)
+	}
+	g.headers = append(g.headers, key)
+}
 func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.Endpoint) error {
 	groupedEndpoints := groupEndpointsByGroup(endpoint) // Group by group name
 	publicDir, privateDir, err := GetPublicPrivateDir(data)
@@ -162,7 +165,7 @@ func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.E
 
 	clientTemplates, err := templ(map[string]interface{}{
 		"Name":    data.ProjectName,
-		"Headers": []string{},
+		"Headers": g.headers,
 	}, clientTemplates)
 	if err != nil {
 		return err
