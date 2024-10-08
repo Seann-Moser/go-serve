@@ -536,6 +536,7 @@ func setRequestType(cf *ClientFunc, requestType interface{}, skipPkg map[string]
 		}
 		fullPkg, pkg := path.Split(getTypePkg(requestType))
 		typeName := getType(requestType)
+
 		cf.RequestTypeName = formatName(typeName, isMap(requestType))
 
 		if _, found := skipPkg[pkg]; !found && fullPkg != "" {
@@ -818,6 +819,56 @@ type Func struct {
 	Data     string
 	Override map[string]string
 }
+
+func (fc *Func) UpdateComment() error {
+	f, err := os.Open(fc.File)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	var lines []string
+	// Splits on newlines by default.
+	scanner := bufio.NewScanner(f)
+	line := 1
+	if fc.Comment.Start == 0 {
+		fc.Comment.Start = fc.Ln - 1
+		fc.Comment.End = fc.Ln - 1
+	}
+	commentRegex := regexp.MustCompile(`//|/\*|\*/`)
+	dontSkipped := false
+	wrote := false
+	for scanner.Scan() {
+		text := scanner.Text()
+		if line >= fc.Comment.Start && line <= fc.Comment.End && !wrote {
+			for i, l := range fc.Comment.Lines {
+				if i == 0 && !(strings.HasPrefix(l, "//") || strings.HasPrefix(l, "/*")) {
+					l = `/*` + l
+					dontSkipped = true
+				}
+
+				if i >= len(fc.Comment.Lines)-1 && dontSkipped {
+					l += "*/"
+				}
+				lines = append(lines, l)
+			}
+			wrote = true
+
+		} else if line >= fc.Comment.Start && line <= fc.Comment.End {
+
+		} else {
+			lines = append(lines, text)
+		}
+		if line == fc.Comment.End && !commentRegex.MatchString(text) && text != "" {
+			lines = append(lines, text)
+		}
+		line++
+	}
+	_ = f.Close()
+
+	err = os.WriteFile(fc.File, []byte(strings.Join(lines, "\n")), os.ModePerm)
+	return err
+}
+
 type Comment struct {
 	Start int
 	End   int
@@ -880,12 +931,15 @@ func FindString(file string, find *regexp.Regexp) (*Comment, int, string, error)
 	foundFunc := false
 	//funcStartLine := 0
 	//functionBreaks :=0
-
+	functionLine := 0
 	for scanner.Scan() {
 		text := scanner.Text()
 
 		// Detect the start of a function
 		if funcRegex.MatchString(text) {
+			if functionLine == 0 {
+				functionLine = line
+			}
 			if inFunction {
 				// Handle nested functions or situations where multiple functions are present
 				functionCode = append(functionCode, text)
@@ -901,7 +955,7 @@ func FindString(file string, find *regexp.Regexp) (*Comment, int, string, error)
 			if strings.Contains(text, "}") {
 				inFunction = false
 				if foundFunc {
-					return comment, line, strings.Join(functionCode, "\n"), nil
+					return comment, functionLine, strings.Join(functionCode, "\n"), nil
 				}
 			}
 		}

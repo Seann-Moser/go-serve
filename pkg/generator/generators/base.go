@@ -16,6 +16,10 @@ const (
 type GeneratorData struct {
 	ProjectName string
 	RootDir     string
+	Title       string
+	Version     string
+	Description string
+	Host        string
 }
 
 type Generator interface {
@@ -51,12 +55,16 @@ type ClientFunc struct {
 
 func (cf *ClientFunc) GenerateSwaggerDoc() string {
 	var sb strings.Builder
-
+	parts := strings.Split(cf.Path, "/")
+	tags := cf.Name
+	if len(parts) > 1 {
+		tags = parts[1]
+	}
 	// General endpoint summary and description
 	sb.WriteString("\n")
 	sb.WriteString(fmt.Sprintf("// @Summary %s\n", cf.Name))
 	sb.WriteString(fmt.Sprintf("// @Description %s\n", cf.Description))
-	sb.WriteString(fmt.Sprintf("// @Tags %s\n", cf.Name))
+	sb.WriteString(fmt.Sprintf("// @Tags %s\n", tags))
 	sb.WriteString("// @Accept json\n")
 	sb.WriteString("// @Produce json\n")
 
@@ -71,7 +79,7 @@ func (cf *ClientFunc) GenerateSwaggerDoc() string {
 			sb.WriteString(fmt.Sprintf("// @Param %s query string false \"%s\"\n", paramName, param))
 		}
 	}
-
+	//@securitydefinitions.oauth2.application OAuth2Application
 	// Generate Swagger for header params
 	if cf.UsesHeaderParams {
 		// You can add specific header params as needed
@@ -80,11 +88,18 @@ func (cf *ClientFunc) GenerateSwaggerDoc() string {
 
 	// Request body documentation if RequestType exists
 	if cf.RequestType != "" {
-		sb.WriteString(fmt.Sprintf("// @Param data body %s true \"%s request body\"\n", cf.RequestTypeName, cf.Name))
+
+		sb.WriteString(fmt.Sprintf("// @Param data body %s true \"%s request body\"\n", cf.RequestType, cf.Name))
 	}
 
 	// Return type (success response)
-	sb.WriteString(fmt.Sprintf("// @Success 200 {object} %s\n", cf.DataTypeName))
+	if cf.DataTypeName != "" {
+		//cf.MethodType
+		//if isMap(requestType) {
+		//	cf.RequestTypeName = fmt.Sprintf("Map<%s>", typeName)
+		//}
+		sb.WriteString(fmt.Sprintf("// @Success 200 {object} %s\n", cf.DataTypeName))
+	}
 
 	// If an iterator is used, mark the response as a stream (or handle as needed)
 	if cf.UseIterator {
