@@ -102,9 +102,9 @@ func (cf *ClientFunc) GenerateSwaggerDoc() string {
 	}
 
 	// If an iterator is used, mark the response as a stream (or handle as needed)
-	if cf.UseIterator {
-		sb.WriteString("// @Router /endpoint [get] // Use appropriate method type here\n")
-	}
+	//if cf.UseIterator {
+	//	sb.WriteString("// @Router /endpoint [get] // Use appropriate method type here\n")
+	//}
 
 	// HTTP method type (GET, POST, etc.)
 	sb.WriteString(fmt.Sprintf("// @Router %s [%s]", cf.RawPath, strings.ToLower(cf.MethodType)))
