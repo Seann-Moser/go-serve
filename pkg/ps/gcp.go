@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/option"
+	"time"
 )
 
 var _ PubSub[any] = &GCPPubSub[any]{}
@@ -160,16 +161,13 @@ func (g *GCPPubSub[T]) Subscribe(ctx context.Context, subscriptionName string) (
 	return subscription, nil
 }
 
-//// CreateSubscription creates a new subscription to a topic.
-//func (g *GCPPubSub[T]) CreateSubscription(ctx context.Context, topic string, subscription string) (*pubsub.Subscription, error) {
-//	t := g.client.Topic(topic)
-//	return g.client.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
-//		Topic: t,
-//	})
-//}
-
 // Close closes the Pub/Sub client.
 // It should be called when the client is no longer needed.
 func (g *GCPPubSub[T]) Close() error {
 	return g.client.Close()
+}
+
+func (g *GCPPubSub[T]) Ping(ctx context.Context, timeout time.Duration) error {
+	//TODO implement me
+	panic("implement me")
 }

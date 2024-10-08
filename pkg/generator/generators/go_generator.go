@@ -52,6 +52,27 @@ var defaultImportsJS = []Imports{
 	},
 }
 
+var SwagApiGeneralTempl string = `
+	@title {{.Title}}
+	@version {{.Version}}
+	@description {{.Description}}
+	
+	@contact.name API Support
+	@contact.url https://support.surveynoodle.com
+	@contact.email support@surveynoodle.com
+	
+	@schemes http https
+	@host {{.Host}}
+	@BasePath /
+	@query.collection.format multi
+	
+	@externalDocs.description  OpenAPI
+	@externalDocs.url          https://support.surveynoodle.com
+	@securitydefinitions.oauth2.application OAuth2Application
+	@tokenUrl https://iam.surveynoodle.com/oauth/token
+	@authorizationurl https://iam.surveynoodle.com/oauth/authorize
+`
+
 /*
 Todo update gofunc template to support better godoc comments
 */
@@ -189,6 +210,23 @@ func (g GoClientGenerator) GenerateComments(data GeneratorData, epts ...*endpoin
 		foundEndpoints = map[string]*endpoints.Endpoint{}
 	}
 	goFiles := GetGoFiles(filepath.Join(homeDir, data.RootDir))
+
+	api, err := templ(map[string]string{
+		"Title":       data.Title,
+		"Version":     data.Version,
+		"Description": data.Description,
+		"Host":        data.Host,
+	}, SwagApiGeneralTempl)
+	if err != nil {
+		return
+	}
+
+	d := FindFunction("main", goFiles)
+	for _, v := range d {
+		v.Comment.Set(api)
+		_ = v.UpdateComment()
+		break
+	}
 	for _, e := range epts {
 		if e == nil {
 			continue
@@ -230,6 +268,7 @@ func (g GoClientGenerator) GenerateComments(data GeneratorData, epts ...*endpoin
 		}
 
 	}
+
 	_ = SaveEndpoints(cachedEndpoints, epts)
 }
 

@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 )
+
+var _ PubSub[any] = &InMemoryPubSub[any]{}
 
 // InMemoryPubSub is an in-memory implementation of the PubSub interface.
 // It is suitable for testing or scenarios where external dependencies are not desired.
@@ -161,5 +164,9 @@ func (im *InMemoryPubSub[T]) Close() error {
 		delete(im.subscribers, topic)
 	}
 
+	return nil
+}
+
+func (im *InMemoryPubSub[T]) Ping(ctx context.Context, timeout time.Duration) error {
 	return nil
 }

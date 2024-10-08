@@ -11,24 +11,26 @@ import (
 	"github.com/Seann-Moser/go-serve/server/endpoints"
 	"github.com/Seann-Moser/go-serve/server/handlers"
 )
-
-// @title 
-// @version 
-// @description 
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name MIT
-// @license.url https://opensource.org/licenses/MIT
-
-// @schemes http https
-// @host 
-// @BasePath /
-// @query.collection.format multi
-
-
+/*
+	@title go-serve
+	@version v0.9.11
+	@description 
+	
+	@contact.name API Support
+	@contact.url https://support.surveynoodle.com
+	@contact.email support@surveynoodle.com
+	
+	@schemes http https
+	@host 
+	@BasePath /
+	@query.collection.format multi
+	
+	@externalDocs.description  OpenAPI
+	@externalDocs.url          https://support.surveynoodle.com
+	@securitydefinitions.oauth2.application OAuth2Application
+	@tokenUrl https://iam.surveynoodle.com/oauth/token
+	@authorizationurl https://iam.surveynoodle.com/oauth/authorize
+*/
 func main() {
 	s := server.NewServer(context.Background(), "8888", "/test", 0, false)
 	if err := s.AddEndpoints(context.Background(), handlers.HealthCheck); err != nil {

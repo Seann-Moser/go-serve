@@ -19,7 +19,7 @@ func TestClientGenerate(t *testing.T) {
 	// Expectations
 
 	// Execute
-	err := client.Generate([]generators.Generator{mockGen}, GetEndpoints()...)
+	err := client.Generate([]generators.Generator{mockGen}, "", "", GetEndpoints()...)
 
 	// Assert
 	assert.NoError(t, err)
@@ -35,7 +35,7 @@ func TestNuxtClientGenerateError(t *testing.T) {
 	// Expectations
 
 	// Execute
-	err := client.Generate([]generators.Generator{mockGen}, GetEndpoints()...)
+	err := client.Generate([]generators.Generator{mockGen}, "", "", GetEndpoints()...)
 	assert.NoError(t, err)
 	// Assert
 }
@@ -49,7 +49,7 @@ func TestClientGenerateError(t *testing.T) {
 	// Expectations
 
 	// Execute
-	err := client.Generate([]generators.Generator{mockGen}, GetEndpoints()...)
+	err := client.Generate([]generators.Generator{mockGen}, "", "", GetEndpoints()...)
 	assert.NoError(t, err)
 	// Assert
 }
