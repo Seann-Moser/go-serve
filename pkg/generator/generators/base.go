@@ -88,7 +88,7 @@ func (cf *ClientFunc) GenerateSwaggerDoc() string {
 
 	// Request body documentation if RequestType exists
 	if cf.RequestType != "" {
-		sb.WriteString(fmt.Sprintf("// @Param data body %s true \"%s request body\"\n", strings.TrimPrefix(cf.RequestType, "*"), cf.Name))
+		sb.WriteString(fmt.Sprintf("// @Param data body %s true \"%s request body\"\n", strings.ReplaceAll(strings.ReplaceAll(cf.RequestType, "*", ""), " ", ""), cf.Name))
 	}
 
 	// Return type (success response)
@@ -98,7 +98,7 @@ func (cf *ClientFunc) GenerateSwaggerDoc() string {
 		//	cf.RequestTypeName = fmt.Sprintf("Map<%s>", typeName)
 		//}
 
-		sb.WriteString(fmt.Sprintf("// @Success 200 {object} %s\n", strings.TrimPrefix(cf.DataTypeName, "*")))
+		sb.WriteString(fmt.Sprintf("// @Success 200 {object} %s\n", strings.ReplaceAll(strings.ReplaceAll(cf.DataTypeName, "*", ""), " ", "")))
 	}
 
 	// If an iterator is used, mark the response as a stream (or handle as needed)
