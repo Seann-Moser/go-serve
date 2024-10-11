@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"net/http"
@@ -15,9 +16,117 @@ import (
 var httpMiddlewareMeter = otel.Meter("endpoint-metrics")
 
 var (
-	httpTotalRequests metric.Int64UpDownCounter = nil
-	httpLatency       metric.Float64Histogram   = nil
+	httpTotalRequests metric.Int64UpDownCounter            = nil
+	httpLatency       metric.Float64Histogram              = nil
+	histograms        map[string]metric.Float64Histogram   = map[string]metric.Float64Histogram{}
+	upDownCounters    map[string]metric.Int64UpDownCounter = map[string]metric.Int64UpDownCounter{}
+	counters          map[string]metric.Int64Counter       = map[string]metric.Int64Counter{}
+
+	meters map[string]metric.Meter = map[string]metric.Meter{}
 )
+
+func Measure[T int64 | float64](ctx context.Context, name string, v T, attributes ...attribute.KeyValue) error {
+	if !Find(name) {
+		return fmt.Errorf("measure %s not found", name)
+	}
+
+	switch any(v).(type) {
+	case int64:
+		if m, found := counters[name]; found {
+			m.Add(ctx, int64(v),
+				metric.WithAttributes(
+					attributes...,
+				),
+			)
+			return nil
+		}
+		if m, found := upDownCounters[name]; found {
+			m.Add(ctx, int64(v),
+				metric.WithAttributes(
+					attributes...,
+				),
+			)
+			return nil
+		}
+	case float64:
+		if m, found := histograms[name]; found {
+			m.Record(ctx, float64(v),
+				metric.WithAttributes(
+					attributes...,
+				),
+			)
+			return nil
+		}
+	default:
+		return fmt.Errorf("unsupported type %T", v)
+	}
+
+	return nil
+}
+
+func Find(name string) bool {
+	if _, found := counters[name]; found {
+		return true
+	}
+	if _, found := histograms[name]; found {
+		return true
+	}
+	if _, found := upDownCounters[name]; found {
+		return true
+	}
+	return false
+}
+
+func RegisterHistogram(name string, meter string, options ...metric.Float64HistogramOption) error {
+	//m, found := meters[meter]
+	//if !found {
+	//	meters[meter] = otel.Meter(meter)
+	//	m = meters[meter]
+	//}
+	histogram, err := httpMiddlewareMeter.Float64Histogram(
+		name,
+		options...,
+	)
+	if err != nil {
+		return err
+	}
+	histograms[name] = histogram
+	return nil
+}
+
+func RegisterCounter(name string, meter string, options ...metric.Int64CounterOption) error {
+	//m, found := meters[meter]
+	//if !found {
+	//	meters[meter] = otel.Meter(meter)
+	//	m = meters[meter]
+	//}
+	counter, err := httpMiddlewareMeter.Int64Counter(
+		name,
+		options...,
+	)
+	if err != nil {
+		return err
+	}
+	counters[name] = counter
+	return nil
+}
+
+func RegisterUpDownCounter(name string, meter string, options ...metric.Int64UpDownCounterOption) error {
+	//m, found := meters[meter]
+	//if !found {
+	//	meters[meter] = otel.Meter(meter)
+	//	m = meters[meter]
+	//}
+	counter, err := httpMiddlewareMeter.Int64UpDownCounter(
+		name,
+		options...,
+	)
+	if err != nil {
+		return err
+	}
+	upDownCounters[name] = counter
+	return nil
+}
 
 func (m *Metrics) Middleware() func(next http.Handler) http.Handler {
 	_ = m.createMeasures()

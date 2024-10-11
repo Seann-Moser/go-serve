@@ -36,7 +36,7 @@ func (n NuxtPluginGenerator) Generate(data GeneratorData, endpoints ...*endpoint
 
 	}
 
-	if err := writeNuxtFile(privateDir, data.ProjectName, output, false); err != nil {
+	if err := writeNuxtFile(privateDir, data.ProjectName, output, false, objects); err != nil {
 		return err
 	}
 	classes, err := templ(objects, jsClassesTemplate)

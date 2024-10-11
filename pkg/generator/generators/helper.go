@@ -294,18 +294,22 @@ import (
 }
 
 // writeNuxtFile Helper: Write generated function code to a file
-func writeNuxtFile(dir string, group string, code []string, isPublic bool, imports ...Imports) error {
+func writeNuxtFile(dir string, group string, code []string, isPublic bool, classes map[string][]string, imports ...Imports) error {
 	if len(code) == 0 {
 		return nil
 	}
 	filename := fmt.Sprintf("%s_plugin.js", ToSnakeCase(group))
 	fp := filepath.Join(dir, filename)
-
+	classFilename := fmt.Sprintf("%s_classes.ts", ToSnakeCase(group))
 	f, err := os.Create(fp)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
+	var classNames []string
+	for c, _ := range classes {
+		classNames = append(classNames, c)
+	}
 
 	_, pkg := path.Split(dir)
 	header := fmt.Sprintf(
@@ -321,10 +325,13 @@ func writeNuxtFile(dir string, group string, code []string, isPublic bool, impor
 	} else {
 		header += "// Private Endpoint - Auto Generated\n"
 	}
-
+	classImports := fmt.Sprintf(`import {%s} from "./%s"`, strings.Join(classNames, ","), classFilename)
+	if len(classNames) == 0 {
+		classImports = ""
+	}
 	nuxtIt := `%s
-import {Iterator,Pagination} from "assets/iterator.js"
-
+import {Iterator,Pagination} from "./iterator.js"
+%s
  function GetConfig(baseURL = "http://localhost:3000" ,data={},pagination=null){
      let params = {}
      if (pagination === null){
@@ -357,7 +364,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     };
 })`
 	n := ToSnakeCase(group)
-	_, err = f.WriteString(fmt.Sprintf(nuxtIt, header, n, strings.Join(code, ",\n")+"\n", n))
+	_, err = f.WriteString(fmt.Sprintf(nuxtIt, classImports, header, n, strings.Join(code, ",\n")+"\n", n))
 	return err
 }
 
