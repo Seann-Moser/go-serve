@@ -81,7 +81,7 @@ func NewGCPPubSub[T any](ctx context.Context, projectID string, opts ...option.C
 // Publish publishes a message to the specified topic.
 func (g *GCPPubSub[T]) Publish(ctx context.Context, topic string, data chan *T, workers int) error {
 	if topic == "" {
-		return fmt.Errorf("topic is required")
+		topic = g.defaultTopic
 	}
 	t := g.client.Topic(topic)
 	wg, ctx := errgroup.WithContext(ctx)
@@ -125,7 +125,7 @@ func (g *GCPPubSub[T]) CreateTopic(ctx context.Context, topic string) (*pubsub.T
 // Subscribe subscribes to a subscription and processes messages using the handler function.
 func (g *GCPPubSub[T]) Subscribe(ctx context.Context, subscriptionName string) (*Subscription[T], error) {
 	if subscriptionName == "" {
-		return nil, fmt.Errorf("subscription is required")
+		subscriptionName = g.defaultSubscription
 	}
 	sub := g.client.Subscription(subscriptionName)
 	subscription := &Subscription[T]{
