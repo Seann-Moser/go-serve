@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/clientpkg"
+	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"github.com/go-redis/redis/v8"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -63,12 +64,10 @@ func NewRedisPubSubFromFlags[T any](ctx context.Context, prefix string) (*RedisP
 		}
 	}
 
-	pubsub := &RedisPubSub[T]{
+	return &RedisPubSub[T]{
 		client:         client,
 		defaultChannel: defaultChannel,
-	}
-
-	return pubsub, nil
+	}, nil
 }
 
 // Ping sends a PING command to the Redis server to check connectivity.
@@ -79,7 +78,14 @@ func (r *RedisPubSub[T]) Ping(ctx context.Context, timeout time.Duration) error 
 	defer cancel()
 
 	// Send the PING command
-	err := r.client.Ping(ctx).Err()
+	if r.client == nil {
+		return fmt.Errorf("redis client is not initialized")
+	}
+	ping := r.client.Ping(ctx)
+	if ping == nil {
+		return fmt.Errorf("status is nil")
+	}
+	err := ping.Err()
 	if err != nil {
 		return fmt.Errorf("failed to ping Redis server: %w", err)
 	}
@@ -200,6 +206,7 @@ func (r *RedisPubSub[T]) Subscribe(ctx context.Context, channel string) (*Subscr
 			_ = r.ps.Unsubscribe(ctx, channel)
 			r.ps.Close()
 			r.ps = nil
+			ctxLogger.Error(ctx, "closed subscription")
 		},
 	}
 
