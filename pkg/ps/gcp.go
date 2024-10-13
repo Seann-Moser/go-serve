@@ -168,6 +168,5 @@ func (g *GCPPubSub[T]) Close() error {
 }
 
 func (g *GCPPubSub[T]) Ping(ctx context.Context, timeout time.Duration) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
