@@ -114,7 +114,14 @@ func (g *GCPPubSub[T]) Publish(ctx context.Context, topic string, data chan *T, 
 			return nil
 		})
 	}
-	return wg.Wait()
+	go func() {
+		err := wg.Wait()
+		if err != nil {
+			ctxLogger.Warn(ctx, "failed to publish msg", zap.Error(err))
+		}
+	}()
+
+	return nil
 }
 
 // CreateTopic creates a new Pub/Sub topic.
@@ -132,32 +139,34 @@ func (g *GCPPubSub[T]) Subscribe(ctx context.Context, subscriptionName string) (
 		Name: subscriptionName,
 		c:    make(chan *SubscriptionData[T]),
 	}
-	// Receive will start multiple goroutines to receive messages.
-	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		var d T
-		err := json.Unmarshal(msg.Data, &d)
-		if err != nil {
-			msg.Nack()
-			ctxLogger.Warn(ctx, "failed unmarshalling data")
-			return
-		}
-
-		subscription.c <- &SubscriptionData[T]{
-			data: &d,
-			Ack: func(ctx context.Context) error {
-				msg.Ack()
-				return nil
-			},
-			Nack: func(ctx context.Context) error {
+	go func() {
+		// Receive will start multiple goroutines to receive messages.
+		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+			var d T
+			err := json.Unmarshal(msg.Data, &d)
+			if err != nil {
 				msg.Nack()
-				return nil
-			},
-		}
-	})
+				ctxLogger.Warn(ctx, "failed unmarshalling data")
+				return
+			}
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to receive messages: %w", err)
-	}
+			subscription.c <- &SubscriptionData[T]{
+				data: &d,
+				Ack: func(ctx context.Context) error {
+					msg.Ack()
+					return nil
+				},
+				Nack: func(ctx context.Context) error {
+					msg.Nack()
+					return nil
+				},
+			}
+		})
+		if err != nil {
+			ctxLogger.Warn(ctx, "failed to receive subscription data", zap.Error(err))
+		}
+	}()
+
 	return subscription, nil
 }
 
