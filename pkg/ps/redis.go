@@ -48,10 +48,19 @@ func NewRedisPubSubFromFlags[T any](ctx context.Context, prefix string) (*RedisP
 		Password: redisPassword,
 		DB:       redisDB,
 	})
-
-	// Test Redis connection
-	if err := client.Ping(ctx).Err(); err != nil {
-		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+	t := time.NewTicker(time.Second)
+	tmpCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	err := client.Ping(ctx)
+	for err != nil {
+		select {
+		case <-tmpCtx.Done():
+			cancel()
+			t.Stop()
+			return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+		case <-t.C:
+			err = client.Ping(ctx)
+		}
 	}
 
 	pubsub := &RedisPubSub[T]{
