@@ -52,15 +52,15 @@ func NewRedisPubSubFromFlags[T any](ctx context.Context, prefix string) (*RedisP
 	t := time.NewTicker(time.Second)
 	tmpCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	err := client.Ping(ctx)
-	for err != nil {
+	ping := client.Ping(ctx)
+	for ping.Err() != nil {
 		select {
 		case <-tmpCtx.Done():
 			cancel()
 			t.Stop()
-			return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+			return nil, fmt.Errorf("failed to connect to Redis: %w", ping.Err())
 		case <-t.C:
-			err = client.Ping(ctx)
+			ping = client.Ping(ctx)
 		}
 	}
 
@@ -82,6 +82,7 @@ func (r *RedisPubSub[T]) Ping(ctx context.Context, timeout time.Duration) error 
 		return fmt.Errorf("redis client is not initialized")
 	}
 	ping := r.client.Ping(ctx)
+
 	if ping == nil {
 		return fmt.Errorf("status is nil")
 	}
