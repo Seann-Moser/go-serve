@@ -42,6 +42,10 @@ type SubscriptionData[T any] struct {
 	Nack func(ctx context.Context) error
 }
 
+func (d *SubscriptionData[T]) Data() *T {
+	return d.data
+}
+
 func (s *Subscription[T]) Read() <-chan *SubscriptionData[T] {
 	return s.c
 }
