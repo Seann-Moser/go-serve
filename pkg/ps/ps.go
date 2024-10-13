@@ -42,6 +42,10 @@ type SubscriptionData[T any] struct {
 	Nack func(ctx context.Context) error
 }
 
+func (s *Subscription[T]) Read() <-chan *SubscriptionData[T] {
+	return s.c
+}
+
 // BPop retrieves the next message from the subscription channel.
 // It blocks until a message is available or the context is canceled.
 func (s *Subscription[T]) BPop(ctx context.Context) (*SubscriptionData[T], error) {
