@@ -440,7 +440,6 @@ func FormatImports(language Language, overrides map[string]*Imports, list ...Imp
 	dup := map[string]struct{}{}
 	for _, i := range list {
 		if override, ok := overrides[i.Path]; ok {
-			i.Path = override.Path
 			i.Name = override.Name
 		}
 		if _, f := dup[i.Path]; f {
@@ -572,7 +571,7 @@ func setRequestType(cf *ClientFunc, requestType interface{}, skipPkg map[string]
 		if _, found := skipPkg[pkg]; !found && fullPkg != "" {
 			cf.Imports = append(cf.Imports, Imports{
 				Name: pkg,
-				Path: fullPkg + pkg,
+				Path: fullPkg,
 			})
 		}
 
@@ -629,7 +628,7 @@ func setResponseType(cf *ClientFunc, responseType interface{}, skipPkg map[strin
 		if isArray(responseType) || (!skipPkg[pkg] && fullPkg != "") {
 			cf.Imports = append(cf.Imports, Imports{
 				Name: pkg,
-				Path: fullPkg + pkg,
+				Path: fullPkg,
 			})
 		}
 
