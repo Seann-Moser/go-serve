@@ -795,10 +795,14 @@ func GetObject(i interface{}) []string {
 		if name == "" {
 			name = field.Name
 		}
+
 		if name == "-" {
 			continue
 		}
 		name = strings.ReplaceAll(name, ",omitempty", "")
+		if strings.Contains(name, ",") {
+			continue
+		}
 		o = append(o, name)
 	}
 	return o
