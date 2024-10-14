@@ -91,26 +91,45 @@ func ToSnakeCase(str string) string {
 	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
 	return strings.ToLower(strings.ReplaceAll(snake, "__", "_"))
 }
-func getTypePkg(myVar interface{}) string {
+
+func getTypePkg(myVar interface{}) (string, string) {
 	switch myVar.(type) {
 	case string:
-		return "string"
+		return "string", ""
 	case int64:
-		return "int64"
+		return "int64", ""
 	case []string:
-		return "[]string"
+		return "[]string", ""
 	}
+
 	t := reflect.TypeOf(myVar)
 	if t == nil {
-		return ""
+		return "", ""
 	}
+
+	var pkgPath string
 	if isArray(myVar) {
-		return t.Elem().PkgPath()
+		pkgPath = t.Elem().PkgPath()
+	} else if t.Kind() == reflect.Ptr {
+		pkgPath = t.Elem().PkgPath()
+	} else {
+		pkgPath = t.PkgPath()
 	}
-	if t.Kind() == reflect.Ptr {
-		return t.Elem().PkgPath()
+
+	// Handle versioning removal, if the package ends with /v[0-9]+
+	re := regexp.MustCompile(`/v[0-9]+$`)
+	basePkgPath := re.ReplaceAllString(pkgPath, "")
+
+	// Handle hyphen case and extract the first segment
+	segments := strings.Split(basePkgPath, "/")
+	lastSegment := segments[len(segments)-1]
+	if strings.Contains(lastSegment, "-") {
+		// Return the first part before the hyphen
+		firstPart := strings.Split(lastSegment, "-")[0]
+		return pkgPath, firstPart
 	}
-	return t.PkgPath()
+
+	return pkgPath, lastSegment
 }
 
 func isArray(myVar interface{}) bool {
@@ -545,7 +564,7 @@ func setRequestType(cf *ClientFunc, requestType interface{}, skipPkg map[string]
 		if requestType == nil {
 			return
 		}
-		fullPkg, pkg := path.Split(getTypePkg(requestType))
+		fullPkg, pkg := getTypePkg(requestType)
 		typeName := getType(requestType)
 
 		cf.RequestTypeName = formatName(typeName, isMap(requestType))
@@ -569,8 +588,7 @@ func setResponseType(cf *ClientFunc, responseType interface{}, skipPkg map[strin
 			cf.Return = "promise"
 			return
 		}
-		fullPkg := getTypePkg(responseType)
-		_, pkg := path.Split(fullPkg)
+		fullPkg, pkg := getTypePkg(responseType)
 		cf.DataTypeName = getType(responseType)
 
 		// Add import if necessary
@@ -605,7 +623,7 @@ func setResponseType(cf *ClientFunc, responseType interface{}, skipPkg map[strin
 				Path: "fmt",
 			})
 		}
-		fullPkg, pkg := path.Split(getTypePkg(responseType))
+		fullPkg, pkg := getTypePkg(responseType)
 		cf.DataTypeName = getDataTypeName(responseType, pkg, skipPkg)
 
 		if isArray(responseType) || (!skipPkg[pkg] && fullPkg != "") {

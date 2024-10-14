@@ -19,6 +19,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
+	github.com/stripe/stripe-go/v79 v79.12.0
 	github.com/swaggo/swag v1.16.3
 	github.com/tidwall/gjson v1.18.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.55.0
