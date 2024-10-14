@@ -51,10 +51,10 @@ func (n NuxtPluginGenerator) Generate(data GeneratorData, endpoints ...*endpoint
 		return err
 	}
 
-	if err := writeNuxtFile(public, data.ProjectName, output, true, objects); err != nil {
+	if err := writeNuxtFile(public, data.ProjectName, publicOutput, true, publicObjects); err != nil {
 		return err
 	}
-	publicClasses, err := templ(objects, jsClassesTemplate)
+	publicClasses, err := templ(publicObjects, jsClassesTemplate)
 	if err := writeClassFile(public, data.ProjectName, publicClasses, true); err != nil {
 		return err
 	}

@@ -168,6 +168,12 @@ func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.E
 		{
 			Path: "time",
 		},
+		{
+			Path: "strings",
+		},
+		{
+			Path: "github.com/spf13/viper",
+		},
 	}
 	if len(g.headers) > 0 {
 		clientImports = append(clientImports, Imports{
