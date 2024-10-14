@@ -92,15 +92,18 @@ func (g *GCPPubSub[T]) Publish(ctx context.Context, topic string, data chan *T, 
 			return ctx.Err()
 		}
 	})
+	if workers <= 0 {
+		workers = 1
+	}
+	ctxLogger.Info(ctx, "starting publisher with workers", zap.Int("workers", workers), zap.String("topic", topic))
 	for i := 0; i < workers; i++ {
 		wg.Go(func() error {
 			for d := range data {
-				if data == nil {
-					continue
-				}
+				ctxLogger.Info(ctx, "attempting to publish message")
 				b, err := json.Marshal(d)
 				if err != nil {
-					return err
+					ctxLogger.Error(ctx, "failed marshalling data", zap.Error(err))
+					continue
 				}
 				result := t.Publish(ctx, &pubsub.Message{
 					Data: b,
@@ -111,6 +114,7 @@ func (g *GCPPubSub[T]) Publish(ctx context.Context, topic string, data chan *T, 
 					continue
 				}
 			}
+			ctxLogger.Info(ctx, "publisher worker finished")
 			return nil
 		})
 	}
@@ -119,6 +123,7 @@ func (g *GCPPubSub[T]) Publish(ctx context.Context, topic string, data chan *T, 
 		if err != nil {
 			ctxLogger.Warn(ctx, "failed to publish msg", zap.Error(err))
 		}
+		ctxLogger.Info(ctx, "publisher worker finished")
 	}()
 
 	return nil
@@ -140,9 +145,11 @@ func (g *GCPPubSub[T]) Subscribe(ctx context.Context, subscriptionName string) (
 		c:    make(chan *SubscriptionData[T]),
 	}
 	go func() {
+		ctxLogger.Info(ctx, "starting subscripber", zap.String("subscription", subscriptionName))
 		// Receive will start multiple goroutines to receive messages.
 		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 			var d T
+			ctxLogger.Info(ctx, "recieved message")
 			err := json.Unmarshal(msg.Data, &d)
 			if err != nil {
 				msg.Nack()
@@ -165,6 +172,7 @@ func (g *GCPPubSub[T]) Subscribe(ctx context.Context, subscriptionName string) (
 		if err != nil {
 			ctxLogger.Warn(ctx, "failed to receive subscription data", zap.Error(err))
 		}
+		ctxLogger.Info(ctx, "subscriber finished", zap.String("subscription", subscriptionName))
 	}()
 
 	return subscription, nil
