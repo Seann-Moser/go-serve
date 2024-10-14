@@ -260,7 +260,7 @@ func templ(ep interface{}, tmp string) (string, error) {
 }
 
 // writeToGoFile Helper: Write generated function code to a file
-func writeToGoFile(dir string, group string, code []string, isPublic bool, imports ...Imports) error {
+func writeToGoFile(dir string, group string, code []string, isPublic bool, overrides map[string]*Imports, imports ...Imports) error {
 	if len(code) == 0 {
 		return nil
 	}
@@ -281,7 +281,7 @@ import (
 	%s
 )
 
-`, ToSnakeCase(pkg), FormatImports(LanguageGo, imports...))
+`, ToSnakeCase(pkg), FormatImports(LanguageGo, overrides, imports...))
 	// Add package name and imports at the top of the file
 	if isPublic {
 		header += "// Public Endpoint - Auto Generated\n"
@@ -318,7 +318,7 @@ func writeNuxtFile(dir string, group string, code []string, isPublic bool, class
 %s
 
 
-`, ToSnakeCase(pkg), FormatImports(LanguageJS, imports...))
+`, ToSnakeCase(pkg), FormatImports(LanguageJS, nil, imports...))
 	// Add package name and imports at the top of the file
 	if isPublic {
 		header += "// Public Endpoint - Auto Generated\n"
@@ -389,7 +389,7 @@ func writeClassFile(dir string, group string, code string, isPublic bool, import
 %s
 
 
-`, ToSnakeCase(pkg), FormatImports(LanguageJS, imports...))
+`, ToSnakeCase(pkg), FormatImports(LanguageJS, nil, imports...))
 	// Add package name and imports at the top of the file
 	if isPublic {
 		header += "// Public Endpoint - Auto Generated\n"
@@ -405,7 +405,7 @@ type Imports struct {
 	Path string
 }
 
-func FormatImports(language Language, list ...Imports) string {
+func FormatImports(language Language, overrides map[string]*Imports, list ...Imports) string {
 	var output []string
 	switch language {
 	case LanguageJS:
@@ -420,6 +420,10 @@ func FormatImports(language Language, list ...Imports) string {
 	})
 	dup := map[string]struct{}{}
 	for _, i := range list {
+		if override, ok := overrides[i.Path]; ok {
+			i.Path = override.Path
+			i.Name = override.Name
+		}
 		if _, f := dup[i.Path]; f {
 			continue
 		}

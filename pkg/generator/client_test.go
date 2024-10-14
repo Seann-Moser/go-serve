@@ -19,6 +19,11 @@ func TestClientGenerate(t *testing.T) {
 	// Expectations
 
 	// Execute
+	mockGen.AddHeader("key", "")
+	mockGen.AddImportOverride("stripe/test/v76", &generators.Imports{
+		Name: "stripe",
+		Path: "stripe/test/v76",
+	})
 	err := client.Generate([]generators.Generator{mockGen}, "", "", GetEndpoints()...)
 
 	// Assert

@@ -20,8 +20,9 @@ import (
 var _ Generator = GoClientGenerator{}
 
 type GoClientGenerator struct {
-	client  *openai.Client
-	headers []string
+	client           *openai.Client
+	headers          []string
+	importOverwrides map[string]*Imports
 }
 
 func NewGoClientGenerator(client *openai.Client) *GoClientGenerator {
@@ -89,12 +90,19 @@ func (c *Client) {{.Name}}(ctx context.Context{{if .RequestType}}, {{.RequestTyp
 //go:embed templates/struct_template.tmpl
 var clientTemplates string
 
-func (g GoClientGenerator) AddHeader(key, value string) {
+func (g *GoClientGenerator) AddHeader(key, value string) {
 	if g.headers == nil {
 		g.headers = make([]string, 0)
 	}
 	g.headers = append(g.headers, key)
 }
+func (g *GoClientGenerator) AddImportOverride(key string, im *Imports) {
+	if g.importOverwrides == nil {
+		g.importOverwrides = map[string]*Imports{}
+	}
+	g.importOverwrides[key] = im
+}
+
 func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.Endpoint) error {
 	groupedEndpoints := groupEndpointsByGroup(endpoint) // Group by group name
 	publicDir, privateDir, err := GetPublicPrivateDir(data)
@@ -127,13 +135,12 @@ func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.E
 			}
 
 		}
-		// Write function to files
 
-		if err := writeToGoFile(publicDir, group, PublicFunctions, true, publicImports...); err != nil {
+		if err := writeToGoFile(publicDir, group, PublicFunctions, true, g.importOverwrides, publicImports...); err != nil {
 			return err
 		}
 
-		if err := writeToGoFile(privateDir, group, functions, false, imports...); err != nil {
+		if err := writeToGoFile(privateDir, group, functions, false, g.importOverwrides, imports...); err != nil {
 			return err
 		}
 
@@ -162,7 +169,14 @@ func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.E
 			Path: "time",
 		},
 	}
-
+	if len(g.headers) > 0 {
+		clientImports = append(clientImports, Imports{
+			Path: "strings",
+		})
+		clientImports = append(clientImports, Imports{
+			Path: "github.com/spf13/viper",
+		})
+	}
 	clientTemplates, err := templ(map[string]interface{}{
 		"Name":    data.ProjectName,
 		"Headers": g.headers,
@@ -170,10 +184,10 @@ func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.E
 	if err != nil {
 		return err
 	}
-	if err := writeToGoFile(publicDir, "client", []string{clientTemplates}, true, clientImports...); err != nil {
+	if err := writeToGoFile(publicDir, "client", []string{clientTemplates}, true, g.importOverwrides, clientImports...); err != nil {
 		return err
 	}
-	if err := writeToGoFile(privateDir, "client", []string{clientTemplates}, true, clientImports...); err != nil {
+	if err := writeToGoFile(privateDir, "client", []string{clientTemplates}, true, g.importOverwrides, clientImports...); err != nil {
 		return err
 	}
 
