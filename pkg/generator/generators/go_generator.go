@@ -193,7 +193,18 @@ func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.E
 	if err := writeToGoFile(publicDir, "client", []string{clientTemplates}, true, g.importOverwrides, clientImports...); err != nil {
 		return err
 	}
-	if err := writeToGoFile(privateDir, "client", []string{clientTemplates}, true, g.importOverwrides, clientImports...); err != nil {
+	if len(g.headers) > 0 {
+		clientImports = append(clientImports, Imports{
+			Path: "strings",
+		})
+		clientImports = append(clientImports, Imports{
+			Path: "github.com/spf13/viper",
+		})
+		clientImports = append(clientImports, Imports{
+			Path: "time",
+		})
+	}
+	if err := writeToGoFile(privateDir, "client", []string{clientTemplates}, false, g.importOverwrides, clientImports...); err != nil {
 		return err
 	}
 
