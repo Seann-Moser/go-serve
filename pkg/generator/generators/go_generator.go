@@ -232,6 +232,14 @@ func (g GoClientGenerator) GenerateComments(data GeneratorData, epts ...*endpoin
 	if foundEndpoints == nil {
 		foundEndpoints = map[string]*endpoints.Endpoint{}
 	}
+	f := map[string]*endpoints.Endpoint{}
+	for i, v := range epts {
+		if fe, found := foundEndpoints[v.UniqueID()]; found {
+			epts[i].Description = fe.Description
+			epts[i].Hash = fe.Hash
+			f[v.UniqueID()] = fe
+		}
+	}
 	goFiles := GetGoFiles(filepath.Join(homeDir, data.RootDir))
 
 	api, err := templ(map[string]string{
@@ -290,6 +298,11 @@ func (g GoClientGenerator) GenerateComments(data GeneratorData, epts ...*endpoin
 
 		}
 
+	}
+	for k, v := range foundEndpoints {
+		if _, found := f[k]; !found {
+			epts = append(epts, v)
+		}
 	}
 
 	_ = SaveEndpoints(cachedEndpoints, epts)
