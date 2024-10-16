@@ -550,8 +550,8 @@ func setRequestType(cf *ClientFunc, requestType interface{}, skipPkg map[string]
 		case reflect.Struct:
 			fallthrough
 		case reflect.Ptr:
-			if _, exists := cf.Objects[normalName]; !exists {
-				cf.Objects[normalName] = GetObject(requestType)
+			if _, exists := cf.Objects[strings.ToTitle(normalName[:1])+normalName[1:]]; !exists {
+				cf.Objects[strings.ToTitle(normalName[:1])+normalName[1:]] = GetObject(requestType)
 			}
 		}
 	case LanguageGo:
@@ -604,8 +604,8 @@ func setResponseType(cf *ClientFunc, responseType interface{}, skipPkg map[strin
 		case reflect.Struct:
 			fallthrough
 		case reflect.Ptr:
-			if _, exists := cf.Objects[cf.Return]; !exists {
-				cf.Objects[cf.Return] = GetObject(responseType)
+			if _, exists := cf.Objects[strings.ToTitle(cf.Return[:1])+cf.Return[1:]]; !exists {
+				cf.Objects[strings.ToTitle(cf.Return[:1])+cf.Return[1:]] = GetObject(responseType)
 			}
 		}
 
@@ -822,7 +822,7 @@ func convertPathToFunctionName(path string) string {
 	for i := 0; i < len(parts); i++ {
 		// Capitalize the first letter of each segment
 		if len(parts[i]) > 0 {
-			parts[i] = strings.Title(parts[i])
+			parts[i] = strings.ToTitle(parts[i])
 		}
 	}
 

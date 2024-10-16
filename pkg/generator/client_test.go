@@ -19,7 +19,7 @@ func TestClientGenerate(t *testing.T) {
 	// Expectations
 
 	// Execute
-	mockGen.AddHeader("key", "")
+	mockGen.AddHeader("KEY", "")
 	mockGen.AddImportOverride("stripe/test/v76", &generators.Imports{
 		Name: "stripe",
 		Path: "stripe/test/v76",
