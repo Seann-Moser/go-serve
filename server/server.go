@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"github.com/Seann-Moser/go-serve/pkg/metrics"
+	"github.com/Seann-Moser/go-serve/server/middle"
 	"golang.org/x/sync/errgroup"
 	"net"
 	"net/http"
@@ -33,15 +34,18 @@ var VERSION = "dev"
 var NAME = "dev"
 
 type Server struct {
-	ServingPort     string `yaml:"serving_port" json:"serving_port" env:"SERVING_PORT"`
-	ctx             context.Context
-	router          *mux.Router
-	EndpointManager *endpoint_manager.Manager
-	Response        *response.Response
-	Request         *request.Request
-	PathPrefix      string
-
-	MetricsServer *metrics.Metrics
+	ServingPort      string `yaml:"serving_port" json:"serving_port" env:"SERVING_PORT"`
+	ctx              context.Context
+	serverCtx        context.Context
+	router           *mux.Router
+	EndpointManager  *endpoint_manager.Manager
+	Response         *response.Response
+	Request          *request.Request
+	PathPrefix       string
+	shutdownDuration time.Duration
+	MetricsServer    *metrics.Metrics
+	requestTracker   *middle.RequestTracker
+	shutdown         func()
 }
 
 const (
@@ -57,6 +61,7 @@ func Flags() *pflag.FlagSet {
 	fs.String(serverPrefixFlag, "", "")
 	fs.Int64(serverMaxReceivedBytesFlag, int64(20*1024*1024), "")
 	fs.Bool(serverShowErrFlag, false, "")
+	fs.Duration("shutdown-duration", 30*time.Second, "duration to wait before shutting down the server")
 	fs.AddFlagSet(metrics.MetricFlags())
 	return fs
 }
@@ -66,15 +71,17 @@ func New(ctx context.Context) *Server {
 		viper.GetString(serverPortFlag),
 		viper.GetString(serverPrefixFlag),
 		viper.GetInt64(serverMaxReceivedBytesFlag),
-		viper.GetBool(serverShowErrFlag))
+		viper.GetBool(serverShowErrFlag),
+		viper.GetDuration("shutdown-duration"))
 }
 
-func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb int64, showErr bool) *Server {
+func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb int64, showErr bool, shutdownDuration time.Duration) *Server {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	notifyContext, cancel := context.WithCancel(ctx)
 	go func() {
 		osCall := <-c
+		println("starting shutdown")
 		ctxLogger.Info(ctx, fmt.Sprintf("system call:%+v", osCall))
 		cancel()
 	}()
@@ -100,18 +107,25 @@ func NewServer(ctx context.Context, servingPort string, pathPrefix string, mb in
 			handler.ServeHTTP(w, r)
 		})
 	})
+	requestTracker := middle.NewRequestTracker()
+	router.Use()
 	if m.Enabled {
-		router.Use(m.Middleware())
+		router.Use(requestTracker.TrackMiddleware)
 	}
+	serverCtx, cancelRoute := context.WithCancel(ctx)
 	return &Server{
-		ServingPort:     servingPort,
-		ctx:             notifyContext,
-		router:          router,
-		EndpointManager: endpoint_manager.NewManager(router),
-		Response:        response.NewResponse(showErr),
-		Request:         request.NewRequest(mb),
-		PathPrefix:      pathPrefix,
-		MetricsServer:   m,
+		ServingPort:      servingPort,
+		serverCtx:        notifyContext,
+		ctx:              serverCtx,
+		router:           router,
+		EndpointManager:  endpoint_manager.NewManager(router),
+		Response:         response.NewResponse(showErr),
+		Request:          request.NewRequest(mb),
+		PathPrefix:       pathPrefix,
+		MetricsServer:    m,
+		shutdownDuration: shutdownDuration,
+		shutdown:         cancelRoute,
+		requestTracker:   requestTracker,
 	}
 }
 
@@ -185,19 +199,25 @@ func (s *Server) StartServer(ctx context.Context) error {
 			ctxLogger.Error(ctx, "failed creating server", zap.Error(err))
 		}
 	}()
-
 	ctxLogger.Info(ctx, "staring server", zap.String("address", server.Addr), zap.String("port", s.ServingPort), zap.String("prefix", s.PathPrefix))
-	<-ctx.Done()
-	ctxLogger.Info(ctx, "server stopped")
-	ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	<-s.serverCtx.Done()
+	ctxShutDown, cancel := context.WithTimeout(context.Background(), s.shutdownDuration)
 	defer func() {
 		cancel()
 	}()
-
 	if err := server.Shutdown(ctxShutDown); err != nil {
 		ctxLogger.Error(ctx, "server Shutdown Failed", zap.Error(err))
 		return err
 	}
+	select {
+	case <-ctxShutDown.Done():
+		s.shutdown()
+	case <-s.requestTracker.Done(s.ctx):
+		s.shutdown()
+
+	}
+
 	ctxLogger.Info(ctx, "server exited properly")
 	return nil
+
 }
