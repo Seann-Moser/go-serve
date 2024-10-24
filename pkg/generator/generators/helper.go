@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"unicode"
 )
 
 var (
@@ -702,15 +703,17 @@ func JSNewClientFunc(projectName string, endpoint *endpoints.Endpoint) []*Client
 
 func createBaseClientFunc(projectName string, endpoint *endpoints.Endpoint, method string, re *regexp.Regexp) *ClientFunc {
 	return &ClientFunc{
-		UrlEnvVarName: SnakeCaseToCamelCase(ToSnakeCase(projectName)),
-		Name:          convertPathToFunctionName(endpoint.URLPath),
-		Path:          endpoint.URLPath,
-		MuxVars:       re.FindAllString(endpoint.URLPath, -1),
-		MethodType:    strings.ToUpper(method),
-		Imports:       make([]Imports, 0),
-		QueryParams:   map[string]string{},
-		Objects:       map[string][]string{},
-		Async:         endpoint.Async,
+		UrlEnvVarName:    SnakeCaseToCamelCase(ToSnakeCase(projectName)),
+		Name:             convertPathToFunctionName(endpoint.URLPath),
+		Path:             endpoint.URLPath,
+		MuxVars:          re.FindAllString(endpoint.URLPath, -1),
+		MethodType:       strings.ToUpper(method),
+		Imports:          make([]Imports, 0),
+		QueryParams:      map[string]string{},
+		Objects:          map[string][]string{},
+		Async:            endpoint.Async,
+		CustomDataParams: endpoint.CustomDataParams,
+		CustomData:       endpoint.CustomData,
 	}
 }
 
@@ -816,18 +819,27 @@ func convertPathToFunctionName(path string) string {
 	// For example, /account/{account_id}/user/{user_id}/settings/query becomes accountUserSettingsQuery
 	re := regexp.MustCompile(`\{[^}]+\}`)
 	path = re.ReplaceAllString(path, "ByID")
-
+	caser := cases.Title(language.English)
 	// Replace slashes with capitalized words
 	parts := strings.Split(path, "/")
 	for i := 0; i < len(parts); i++ {
 		// Capitalize the first letter of each segment
-		if len(parts[i]) > 0 {
-			parts[i] = strings.ToTitle(parts[i])
+		if len(parts[i]) > 0 && !isFirstCharCapital(parts[i]) {
+			parts[i] = caser.String(parts[i])
 		}
 	}
 
 	// Join the segments into a single function name
 	return strings.Join(parts, "")
+}
+
+func isFirstCharCapital(s string) bool {
+	if len(s) == 0 {
+		return false // Handle empty string case
+	}
+
+	firstRune := []rune(s)[0] // Get the first character as a rune
+	return unicode.IsUpper(firstRune)
 }
 
 func GetGoFiles(path string) []string {

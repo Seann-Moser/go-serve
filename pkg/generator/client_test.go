@@ -72,9 +72,14 @@ func GetEndpoints() []*endpoints.Endpoint {
 			},
 		},
 		{
-			SubDomain: "test",
-			URLPath:   "/account/{account_id}/user/{user_id}",
-			Methods:   []string{http.MethodGet},
+			SubDomain:        "test",
+			URLPath:          "/account/{account_id}/user/{user_id}",
+			Methods:          []string{http.MethodGet},
+			CustomDataParams: []string{"custom"},
+			CustomData: `
+		  for (const k in custom) {
+				config.params[k] = custom[k];
+			}`,
 			//HandlerFunc: HandlerFuncs,
 		},
 		{
