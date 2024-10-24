@@ -49,6 +49,9 @@ type Endpoint struct {
 	SkipGenerate    bool                   `json:"-" db:"-"`
 	Public          bool                   `json:"-" db:"-"`
 	Group           string                 `json:"-" db:"-"`
+
+	CustomData       string   `json:"-" db:"-"`
+	CustomDataParams []string `json:"-" db:"-"`
 }
 
 type HTTPDescription struct {

@@ -5,10 +5,11 @@
          * {{if .RequestType}}@param {{"{"}}{{.RequestType}}{{"}"}} {{.RequestTypeName}}
          * {{end}}  {{range .MuxVars}}
          * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
-         * @param {string} {{.}}{{end}}{{end}}
+         * @param {string} {{.}}{{end}}{{end}}{{range .CustomDataParams}}
+         * @param {string} {{.}} {{end}}
          */
-        {{if .Async}}async {{end}}{{.Name}}({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}pagination=null){
-            const config = this.{{.Name}}Config({{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}pagination)
+        {{if .Async}}async {{end}}{{.Name}}({{if .RequestType}}{{.RequestTypeName}}, {{end}}{{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}{{if .CustomDataParams }}{{range $v := .CustomDataParams}}{{$v}} ,{{end}}{{end}}pagination=null){
+            const config = this.{{.Name}}Config({{range .MuxVars}}{{.}}, {{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}}, {{end}}{{end}}{{if .CustomDataParams }}{{range $v := .CustomDataParams}}{{$v}} ,{{end}}{{end}}pagination)
             {{if .RequestType}}
             if ({{.RequestTypeName}} !== null) {
                 config.body = JSON.stringify({{.RequestTypeName}});
@@ -27,14 +28,25 @@
          * {{range .MuxVars}}
          * @param {string} {{.}}{{end}}{{if .UsesQueryParams }}{{range .QueryParams}}
          * @param {string} {{.}}{{end}}
-         * {{end}}
+         * {{end}} {{range .CustomDataParams}}
+         * @param {string} {{.}} {{end}}
          */
-        {{.Name}}Config({{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}pagination=null){
+        {{.Name}}Config({{range .MuxVars}}{{.}},{{end}}{{if .UsesQueryParams }}{{range $k,$v := .QueryParams}}{{$v}} ,{{end}}{{end}}{{if .CustomDataParams }}{{range $v := .CustomDataParams}}{{$v}},{{end}}{{end}}pagination=null){
+            {{if .CustomData}}const config = GetConfig(url,{
+                                   method: "{{.MethodType}}",
+                                   path: {{.Path}},
+                                   params:{  {{range $k,$v := .QueryParams}}
+                                        {{$k}} : {{$v}},{{end}}
+                                   },
+                               },pagination)
+             {{.CustomData}}
+            return config
+            {{else}}
             return GetConfig(url,{
-                method: "{{.MethodType}}",
-                path: {{.Path}},
-                params:{  {{range $k,$v := .QueryParams}}
-                     {{$k}} : {{$v}},{{end}}
-                },
-            },pagination)
+                    method: "{{.MethodType}}",
+                    path: {{.Path}},
+                    params:{  {{range $k,$v := .QueryParams}}
+                         {{$k}} : {{$v}},{{end}}
+                    },
+            },pagination){{end}}
         }

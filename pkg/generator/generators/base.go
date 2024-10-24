@@ -51,6 +51,9 @@ type ClientFunc struct {
 	Swagger string
 
 	Language Language
+
+	CustomData       string
+	CustomDataParams []string
 }
 
 func (cf *ClientFunc) GenerateSwaggerDoc() string {
