@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/multierr"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/XSAM/otelsql"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq" // PostgreSQL driver
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -45,6 +47,7 @@ const (
 	DBHostFlag               = "db-host"
 	DBPortFlag               = "db-port"
 	DBMaxConnectionsFlag     = "db-max-connections"
+	DBType                   = "db-type"
 	DBUpdateTablesFlag       = "db-update-table"
 	DBMaxConnectionRetryFlag = "db-max-connection-retry"
 	DBInstanceName           = "db-instance-name"
@@ -66,6 +69,7 @@ func GetDaoFlags() *pflag.FlagSet {
 	fs.Int(DBMaxIdleConnectionsFlag, 10, "")
 	fs.Int(DBMaxConnectionRetryFlag, 10, "")
 	fs.Bool(DBUpdateTablesFlag, false, "")
+	fs.String(DBType, "mysql", "mysql, postgres, sqlite")
 	fs.Duration(DBMaxConnectionLifetime, 1*time.Minute, "")
 	fs.Duration(DBWriteStatDuration, 10*time.Second, "")
 
@@ -157,6 +161,7 @@ func ContextGetTransaction(ctx context.Context) (*sqlx.Tx, error) {
 func NewSQLDao(ctx context.Context) (*DAO, error) {
 	db, err := connectToDB(
 		ctx,
+		viper.GetString(DBType),
 		viper.GetString(DBUserNameFlag),
 		viper.GetString(DBPasswordFlag),
 		viper.GetString(DBHostFlag),
@@ -214,37 +219,61 @@ func getType(myVar interface{}) string {
 	}
 }
 
-func connectToDB(ctx context.Context, user, password, host, instanceName string, port, maxConnections, idleConn int, lifeTime, writeStatDuration time.Duration) (*sqlx.DB, error) {
-	dbConf := mysql.Config{
-		AllowNativePasswords:    true,
-		User:                    user,
-		Passwd:                  password,
-		Net:                     "tcp",
-		Addr:                    fmt.Sprintf("%s:%d", host, port),
-		CheckConnLiveness:       true,
-		AllowCleartextPasswords: true,
-		MaxAllowedPacket:        4 << 20,
-	}
-	ctxLogger.Debug(ctx, "connecting to db", zap.String("dsn", dbConf.FormatDSN()))
+func connectToDB(ctx context.Context, dbType, user, password, host, instanceName string, port, maxConnections, idleConn int, lifeTime, writeStatDuration time.Duration) (*sqlx.DB, error) {
+	var dsn string
+	var dbSystem attribute.KeyValue
 
-	otelSql, err := otelsql.Open("mysql", dbConf.FormatDSN(), otelsql.WithAttributes(
-		semconv.DBSystemMySQL))
+	switch dbType {
+	case "mysql":
+		mysqlConf := mysql.Config{
+			AllowNativePasswords:    true,
+			User:                    user,
+			Passwd:                  password,
+			Net:                     "tcp",
+			Addr:                    fmt.Sprintf("%s:%d", host, port),
+			CheckConnLiveness:       true,
+			AllowCleartextPasswords: true,
+			MaxAllowedPacket:        4 << 20,
+		}
+		dsn = mysqlConf.FormatDSN()
+		dbSystem = semconv.DBSystemMySQL
+
+	case "postgres":
+		dbSystem = semconv.DBSystemPostgreSQL
+		dsn = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			host, port, user, password, instanceName)
+	default:
+		return nil, fmt.Errorf("unsupported database type: %s", dbType)
+	}
+
+	ctxLogger.Debug(ctx, "connecting to db", zap.String("dsn", dsn), zap.String("dbType", dbType))
+
+	otelSql, err := otelsql.Open(dbType, dsn, otelsql.WithAttributes(
+		dbSystem,
+	))
 	if err != nil {
 		return nil, err
 	}
-	db := sqlx.NewDb(otelSql, "mysql")
+
+	db := sqlx.NewDb(otelSql, dbType)
 	db.SetMaxOpenConns(maxConnections)
 	db.SetConnMaxLifetime(lifeTime)
 	db.SetMaxIdleConns(idleConn)
 	db.SetConnMaxIdleTime(10 * time.Minute)
+
 	if err = db.Ping(); err == nil {
 		return db, nil
 	}
+
+	// Retry connection on failure
 	var retries int
 	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
 	err = otelsql.RegisterDBStatsMetrics(otelSql, otelsql.WithAttributes(
-		semconv.DBSystemMySQL,
+		dbSystem,
 	))
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -256,9 +285,8 @@ func connectToDB(ctx context.Context, user, password, host, instanceName string,
 			if err = db.Ping(); err == nil {
 				return db, nil
 			}
-			ctxLogger.Info(ctx, "attempting to connect to db", zap.Int("attempt", retries), zap.String("dsn", dbConf.FormatDSN()))
+			ctxLogger.Info(ctx, "attempting to connect to db", zap.Int("attempt", retries), zap.String("dsn", dsn))
 			retries++
 		}
 	}
-
 }
