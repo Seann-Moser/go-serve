@@ -93,6 +93,21 @@ func ToSnakeCase(str string) string {
 	return strings.ToLower(strings.ReplaceAll(snake, "__", "_"))
 }
 
+// SnakeToCamel converts a snake_case string to CamelCase.
+func SnakeToCamel(snake string) string {
+	// Split the string by underscores
+	parts := strings.Split(snake, "_")
+	for i, part := range parts {
+		if len(part) > 0 {
+			// Capitalize the first letter and make the rest lowercase
+			parts[i] = strings.ToUpper(part[:1]) + strings.ToLower(part[1:])
+		}
+	}
+	// Join the parts without any separator
+	camel := strings.Join(parts, "")
+	return camel
+}
+
 func getTypePkg(myVar interface{}) (string, string) {
 	switch myVar.(type) {
 	case string:
@@ -147,7 +162,7 @@ func isArray(myVar interface{}) bool {
 	case reflect.Array:
 		return true
 	case reflect.Ptr:
-		return isArray(t.Elem())
+		return false
 	default:
 		return false
 	}
@@ -345,12 +360,12 @@ func writeNuxtFile(dir string, group string, code []string, isPublic bool, class
 	} else {
 		header += "// Private Endpoint - Auto Generated\n"
 	}
-	classImports := fmt.Sprintf(`import {%s} from "./%s"`, strings.Join(classNames, ","), classFilename)
+	classImports := fmt.Sprintf(`import {%s} from "assets/%s"`, strings.Join(classNames, ","), classFilename)
 	if len(classNames) == 0 {
 		classImports = ""
 	}
 	nuxtIt := `%s
-import {Iterator,Pagination} from "./iterator.js"
+import {Iterator,Pagination} from "assets/iterator.js"
 %s
  function GetConfig(baseURL = "http://localhost:3000" ,data={},pagination=null){
      let params = {}
@@ -373,7 +388,7 @@ import {Iterator,Pagination} from "./iterator.js"
  }
 
 export default defineNuxtPlugin((nuxtApp) => {
-	const url = nuxtApp.$config.public.%s
+    const url = useRuntimeConfig().public.%s
 	const api = {
 	%s
 	}
@@ -383,7 +398,7 @@ export default defineNuxtPlugin((nuxtApp) => {
         },
     };
 })`
-	n := ToSnakeCase(group)
+	n := "baseUrl" + SnakeToCamel(ToSnakeCase(group))
 	_, err = f.WriteString(fmt.Sprintf(nuxtIt, classImports, header, n, strings.Join(code, ",\n")+"\n", n))
 	return err
 }
