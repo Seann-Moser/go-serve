@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/Seann-Moser/go-serve/server/endpoints"
@@ -36,18 +37,25 @@ func NewAdvancedHealthCheck(timeout time.Duration, pings map[string]Ping) *endpo
 		URLPath:         "/healthcheck",
 		PermissionLevel: endpoints.All,
 		HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
-			var missing []string
 			ctx, cancel := context.WithTimeout(r.Context(), timeout)
 			defer cancel()
+			eg, ctx := errgroup.WithContext(ctx)
 			for k, v := range pings {
-				if !v(ctx) {
-					missing = append(missing, fmt.Sprintf("failed to ping:%s", k))
-				}
+				eg.Go(func() error {
+					if !v(ctx) {
+						return fmt.Errorf("failed to ping:%s", k)
+					}
+					return nil
+				})
+				//if !v(ctx) {
+				//	missing = append(missing, fmt.Sprintf("failed to ping:%s", k))
+				//}
 			}
-			if len(missing) > 0 {
+
+			if err := eg.Wait(); err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
-				_, _ = w.Write([]byte(strings.Join(missing, ", ")))
-				ctxLogger.Error(r.Context(), strings.Join(missing, ", "))
+				_, _ = w.Write([]byte(err.Error()))
+				ctxLogger.Error(r.Context(), "failed to ping all dependencies", zap.Error(err))
 				return
 			}
 			w.WriteHeader(http.StatusOK)
