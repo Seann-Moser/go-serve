@@ -77,24 +77,27 @@ func NewRedisPubSubFromFlags[T any](ctx context.Context, prefix string) (*RedisP
 // It returns an error if the server does not respond within the specified timeout.
 func (r *RedisPubSub[T]) Ping(ctx context.Context, timeout time.Duration) error {
 	// Create a context with the specified timeout
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	// Send the PING command
 	if r.client == nil {
 		return fmt.Errorf("redis client is not initialized")
 	}
-	ping := r.client.Ping(ctx)
 
-	if ping == nil {
-		return fmt.Errorf("status is nil")
-	}
-	err := ping.Err()
-	if err != nil {
-		return fmt.Errorf("failed to ping Redis server: %w", err)
-	}
+	tmpCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	t := time.NewTicker(time.Second)
+	defer t.Stop()
 
-	return nil
+	for {
+		select {
+		case <-tmpCtx.Done():
+			return fmt.Errorf("failed to connect to Redis: %w", tmpCtx.Err())
+		case <-t.C:
+			ping := r.client.Ping(tmpCtx) // Use tmpCtx to respect the timeout
+			if ping.Err() == nil {
+				// Successful ping, break the loop
+				return nil
+			}
+		}
+	}
 }
 
 // Publish publishes messages to the specified Redis channel.
