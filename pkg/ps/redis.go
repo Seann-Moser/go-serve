@@ -49,25 +49,28 @@ func NewRedisPubSubFromFlags[T any](ctx context.Context, prefix string) (*RedisP
 		Password: redisPassword,
 		DB:       redisDB,
 	})
-	t := time.NewTicker(time.Second)
-	tmpCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+
+	// Set up context with a timeout for the ping attempt
+	tmpCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	ping := client.Ping(ctx)
-	for ping.Err() != nil {
+	t := time.NewTicker(time.Second)
+	defer t.Stop()
+
+	for {
 		select {
 		case <-tmpCtx.Done():
-			cancel()
-			t.Stop()
-			return nil, fmt.Errorf("failed to connect to Redis: %w", ping.Err())
+			return nil, fmt.Errorf("failed to connect to Redis: %w", tmpCtx.Err())
 		case <-t.C:
-			ping = client.Ping(ctx)
+			ping := client.Ping(tmpCtx) // Use tmpCtx to respect the timeout
+			if ping.Err() == nil {
+				// Successful ping, break the loop
+				return &RedisPubSub[T]{
+					client:         client,
+					defaultChannel: defaultChannel,
+				}, nil
+			}
 		}
 	}
-
-	return &RedisPubSub[T]{
-		client:         client,
-		defaultChannel: defaultChannel,
-	}, nil
 }
 
 // Ping sends a PING command to the Redis server to check connectivity.
