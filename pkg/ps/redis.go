@@ -144,7 +144,7 @@ func (r *RedisPubSub[T]) Publish(ctx context.Context, channel string, data chan 
 	}
 
 	// Wait for all workers to finish
-	wg.Wait()
+	//wg.Wait()
 	return nil
 }
 
