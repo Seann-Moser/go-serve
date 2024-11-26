@@ -61,7 +61,7 @@ func Flags() *pflag.FlagSet {
 	fs.String(serverPrefixFlag, "", "")
 	fs.Int64(serverMaxReceivedBytesFlag, int64(20*1024*1024), "")
 	fs.Bool(serverShowErrFlag, false, "")
-	fs.Duration("shutdown-duration", 30*time.Second, "duration to wait before shutting down the server")
+	fs.Duration("shutdown-duration", 15*time.Second, "duration to wait before shutting down the server")
 	fs.AddFlagSet(metrics.MetricFlags())
 	return fs
 }
@@ -201,6 +201,7 @@ func (s *Server) StartServer(ctx context.Context) error {
 	}()
 	ctxLogger.Info(ctx, "staring server", zap.String("address", server.Addr), zap.String("port", s.ServingPort), zap.String("prefix", s.PathPrefix))
 	<-s.serverCtx.Done()
+	ctxLogger.Info(ctx, "server shutting down")
 	ctxShutDown, cancel := context.WithTimeout(context.Background(), s.shutdownDuration)
 	defer func() {
 		cancel()
@@ -209,12 +210,13 @@ func (s *Server) StartServer(ctx context.Context) error {
 		ctxLogger.Error(ctx, "server Shutdown Failed", zap.Error(err))
 		return err
 	}
+	<-time.NewTicker(s.shutdownDuration).C
+
 	select {
 	case <-ctxShutDown.Done():
 		s.shutdown()
 	case <-s.requestTracker.Done(s.ctx):
 		s.shutdown()
-
 	}
 
 	ctxLogger.Info(ctx, "server exited properly")
