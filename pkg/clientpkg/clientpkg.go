@@ -29,9 +29,18 @@ type HttpClient interface {
 	RequestWithRetry(ctx context.Context, data RequestData, p *pagination.Pagination) (resp *ResponseData)
 	SendRequest(ctx context.Context, data RequestData, p *pagination.Pagination) *ResponseData
 	AddOauthClient(prefix string)
+	SetEndpoint(e string) error
 }
 
 type MockClient struct {
+}
+
+func (m MockClient) SetEndpoint(e string) error {
+	_, err := url.Parse(e)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m MockClient) AddOauthClient(prefix string) {
