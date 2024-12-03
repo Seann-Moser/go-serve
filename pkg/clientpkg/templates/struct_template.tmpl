@@ -46,6 +46,14 @@ func (c *Client) Ping(ctx context.Context) bool {
 	return resp.Status == http.StatusOK
 }
 
+func (c *Client) SetEndpoint(e string) error {
+	return c.base.SetEndpoint(e)
+}
+
+func (c *Client) SetHeaders(k map[string]string) {
+	c.headers = k
+}
+
 func (c *Client) PingCheck(ctx context.Context) error {
 	var valid bool
 	tick := time.NewTicker(1 * time.Second)

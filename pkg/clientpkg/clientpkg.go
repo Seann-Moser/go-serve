@@ -82,6 +82,18 @@ type Client struct {
 	OAuthClient  *OAuthClient
 }
 
+func (c *Client) GetEndpoint() *url.URL {
+	return c.endpoint
+}
+func (c *Client) SetEndpoint(e string) error {
+	u, err := url.Parse(e)
+	if err != nil {
+		return err
+	}
+	c.endpoint = u
+	return nil
+}
+
 func Flags(prefix string) *pflag.FlagSet {
 	fs := pflag.NewFlagSet(prefix, pflag.ExitOnError)
 	fs.String(GetFlagWithPrefix(prefix, "endpoint"), "http://127.0.0.1:8080", fmt.Sprintf("[%s]", strings.ToUpper(ToSnakeCase(GetFlagWithPrefix(prefix, "endpoint")))))
