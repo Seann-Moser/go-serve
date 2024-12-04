@@ -41,7 +41,7 @@ func With(ctx context.Context, fields ...zapcore.Field) context.Context {
 }
 
 func GetLogger(ctx context.Context) *zap.Logger {
-	if ctx == nil {
+	if ctx == nil || ctx.Err() != nil { // Check if context is nil or closed
 		if globalLogger != nil {
 			return globalLogger
 		}
@@ -78,7 +78,12 @@ func NewLogger(production bool, level string, icc bool) (*zap.Logger, error) {
 		return nil, err
 	}
 	ignoreContextCanceled = icc
-	return conf.Build()
+	logger, err := conf.Build()
+	if err != nil {
+		return nil, err
+	}
+	globalLogger = logger
+	return logger, nil
 }
 
 func Check(ctx context.Context, lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
