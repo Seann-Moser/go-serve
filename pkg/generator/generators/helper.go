@@ -833,7 +833,7 @@ func convertPathToFunctionName(path string) string {
 	// Replace path segments with placeholders
 	// For example, /account/{account_id}/user/{user_id}/settings/query becomes accountUserSettingsQuery
 	re := regexp.MustCompile(`\{[^}]+\}`)
-	path = re.ReplaceAllString(path, "")
+	path = re.ReplaceAllString(path, "ByID")
 
 	caser := cases.Title(language.English)
 	// Replace slashes with capitalized words
