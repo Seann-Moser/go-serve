@@ -399,7 +399,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     };
 })`
 	n := "baseUrl" + SnakeToCamel(ToSnakeCase(group))
-	_, err = f.WriteString(fmt.Sprintf(nuxtIt, classImports, header, n, strings.Join(code, ",\n")+"\n", n))
+	_, err = f.WriteString(fmt.Sprintf(nuxtIt, classImports, header, n, strings.Join(code, ",\n")+"\n", ToSnakeCase(group)))
 	return err
 }
 
