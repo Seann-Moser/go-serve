@@ -46,6 +46,7 @@ type Server struct {
 	MetricsServer    *metrics.Metrics
 	requestTracker   *middle.RequestTracker
 	shutdown         func()
+	server           *http.Server
 }
 
 const (
@@ -183,15 +184,32 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	return s.StartServer(errCtx)
 }
-
-func (s *Server) StartServer(ctx context.Context) error {
-	server := &http.Server{
+func (s *Server) ConfigureServer(ctx context.Context) *http.Server {
+	s.server = &http.Server{
 		Addr: ":" + s.ServingPort,
 
 		Handler: s.router,
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctxLogger.ConfigureCtx(ctxLogger.GetLogger(ctx), ctx)
 		},
+	}
+	return s.server
+
+}
+
+func (s *Server) StartServer(ctx context.Context) error {
+	var server *http.Server
+
+	if s.server != nil {
+		server = s.server
+	} else {
+		server = &http.Server{
+			Addr:    ":" + s.ServingPort,
+			Handler: s.router,
+			BaseContext: func(_ net.Listener) context.Context {
+				return ctxLogger.ConfigureCtx(ctxLogger.GetLogger(ctx), ctx)
+			},
+		}
 	}
 
 	go func() {
