@@ -24,7 +24,6 @@ var skip = []zap.Option{zap.AddCallerSkip(1)}
 
 func (resp *Response) Error(r *http.Request, w http.ResponseWriter, err error, code int, message string) {
 	w.WriteHeader(code)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err != nil {
 		logger := ctxLogger.GetLogger(r.Context())
 		logger.WithOptions(skip...).Error(message, zap.Error(err), zap.Int("code", code))
@@ -55,7 +54,6 @@ func (resp *Response) PaginationResponse(r *http.Request, w http.ResponseWriter,
 		ctxLogger.Error(r.Context(), "failed to encode to []interface", zap.Error(err))
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	w.WriteHeader(http.StatusOK)
 	err = BaseResponse{
@@ -174,7 +172,6 @@ func getRange(data []interface{}, page *pagination.Pagination, raw bool) []inter
 
 func (resp *Response) Message(r *http.Request, w http.ResponseWriter, msg string) {
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	err := BaseResponse{
 		Message: msg,
@@ -205,7 +202,6 @@ func (resp *Response) Raw(req *http.Request, w http.ResponseWriter, r *http.Resp
 }
 func (resp *Response) DataResponse(r *http.Request, w http.ResponseWriter, data interface{}, code int) {
 	w.WriteHeader(code)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err := BaseResponse{
 		Data: data,
 	}.Encode(r, w)

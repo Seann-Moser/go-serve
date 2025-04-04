@@ -184,6 +184,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	return s.StartServer(errCtx)
 }
+
 func (s *Server) ConfigureServer(ctx context.Context) *http.Server {
 	s.server = &http.Server{
 		Addr: ":" + s.ServingPort,
@@ -194,7 +195,6 @@ func (s *Server) ConfigureServer(ctx context.Context) *http.Server {
 		},
 	}
 	return s.server
-
 }
 
 func (s *Server) StartServer(ctx context.Context) error {
