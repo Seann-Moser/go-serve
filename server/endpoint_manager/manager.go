@@ -3,15 +3,15 @@ package endpoint_manager
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"github.com/Seann-Moser/go-serve/server/handlers"
-	"net/http"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
 	"github.com/Seann-Moser/go-serve/server/endpoints"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type AddEndpoints func(manager Manager) error
@@ -75,13 +75,11 @@ func (m *Manager) AddEndpoint(ctx context.Context, endpoint *endpoints.Endpoint)
 	}
 	handleFunc := func(pattern string, handlerFunc func(http.ResponseWriter, *http.Request)) *mux.Route {
 		// Configure the "http.route" for the HTTP instrumentation.
-		handler := otelhttp.WithRouteTag(pattern, otelhttp.NewHandler(http.HandlerFunc(handlerFunc), pattern))
-		return m.Router.Handle(pattern, handler)
+		return m.Router.Handle(pattern, http.HandlerFunc(handlerFunc))
 	}
 	handle := func(pattern string, handlerFunc http.Handler) *mux.Route {
 		// Configure the "http.route" for the HTTP instrumentation.\
-		handler := otelhttp.WithRouteTag(pattern, otelhttp.NewHandler(handlerFunc, pattern))
-		return m.Router.Handle(pattern, handler)
+		return m.Router.Handle(pattern, handlerFunc)
 	}
 
 	if len(endpoint.Redirect) > 0 && endpoint.HandlerFunc == nil && endpoint.Handler == nil {
