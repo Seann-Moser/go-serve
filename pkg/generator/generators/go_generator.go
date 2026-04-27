@@ -7,14 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
-	openai "github.com/sashabaranov/go-openai"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/Seann-Moser/go-serve/server/endpoints"
+	openai "github.com/sashabaranov/go-openai"
 )
 
 var _ Generator = GoClientGenerator{}
@@ -75,8 +76,6 @@ var SwagApiGeneralTempl string = `
 Todo update gofunc template to support better godoc comments
 */
 const goFuncTemplate = `
-// {{.Name}} godoc
-// {{.Description}} {{.Swagger}}
 func (c *Client) {{.Name}}(ctx context.Context{{if .RequestType}}, {{.RequestTypeName}} {{.RequestType}}{{end}}{{range .MuxVars}}, {{.}} string{{end}}{{if .UsesQueryParams }}{{range $k, $v := .QueryParams}}, {{$v}} string{{end}}{{end}}{{if .UsesHeaderParams }}, headers map[string]string{{end}},skipCache bool) {{.Return}} {
 	path := {{.Path}}{{if .UsesQueryParams }}
 	params := map[string]string{}{{end}}{{range $k, $v := .QueryParams}}

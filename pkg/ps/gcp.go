@@ -1,10 +1,12 @@
 package ps
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
+	"cloud.google.com/go/pubsub"
 	"github.com/Seann-Moser/go-serve/pkg/clientpkg"
 	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
 	"github.com/spf13/pflag"
@@ -12,7 +14,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/option"
-	"time"
 )
 
 var _ PubSub[any] = &GCPPubSub[any]{}

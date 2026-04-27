@@ -39,24 +39,6 @@ func GetFlagWithPrefix(prefix, flag string) string {
 	return fmt.Sprintf("%s-%s", prefix, flag)
 }
 
-func MergeMap[T any](m1, m2 map[string]T) map[string]T {
-	if m1 == nil {
-		return m2
-	}
-	if m2 == nil {
-		return m1
-	}
-	if m1 == nil && m2 == nil {
-		return map[string]T{}
-	}
-	for k, v := range m2 {
-		if _, found := m1[k]; found {
-			continue
-		}
-		m1[k] = v
-	}
-	return m1
-}
 func GetProjectDir() (string, string, error) {
 	currentPath, err := os.Getwd()
 	if err != nil {
@@ -153,7 +135,7 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 
 	class, err := templateReplaceClasses(jsClassesTemplate, objects)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed:%w", err)
 	}
 	imports = RemoveDuplicateValues[string](imports)
 
@@ -219,6 +201,17 @@ export default defineNuxtPlugin((nuxtApp) => {
 		}
 	}
 	return strings.Join(functions, ""), nil
+}
+func MergeMap[V any](src, dst map[string]V) map[string]V {
+	if dst == nil {
+		dst = make(map[string]V)
+	}
+
+	for k, v := range src {
+		dst[k] = v
+	}
+
+	return dst
 }
 
 type ClientFunc struct {
@@ -720,18 +713,18 @@ func snakeCaseToCamelCase(inputUnderScoreStr string) (camelCase string) {
 // @Tags account,GET,DELETE
 // @ID account_user_settings-c0affc3d8eefc506bb3142325d940283a274ee0d
 // @Description empty
-// @Produce json 
-// @Param account_id path string true "description" 
-// @Param user_id path string true "description" 
-// @Param header header string false "description" 
-// @Param test header string false "description" 
-// @Param responseData body clientpkg.ResponseData false "description" 
-// @Success 200 {object} response.BaseResponse "return message object"  
+// @Produce json
+// @Param account_id path string true "description"
+// @Param user_id path string true "description"
+// @Param header header string false "description"
+// @Param test header string false "description"
+// @Param responseData body clientpkg.ResponseData false "description"
+// @Success 200 {object} response.BaseResponse "return message object"
 // @Failure 400 {object} response.BaseResponse "invalid request to endpoint"
 // @Failure 500 {object} response.BaseResponse "failed"
 // @Failure 401 {object} response.BaseResponse "unauthorized request to endpoint"
-// @Router /account/{account_id}/user/{user_id}/settings [GET] 
-// @Router /account/{account_id}/user/{user_id}/settings [DELETE] 
+// @Router /account/{account_id}/user/{user_id}/settings [GET]
+// @Router /account/{account_id}/user/{user_id}/settings [DELETE]
 func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
@@ -741,14 +734,14 @@ func (c *Client) HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 // @Tags account,GET
 // @ID account_user-9df6dae28a065c2087fbd4eac002c2cd9de221e7
 // @Description empty
-// @Produce json 
-// @Param account_id path string true "description" 
-// @Param user_id path string true "description" 
-// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "returning object"  
+// @Produce json
+// @Param account_id path string true "description"
+// @Param user_id path string true "description"
+// @Success 200 {object} response.BaseResponse{data=clientpkg.RequestData} "returning object"
 // @Failure 400 {object} response.BaseResponse "invalid request to endpoint"
 // @Failure 500 {object} response.BaseResponse "failed"
 // @Failure 401 {object} response.BaseResponse "unauthorized request to endpoint"
-// @Router /account/{account_id}/user/{user_id} [GET] 
+// @Router /account/{account_id}/user/{user_id} [GET]
 func HandlerFuncs(w http.ResponseWriter, r *http.Request) {
 
 }
