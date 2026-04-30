@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 )
 
 var (

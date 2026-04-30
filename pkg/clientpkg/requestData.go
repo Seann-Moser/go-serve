@@ -3,8 +3,8 @@ package clientpkg
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Seann-Moser/go-serve/pkg/pagination"
-	"github.com/Seann-Moser/go-serve/pkg/request"
+	"github.com/DarlingGoose/go-serve/pkg/pagination"
+	"github.com/DarlingGoose/go-serve/pkg/request"
 	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
 	"io"

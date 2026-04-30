@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 	"net/http"
 	"net/url"
 	"strings"
@@ -10,8 +10,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Seann-Moser/go-serve/pkg/response"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/pkg/response"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 )
 
 type proxy struct {

@@ -59,13 +59,13 @@ func TestGetTypePkg(t *testing.T) {
 		{
 			name:     "Pointer to struct",
 			input:    &SampleStruct{},
-			wantPkg:  "github.com/Seann-Moser/go-serve/pkg/generator/generators",
+			wantPkg:  "github.com/DarlingGoose/go-serve/pkg/generator/generators",
 			wantName: "generators",
 		},
 		{
 			name:     "Array of structs",
 			input:    []SampleStruct{{}, {}},
-			wantPkg:  "github.com/Seann-Moser/go-serve/pkg/generator/generators",
+			wantPkg:  "github.com/DarlingGoose/go-serve/pkg/generator/generators",
 			wantName: "generators",
 		},
 		{

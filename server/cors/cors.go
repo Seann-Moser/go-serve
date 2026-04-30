@@ -3,7 +3,7 @@ package cors
 import (
 	"context"
 	"fmt"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 	"go.uber.org/zap"
 	"net/http"
 	"regexp"

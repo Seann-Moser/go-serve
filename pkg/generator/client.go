@@ -3,8 +3,8 @@ package generator
 import (
 	"bytes"
 	"fmt"
-	generators "github.com/Seann-Moser/go-serve/pkg/generator/generators"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	generators "github.com/DarlingGoose/go-serve/pkg/generator/generators"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 	"os/exec"
 	"strings"
 )

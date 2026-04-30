@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 )
 
 // rootCmd represents the base command when called without any subcommands

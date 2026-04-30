@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
-	"github.com/Seann-Moser/go-serve/server/handlers"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/server/handlers"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 )
 
 type AddEndpoints func(manager Manager) error

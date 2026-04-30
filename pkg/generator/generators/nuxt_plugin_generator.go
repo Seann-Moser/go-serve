@@ -2,8 +2,8 @@ package generators
 
 import (
 	_ "embed"
-	"github.com/Seann-Moser/go-serve/pkg/clientpkg"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/pkg/clientpkg"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 )
 
 var _ Generator = NuxtPluginGenerator{}

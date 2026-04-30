@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/Seann-Moser/go-serve/internal/client_builder"
+	"github.com/DarlingGoose/go-serve/internal/client_builder"
 )
 
 // serveCmd represents the serve command

@@ -3,19 +3,19 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/Seann-Moser/go-serve/server/middle"
+	"github.com/DarlingGoose/go-serve/server/middle"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/Seann-Moser/go-serve/server"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
-	"github.com/Seann-Moser/go-serve/server/handlers"
+	"github.com/DarlingGoose/go-serve/server"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/server/handlers"
 )
 
 /*
 	@title go-serve
-	@version v0.9.52
+	@version v0.9.62
 	@description 
 	
 	@contact.name API Support

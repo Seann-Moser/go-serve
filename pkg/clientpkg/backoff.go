@@ -2,7 +2,7 @@ package clientpkg
 
 import (
 	"context"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"

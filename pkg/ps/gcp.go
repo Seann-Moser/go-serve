@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/Seann-Moser/go-serve/pkg/clientpkg"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/clientpkg"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"

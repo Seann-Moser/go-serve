@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Seann-Moser/QueryHelper"
+	"github.com/DarlingGoose/QueryHelper"
 	"github.com/XSAM/otelsql"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/go-sql-driver/mysql"
@@ -22,7 +22,7 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 )
 
 // DAO represents the Data Access Object, providing methods to interact with the database.

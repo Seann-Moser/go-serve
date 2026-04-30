@@ -18,7 +18,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 )
 
 //go:embed templates/go_function_template.tmpl
@@ -100,10 +100,10 @@ func GenerateBaseClient(write bool, headers []string, endpoints ...*endpoints.En
 		`"fmt"`,
 		`"net/http"`,
 		`"github.com/spf13/pflag"`,
-		`clientpkg "github.com/Seann-Moser/go-serve/pkg/clientpkg"`,
+		`clientpkg "github.com/DarlingGoose/go-serve/pkg/clientpkg"`,
 		`"github.com/spf13/viper"`,
 		`"strings"`,
-		`"github.com/Seann-Moser/go-serve/pkg/response"`,
+		`"github.com/DarlingGoose/go-serve/pkg/response"`,
 		`"time"`,
 	}...)
 

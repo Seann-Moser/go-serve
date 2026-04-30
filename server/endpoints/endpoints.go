@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Seann-Moser/QueryHelper"
+	"github.com/DarlingGoose/QueryHelper"
 	"github.com/gorilla/mux"
 )
 

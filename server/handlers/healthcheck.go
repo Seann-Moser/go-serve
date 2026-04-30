@@ -3,13 +3,13 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"net/http"
 	"time"
 
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 )
 
 var HealthCheck = &endpoints.Endpoint{

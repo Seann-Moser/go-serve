@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"context"
 	"strconv"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 )
 
 // {{.InterfaceName}} is the interface that defines the methods.

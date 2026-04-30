@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
-	"github.com/Seann-Moser/go-serve/pkg/metrics"
-	"github.com/Seann-Moser/go-serve/server/middle"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/metrics"
+	"github.com/DarlingGoose/go-serve/server/middle"
 	"golang.org/x/sync/errgroup"
 	"net"
 	"net/http"
@@ -20,14 +20,14 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/Seann-Moser/go-serve/pkg/request"
-	"github.com/Seann-Moser/go-serve/pkg/response"
+	"github.com/DarlingGoose/go-serve/pkg/request"
+	"github.com/DarlingGoose/go-serve/pkg/response"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"github.com/Seann-Moser/go-serve/server/endpoint_manager"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/server/endpoint_manager"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 )
 
 var VERSION = "dev"

@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
-	"github.com/Seann-Moser/go-serve/server/device"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/server/device"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"net/http"
@@ -16,7 +16,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"github.com/Seann-Moser/go-serve/pkg/response"
+	"github.com/DarlingGoose/go-serve/pkg/response"
 )
 
 const (

@@ -4,7 +4,7 @@ package ps
 import (
 	"context"
 	"fmt"
-	"github.com/Seann-Moser/go-serve/pkg/clientpkg"
+	"github.com/DarlingGoose/go-serve/pkg/clientpkg"
 	"sync"
 	"testing"
 	"time"

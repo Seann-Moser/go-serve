@@ -1,7 +1,7 @@
 package cookies
 
 import (
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
-	"github.com/Seann-Moser/go-serve/pkg/response"
-	"github.com/Seann-Moser/go-serve/server/device"
+	"github.com/DarlingGoose/go-serve/pkg/response"
+	"github.com/DarlingGoose/go-serve/server/device"
 )
 
 type Cookies struct {

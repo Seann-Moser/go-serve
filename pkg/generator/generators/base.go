@@ -2,7 +2,7 @@ package generators
 
 import (
 	"fmt"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 	"strings"
 )
 

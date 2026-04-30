@@ -3,7 +3,7 @@ package clientpkg
 import (
 	_ "embed"
 	"fmt"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 	"os"
 	"path"
 	"regexp"

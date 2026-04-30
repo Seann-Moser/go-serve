@@ -2,7 +2,7 @@ package response
 
 import (
 	"encoding/json"
-	"github.com/Seann-Moser/go-serve/pkg/pagination"
+	"github.com/DarlingGoose/go-serve/pkg/pagination"
 	"net/http"
 	"reflect"
 	"strings"

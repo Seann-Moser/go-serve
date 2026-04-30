@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -41,7 +41,7 @@ var defaultImports = []Imports{
 	},
 	{
 		Name: "clientpkg",
-		Path: "github.com/Seann-Moser/go-serve/pkg/clientpkg",
+		Path: "github.com/DarlingGoose/go-serve/pkg/clientpkg",
 	},
 }
 var defaultImportsJS = []Imports{
@@ -153,10 +153,10 @@ func (g GoClientGenerator) Generate(data GeneratorData, endpoint ...*endpoints.E
 			Path: "fmt",
 		},
 		{
-			Path: "github.com/Seann-Moser/go-serve/pkg/clientpkg",
+			Path: "github.com/DarlingGoose/go-serve/pkg/clientpkg",
 		},
 		{
-			Path: "github.com/Seann-Moser/go-serve/pkg/response",
+			Path: "github.com/DarlingGoose/go-serve/pkg/response",
 		},
 		{
 			Path: "github.com/spf13/pflag",

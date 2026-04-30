@@ -1,8 +1,8 @@
 package generator
 
 import (
-	"github.com/Seann-Moser/go-serve/pkg/generator/generators"
-	"github.com/Seann-Moser/go-serve/server/endpoints"
+	"github.com/DarlingGoose/go-serve/pkg/generator/generators"
+	"github.com/DarlingGoose/go-serve/server/endpoints"
 	"net/http"
 	"testing"
 

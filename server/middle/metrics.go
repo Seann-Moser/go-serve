@@ -1,7 +1,7 @@
 package middle
 
 import (
-	device "github.com/Seann-Moser/go-serve/server/device"
+	device "github.com/DarlingGoose/go-serve/server/device"
 	"net/http"
 
 	"go.uber.org/zap"

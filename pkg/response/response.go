@@ -3,7 +3,7 @@ package response
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/Seann-Moser/go-serve/pkg/ctxLogger"
+	"github.com/DarlingGoose/go-serve/pkg/ctxLogger"
 	"io"
 	"math"
 	"net/http"
@@ -13,7 +13,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/Seann-Moser/go-serve/pkg/pagination"
+	"github.com/DarlingGoose/go-serve/pkg/pagination"
 )
 
 func NewResponse(showErr bool) *Response {
